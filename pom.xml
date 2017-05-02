@@ -111,7 +111,6 @@
 		<dependency>
 		    <groupId>junit</groupId>
 		    <artifactId>junit</artifactId>
-		    <version>4.12</version>
 		</dependency>
 
 		<!-- http://mvnrepository.com/artifact/org.springframework/spring-aspects -->
@@ -124,20 +123,17 @@
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-context</artifactId>
-		    <version>4.3.3.RELEASE</version>
 		</dependency>
 		
 		<!-- http://mvnrepository.com/artifact/org.hibernate/hibernate-ehcache -->
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-ehcache</artifactId>
-			<version>5.2.0.Final</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.16.8</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -278,7 +274,6 @@
  			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
 				<executions>
 					<execution>
 						<phase>package</phase>

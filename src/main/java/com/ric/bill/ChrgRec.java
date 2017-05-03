@@ -23,6 +23,7 @@ public class ChrgRec {
 	private Integer cntPers;
 	private BigDecimal area;
 	private Integer met;
+	private Integer entry;
 
     /**
      * конструктор 
@@ -32,10 +33,12 @@ public class ChrgRec {
      * @param stdt - норматив
      * @param serv - услуга
      * @param org - организация
+     * @param met - наличие счетчика
+     * @param entry - номер ввода
      * @param dt1 - дата начала
      * @param dt2 - дата окончания
      */
-	public ChrgRec(BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, Serv serv, Org org, Integer met, Date dt1, Date dt2) {
+	public ChrgRec(BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, Serv serv, Org org, Integer met, Integer entry, Date dt1, Date dt2) {
 		super();
 		setVol(vol);
 		setPrice(price);
@@ -45,6 +48,7 @@ public class ChrgRec {
 		setServ(serv);
 		setOrg(org);
 		setMet(met);
+		setEntry(entry);
 		setDt1(dt1);
 		setDt2(dt2);
 	}
@@ -127,6 +131,14 @@ public class ChrgRec {
 
 	public void setMet(Integer met) {
 		this.met = met;
+	}
+
+	public Integer getEntry() {
+		return entry;
+	}
+
+	public void setEntry(Integer entry) {
+		this.entry = entry;
 	}
 
 }

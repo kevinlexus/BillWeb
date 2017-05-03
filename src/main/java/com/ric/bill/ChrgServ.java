@@ -649,7 +649,7 @@ public class ChrgServ {
 			//log.info("Save услуга="+chrg.getServ().getId()+" объем="+chrg.getVol()+" расценка="+chrg.getPrice()+" сумма="+chrg.getSumFull(),2);
 			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(), chrg.getSumFull(), chrg.getSumAmnt(), 
 					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntPers(), chrg.getArea(),  chrg.getTp(), chrg.getDt1(), chrg.getDt2(), 
-					chrg.getMet(), calc.getReqConfig().getChng()); 
+					chrg.getMet(), chrg.getEntry(), calc.getReqConfig().getChng()); 
 
 			kart.getChrg().add(chrg2); 
 		}

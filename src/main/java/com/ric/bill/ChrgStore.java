@@ -39,9 +39,11 @@ public class ChrgStore {
 	 * @param serv - услуга
 	 * @param org - организация
 	 * @param exsMet - наличие счетчика: false - нет, true - есть
+	 * @param entry - номер ввода
 	 * @param dt - дата
 	 */
-	public void addChrg (BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, Serv serv, Org org, Boolean exsMet, Date dt) {
+	public void addChrg (BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, 
+						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt) {
 		Integer met = 0;
 		if (exsMet) {
 			met = 1;
@@ -87,7 +89,7 @@ public class ChrgStore {
 		// СГРУППИРОВАТЬ по услуге, организации, расценке, дате
 		if (getStore().size() == 0) {
 			//завести новую строку
-			getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, dt, dt));
+			getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
 		} else {
 			ChrgRec lastRec = null;
 			//получить последний добавленный элемент по данной услуге
@@ -98,7 +100,7 @@ public class ChrgStore {
 			}
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
-				getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, dt, dt));
+				getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
@@ -110,7 +112,9 @@ public class ChrgStore {
 							(lastRec.getCntPers() == null && cntPers == null ||
 							 lastRec.getCntPers().equals(cntPers)) &&
 								(lastRec.getMet() == null && met == null ||
-								 lastRec.getMet().equals(met))
+								 lastRec.getMet().equals(met)) &&
+									(lastRec.getEntry() == null && entry == null ||
+									 lastRec.getEntry().equals(entry))
 					) {
 						//добавить данные в последнюю строку, прибавить объем и площадь 
 						if (lastRec.getVol() != null) {
@@ -129,7 +133,7 @@ public class ChrgStore {
 						lastRec.setDt2(dt);
 					} else {
 						//завести новую строку, если отличается расценкой или организацией
-						getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, dt, dt));
+						getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
 					}
 			}
 		}

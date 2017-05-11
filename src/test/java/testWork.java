@@ -25,6 +25,7 @@ import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
 import com.ric.bill.mm.PayordMng;
 import com.ric.bill.mm.SecMng;
+import com.ric.bill.model.exs.UlistTp;
 import com.ric.web.AppConfig;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -50,7 +51,7 @@ public class testWork {
 	
     @Test
 	public void mainWork() {
-		log.error("Check conf");
+		log.info("Test start");
 
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
 		reqConfig.setUp(config, "0", "0", null, 1, "", "");
@@ -64,6 +65,15 @@ public class testWork {
 		} catch (ParseException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+		}
+		
+		UlistTp u = em.find(UlistTp.class, 6497);
+		
+		System.out.println("Ulist.cd = "+ u.getCd());
+		
+		log.info("Test end");
+		if (1==1) {
+			return;
 		}
 		
 		try {

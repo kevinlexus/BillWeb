@@ -16,7 +16,6 @@ Ext.define('BillWebApp.view.main.Panel3', {
         frame: true,
         bodyPadding: 10
     },
-
     items: [{
             // ГРУППЫ ПЛАТЕЖЕК
             xtype: 'gridpanel',

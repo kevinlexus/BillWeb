@@ -10,10 +10,10 @@ Ext.define('BillWebApp.store.PayordStore', {
     proxy: { // прокси должна находиться в модели. иначе ничего не будет работать при type: 'ajax' - сомнительно! перенес обратно в store
         type: 'ajax',
         api: {
-            create  : 'http://192.168.100.21:8083/payord/addPayord',
-            read    : 'http://192.168.100.21:8083/payord/getPayord',
-            update  : 'http://192.168.100.21:8083/payord/setPayord',
-            destroy : 'http://192.168.100.21:8083/payord/delPayord'
+            create  : '/payord/addPayord',
+            read    : '/payord/getPayord',
+            update  : '/payord/setPayord',
+            destroy : '/payord/delPayord'
         },
         reader: {
             type: 'json'

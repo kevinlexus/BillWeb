@@ -14,7 +14,7 @@ Ext.define('BillWebApp.store.PeriodStore1', {
         type: 'ajax',
         api: {
             create  : '',
-            read    : 'http://192.168.100.21:8083/rep/getPeriodReports',
+            read    : '/rep/getPeriodReports',
             update  : '',
             destroy : ''
         },

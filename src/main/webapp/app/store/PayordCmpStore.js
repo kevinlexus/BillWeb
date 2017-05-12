@@ -14,10 +14,10 @@ Ext.define('BillWebApp.store.PayordCmpStore', {
         type: 'ajax',
         api: {
             create  : '',
-            create  : 'http://192.168.100.21:8083/payord/addPayordCmp',
-            read    : 'http://192.168.100.21:8083/payord/getPayordCmp',
-            update  : 'http://192.168.100.21:8083/payord/setPayordCmp',
-            destroy : 'http://192.168.100.21:8083/payord/delPayordCmp'
+            create  : '/payord/addPayordCmp',
+            read    : '/payord/getPayordCmp',
+            update  : '/payord/setPayordCmp',
+            destroy : '/payord/delPayordCmp'
         },
         reader: {
             type: 'json'

@@ -15,7 +15,7 @@ Ext.define('BillWebApp.store.KoStore', {
         type: 'ajax',
         api: {
             create  : '',
-            read    : 'http://192.168.100.21:8083/base/getKoAddrTpFlt',
+            read    : '/base/getKoAddrTpFlt',
             update  : '',
             destroy : ''
         },

@@ -1,16 +1,16 @@
-Ext.define('BillWebApp.view.main.Panel5', {
+Ext.define('BillWebApp.view.main.PanelEdit', {
     extend: 'Ext.panel.Panel',
-    xtype: 'panel5',
+    xtype: 'panelEdit',
     layout: {
         type: 'vbox'
     },
     scrollable: true,
     maxHeight: 900,
     bodyPadding: 10,
-    reference: 'panel5',
+    reference: 'panelEdit',
     frame: false,
     items: [{
-        xtype: 'panel3'
+        xtype: 'panel2'
     }]
 
 });

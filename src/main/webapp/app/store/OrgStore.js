@@ -15,7 +15,7 @@ Ext.define('BillWebApp.store.OrgStore', {
         type: 'ajax',
         api: {
             create  : '',
-            read    : 'http://192.168.100.21:8083/base/getOrgAll',
+            read    : '/base/getOrgAll',
             update  : '',
             destroy : ''
         },

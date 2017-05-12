@@ -11,10 +11,10 @@ Ext.define('BillWebApp.store.PayordGrpStore', {
         //autoSave: true,
         type: 'ajax',
         api: {
-            create  : 'http://192.168.100.21:8083/payord/addPayordGrp',
-            read    : 'http://192.168.100.21:8083/payord/getPayordGrpAll',
-            update  : 'http://192.168.100.21:8083/payord/setPayordGrp',
-            destroy : 'http://192.168.100.21:8083/payord/delPayordGrp'
+            create  : '/payord/addPayordGrp',
+            read    : '/payord/getPayordGrpAll',
+            update  : '/payord/setPayordGrp',
+            destroy : '/payord/delPayordGrp'
         },
         reader: {
             type: 'json'

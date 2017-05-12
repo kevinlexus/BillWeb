@@ -34,6 +34,13 @@
        memoryStoreEvictionPolicy="LRU">
     </cache>
 
+    <cache name="wipein1min"
+       maxElementsInMemory="10000" 
+       timeToLiveSeconds="60"
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
     <cache name="neverWipe"
        maxElementsInMemory="500000" 
        eternal="true" 

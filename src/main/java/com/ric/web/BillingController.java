@@ -175,7 +175,7 @@ public class BillingController {
  			@RequestParam(value = "tp", defaultValue = "0") Integer tp) {
  
  		log.info("GOT /rep/getPeriodReports with repCd={}, tp={}", repCd, tp);
- 		return repMng.getPeriodsByCD(repCd, tp);
+ 		return repMng.getPeriodByCD(repCd, tp);
  
  	}
 	 

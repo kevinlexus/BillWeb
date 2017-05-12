@@ -14,10 +14,10 @@ Ext.define('BillWebApp.store.PayordFlowStore', {
         type: 'ajax',
         api: {
             create  : '',
-            create  : 'http://192.168.100.21:8083/payord/addPayordFlow',
-            read    : 'http://192.168.100.21:8083/payord/getPayordFlowByTpDt',
-            update  : 'http://192.168.100.21:8083/payord/setPayordFlow',
-            destroy : 'http://192.168.100.21:8083/payord/delPayordFlow'
+            create  : '/payord/addPayordFlow',
+            read    : '/payord/getPayordFlowByTpDt',
+            update  : '/payord/setPayordFlow',
+            destroy : '/payord/delPayordFlow'
         },
         reader: {
             type: 'json'

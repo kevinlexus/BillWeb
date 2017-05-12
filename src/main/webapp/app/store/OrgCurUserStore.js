@@ -15,7 +15,7 @@ Ext.define('BillWebApp.store.OrgCurUserStore', {
         type: 'ajax',
         api: {
             create  : '',
-            read    : 'http://192.168.100.21:8083/sec/getOrgCurUser',
+            read    : '/sec/getOrgCurUser',
             update  : '',
             destroy : ''
         },

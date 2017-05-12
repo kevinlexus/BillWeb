@@ -15,7 +15,7 @@ Ext.define('BillWebApp.store.LstStore', {
         type: 'ajax',
         api: {
             create  : '',
-            read    : 'http://192.168.100.21:8083/base/getLstByTp',
+            read    : '/base/getLstByTp',
             update  : '',
             destroy : ''
         },

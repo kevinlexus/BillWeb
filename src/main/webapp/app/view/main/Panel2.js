@@ -3,26 +3,25 @@ Ext.define('BillWebApp.view.main.Panel2', {
     xtype: 'panel2',
     title: 'Редактирование поручений',
     layout: {
-        type: 'vbox' // после смены vbox, проверить, как открываются комбо-боксы (могут не работать)
+        type: 'vbox',
+        pack: 'start',
+        align: 'stretch'
     },
     width: 1010,
-    minHeight: 500,
+    minHeight: 900,
     bodyPadding: 10,
     reference: 'panel2',
     controller: 'panel2controller',
     defaults: {
         frame: true,
-        bodyPadding: 10,
-        listeners:{
-            //beforerender: 'onPanel2BeforeRenderer'
-        }
+        bodyPadding: 10
     },
     items: [{
             // Платежные поручения в банк
             xtype: 'gridpanel',
             reference: 'payordFlowGrid',
             width: 1000,
-            minHeight: 120,
+            //minHeight: 120,
             margin: '0 0 10 0',
             tbar: [{
                 text: 'Добавить поручение',

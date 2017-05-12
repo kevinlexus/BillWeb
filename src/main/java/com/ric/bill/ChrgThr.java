@@ -135,8 +135,8 @@ public class ChrgThr {
 		
 		//Объект, временно хранящий записи начисления
 		chStore = new ChrgStore(); 
-		if (serv.getId()==79) {
-			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		if (serv.getId()==89) {
+			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		/*if (serv.getId()==72) {
@@ -573,7 +573,8 @@ public class ChrgThr {
 					log.info("свыше dt={}, tmpVol={}", genDt, tmpVol);
 				}*/
 				chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), 
-								BigDecimal.valueOf(stdt.vol), cntPers.cntVol, tmpSqr, upStServ, org, exsMet, entry, genDt);
+								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+								cntPers.cntVol, tmpSqr, upStServ, org, exsMet, entry, genDt);
 			} else {
 				// нет проживающих
 				BigDecimal tmpSqr = BigDecimal.ZERO;
@@ -586,12 +587,14 @@ public class ChrgThr {
 				if (woKprServ != null) {
 					// если существует услуга "без проживающих"
 					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), 
-							 	BigDecimal.valueOf(stdt.vol), cntPers.cntVol /*здесь не cntEmpt*/, 
+								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+							 	cntPers.cntVol /*здесь не cntEmpt*/, 
 							 	tmpSqr, woKprServ, org, exsMet, entry, genDt);
 				} else {
 					// услуги без проживающих не существует, поставить на свыше соц.нормы
 					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), 
-								BigDecimal.valueOf(stdt.vol), cntPers.cntVol, /*здесь не cntEmpt*/ 
+								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+								cntPers.cntVol, /*здесь не cntEmpt*/ 
 								tmpSqr, upStServ, org, exsMet, entry, genDt);
 				}
 				

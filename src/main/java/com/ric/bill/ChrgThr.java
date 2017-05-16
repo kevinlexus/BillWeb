@@ -295,6 +295,11 @@ public class ChrgThr {
 		Integer entry = null;
 		
 		log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
+
+		if (serv.getId() == 72) {
+			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
+		}
+
 		// получить необходимые услуги
 		stServ = serv.getServSt();
 		upStServ = serv.getServUpst();
@@ -314,7 +319,22 @@ public class ChrgThr {
 		kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
 
 		//получить расценку по норме	
-		stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+			// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
+			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+			stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+			stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+		} else {
+			// прочие варианты
+			if (stServ.getServPrice() != null) {
+				// указана услуга, откуда взять расценку
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+			} else {
+				// не указана услуга, откуда взять расценку
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+			}
+		}
+
 		
 		if (stPrice == null) {
 			stPrice = 0d;
@@ -340,7 +360,14 @@ public class ChrgThr {
 			//здесь же получить расценки по свыше соц.нормы и без проживающих 
 			if (serv.getServUpst() != null) {
 				
-				upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
+				if (upStServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
+				} else {
+					// не указана услуга, откуда взять расценку
+					upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
+				}
+					
 				if (upStPrice == null) {
 					upStPrice = 0d;
 				}
@@ -349,7 +376,15 @@ public class ChrgThr {
 			}
 
 			if (serv.getServWokpr() != null) {
-				woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
+				
+				if (woKprServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
+				} else {
+					// не указана услуга, откуда взять расценку
+					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
+				}
+
 				if (woKprPrice == null) {
 					// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
 					if (upStPrice == null || upStPrice == 0d) {
@@ -383,7 +418,15 @@ public class ChrgThr {
 			}
 
 			// расценка по норме
-			Double chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+			Double chngPrice;
+			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+				// по этому варианту получить расценку от родительской услуги
+				chngPrice = tarMng.getChngVal(calc, stServ.getServDep(), genDt, "Изменение расценки (тарифа)", 1);
+			} else {
+				// прочие варианты
+				chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+			}
+
 			if (chngPrice != null) {
 				stPrice = chngPrice; 
 			}
@@ -428,7 +471,9 @@ public class ChrgThr {
 		
 		// получить базу для начисления
 		baseCD = parMng.getStr(rqn, serv, "Name_CD_par_base_charge");
-	
+		// доля площади в день, для любой услуги, чтобы записать в chrg
+		sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays();
+
 		// получить объем для начисления
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d || 
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
@@ -447,7 +492,12 @@ public class ChrgThr {
 					vol = vol * kartMng.getCapPrivs(rqn, calc, kart, genDt);
 				}
 			}
-			
+		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+			// получить норматив 
+			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+			// объем: норматив * долю площади
+			vol = stVol * sqr;
 		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 			//получить объем за месяц
 			vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
@@ -503,9 +553,6 @@ public class ChrgThr {
 			vol = 1 / calc.getReqConfig().getCntCurDays();
 		}
 
-		// доля площади в день, для любой услуги, чтобы записать в chrg
-		sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays();
-		
 		/****************************/
 		// ВЫПОЛНИТЬ РАСЧЕТ
 		/****************************/
@@ -531,6 +578,10 @@ public class ChrgThr {
 	        //тип расчета, например Х.В.ОДН, Г.В.ОДН, Эл.эн.ОДН
 			chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntVol, 
 					BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt);
+		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+			chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, cntPers.cntVol, 
+						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt);			
 		} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 			//тип расчета, например:Коммерческий найм, где цена = сумме
 			chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntVol, 
@@ -541,6 +592,8 @@ public class ChrgThr {
 			// Вариант подразумевает объём по лог.счётчику, РАСПределённый по дням
 			// или по параметру - базе, жилого фонда, так же распределенного по дням
 			Double absVol= Math.abs(vol);
+
+
 			if (cntPers.cntEmpt != 0) {
 				// есть проживающие
 				// соцнорма
@@ -555,6 +608,9 @@ public class ChrgThr {
 						BigDecimal.valueOf(stPrice) != BigDecimal.ZERO ) {
 					// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
 					tmpSqr = BigDecimal.valueOf(sqr);
+				}
+				if (serv.getId()==32) {
+					//log.info("serv.id={}, vol={}, stPrice={}, stdt.vol={}", serv.getId(), vol, stPrice, stdt.vol);
 				}
 
 				chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(stPrice), 
@@ -573,7 +629,7 @@ public class ChrgThr {
 					log.info("свыше dt={}, tmpVol={}", genDt, tmpVol);
 				}*/
 				chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), 
-								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 								cntPers.cntVol, tmpSqr, upStServ, org, exsMet, entry, genDt);
 			} else {
 				// нет проживающих
@@ -587,13 +643,13 @@ public class ChrgThr {
 				if (woKprServ != null) {
 					// если существует услуга "без проживающих"
 					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), 
-								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 							 	cntPers.cntVol /*здесь не cntEmpt*/, 
 							 	tmpSqr, woKprServ, org, exsMet, entry, genDt);
 				} else {
 					// услуги без проживающих не существует, поставить на свыше соц.нормы
 					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), 
-								null, //BigDecimal.valueOf(stdt.vol), - убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017
+								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 								cntPers.cntVol, /*здесь не cntEmpt*/ 
 								tmpSqr, upStServ, org, exsMet, entry, genDt);
 				}

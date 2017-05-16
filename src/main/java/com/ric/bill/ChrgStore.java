@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.ric.bill.model.bs.Org;
 import com.ric.bill.model.tr.Serv;
 
@@ -14,6 +16,7 @@ import com.ric.bill.model.tr.Serv;
  * @author lev
  *
  */
+@Slf4j
 public class ChrgStore {
 
 	// коллекция для группированного начисления
@@ -86,10 +89,13 @@ public class ChrgStore {
 			}
 		}
 
+		//log.info("lastRec.getServId()={}",serv.getId());
+
 		// СГРУППИРОВАТЬ по услуге, организации, расценке, дате
 		if (getStore().size() == 0) {
 			//завести новую строку
 			getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
+//			log.info("lastRec create 1 serv.id={}, stdt={}", serv.getId(), stdt);
 		} else {
 			ChrgRec lastRec = null;
 			//получить последний добавленный элемент по данной услуге
@@ -101,20 +107,19 @@ public class ChrgStore {
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
 				getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
+//				log.info("lastRec create 2 serv.id={}, stdt={}", serv.getId(), stdt);
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
-				if (lastRec.getPrice().compareTo(price) == 0 &&
-					(lastRec.getOrg() == null && org == null ||
-					 lastRec.getOrg().equals(org)) &&
-						(lastRec.getStdt() == null && stdt == null ||
-						 lastRec.getStdt().equals(stdt)) &&
-							(lastRec.getCntPers() == null && cntPers == null ||
-							 lastRec.getCntPers().equals(cntPers)) &&
-								(lastRec.getMet() == null && met == null ||
-								 lastRec.getMet().equals(met)) &&
-									(lastRec.getEntry() == null && entry == null ||
-									 lastRec.getEntry().equals(entry))
+				
+//				log.info("lastRec found serv.id={}, stdt={}", lastRec.getServ().getId(), lastRec.getStdt());
+				
+				if (Utl.cmp(lastRec.getPrice(), price) &&
+					 	Utl.cmp(lastRec.getOrg(), org) &&
+						 	Utl.cmp(lastRec.getStdt(), stdt) &&
+								Utl.cmp(lastRec.getCntPers(), cntPers) &&
+									Utl.cmp(lastRec.getMet(), met) &&
+										Utl.cmp(lastRec.getEntry(), entry)
 					) {
 						//добавить данные в последнюю строку, прибавить объем и площадь 
 						if (lastRec.getVol() != null) {
@@ -134,6 +139,7 @@ public class ChrgStore {
 					} else {
 						//завести новую строку, если отличается расценкой или организацией
 						getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
+//						log.info("lastRec create 3 serv.id={}, stdt={}", serv.getId(), stdt);
 					}
 			}
 		}

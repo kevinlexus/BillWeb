@@ -357,7 +357,7 @@ public class ChrgServ {
 		while (true) {
 			log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
-			List<Serv> servWork = getNextServ(10);
+			List<Serv> servWork = getNextServ(1);
 
 			if (servWork.size()==0) {
 				//выйти, если все услуги обработаны

@@ -322,8 +322,19 @@ public class ChrgThr {
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 			// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
 			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+			// получить расценку от родительской услуги
 			stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-			stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+			if (stPrice == null) {
+				// если пустая расценка в родительской услуге, получить из текущей услуги 
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+			}
+			// если пуст один из параметров - занулить все, чтобы не было exception
+			if (stPrice == null || stVol == null) {
+				stPrice = 0d;
+				stVol = 0d;
+			} else {
+				stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+			}
 		} else {
 			// прочие варианты
 			if (stServ.getServPrice() != null) {
@@ -497,7 +508,11 @@ public class ChrgThr {
 			// получить норматив 
 			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
 			// объем: норматив * долю площади
-			vol = stVol * sqr;
+			if (stVol != null) {
+				vol = stVol * sqr;
+			} else {
+				vol = 0d;
+			}
 		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 			//получить объем за месяц
 			vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);

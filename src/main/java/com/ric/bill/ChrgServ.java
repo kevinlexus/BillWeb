@@ -231,7 +231,9 @@ public class ChrgServ {
 
 
     /**
-     * получить список N следующих услуг, для расчета в потоках 
+     * получить список N следующих услуг, для расчета в потоках
+     * что такое уровни? они необходимы, чтобы услуги вызывались последовательно 
+     * по зависимости друг от друга, эта зависимость прописывается в serv.fk_dep
      * @param cnt // кол-во услуг
      */
     private List<Serv> getNextServ(int cnt) {
@@ -347,6 +349,9 @@ public class ChrgServ {
 		Kart kart = calc.getKart();
 		//загрузить все услуги по данному л.с.
 		servThr = kartMng.getServAll(calc.getReqConfig().getRqn(), calc);
+		
+		//servThr.stream().forEach(t-> log.info("serv.id={}", t.getId() ));
+		
 		// сбросить уровень
 		servLevel=0;
 		// создать список обрабатываемых услуг, с очередями
@@ -357,7 +362,7 @@ public class ChrgServ {
 		while (true) {
 			log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
-			List<Serv> servWork = getNextServ(1);
+			List<Serv> servWork = getNextServ(10);
 
 			if (servWork.size()==0) {
 				//выйти, если все услуги обработаны

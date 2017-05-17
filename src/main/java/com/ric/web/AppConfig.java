@@ -10,7 +10,7 @@ import org.springframework.web.servlet.view.jasperreports.JasperReportsMultiForm
 import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResolver;
 
 @Configuration
-@ComponentScan({"com.ric.bill"})
+//@ComponentScan({"com.ric.bill"})
 @ImportResource("spring.xml")
 @EnableCaching
 @EnableAsync

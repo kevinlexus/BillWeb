@@ -96,27 +96,11 @@ public class ChrgServ {
     
 	// текущий уровень очереди
     Integer servLevel;
-    // коллекция, для проверки зависимых услуг
-	//private ArrayList<Serv> lstDep;
     
 	//конструктор
     public ChrgServ() {
     	super();
     }
-
-    // внутренний класс-контейнер пачки услуг на обработку
-/*    private class BatchServ {
-    	public int i; // очередь обработки
-    	public List<Serv> lst; // список услуг
-    	
-    	public BatchServ(int i, List<Serv> lst) {
-    		this.i=i;
-    		this.lst = lst; 
-    	}
-    }
-    //коллекция контейнеров очередей услуг по уровням обработки
-    private List<BatchServ> queBatch;
-  */  
 
     Map<Serv, Integer> queBatch; // ключ - услуга, value - уровень
     
@@ -585,16 +569,9 @@ public class ChrgServ {
 		
 		long endTime5=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
-		
-		//for (Chrg chrg : prepChrg) {
-			//if (chrg.getServ().getId()==71) {
-			//	log.info("SAVE serv.id={}, dt1={}, dt2={}, vol={}", chrg.getServ().getId(), chrg.getDt1(), chrg.getDt2(), chrg.getVol());
-			//}
-		//}
 
 		//Сохранить новое начисление (переписать из prepChrg)
 		for (Chrg chrg : prepChrg) {
-			//log.info("Save услуга="+chrg.getServ().getId()+" объем="+chrg.getVol()+" расценка="+chrg.getPrice()+" сумма="+chrg.getSumFull(),2);
 			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(), chrg.getSumFull(), chrg.getSumAmnt(), 
 					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntPers(), chrg.getArea(),  chrg.getTp(), chrg.getDt1(), chrg.getDt2(), 
 					chrg.getMet(), chrg.getEntry(), calc.getReqConfig().getChng()); 
@@ -603,8 +580,6 @@ public class ChrgServ {
 		}
 		
 		long endTime6=System.currentTimeMillis()-beginTime;
-		
-		//log.info("TIMING: найти kart={}, групп.до укруп.тек.={}, групп.до укруп.пред.={}, перенос в архив={}, передать дельту={}, сохр.начисл.={}", endTime1, endTime2, endTime3, endTime4, endTime5, endTime6);
 	}
 	
 

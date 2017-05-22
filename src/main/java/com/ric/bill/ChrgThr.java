@@ -222,9 +222,22 @@ public class ChrgThr {
 
 			if (!rec.getServ().getVrt()) {
 				if (sum.compareTo(BigDecimal.ZERO) != 0) {
-					Chrg chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
-							vol, rec.getPrice(), rec.getStdt(), rec.getCntPers(), area, chrgTpRnd, 
-							calc.getReqConfig().getChng(), rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2());
+					Chrg chrg = new Chrg();
+					try {
+						if (Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
+							// Убрать расценку и объем по данному типу услуг
+							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
+									null, null, rec.getStdt(), rec.getCntPers(), area, chrgTpRnd, 
+									calc.getReqConfig().getChng(), rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2());
+						} else {
+							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
+									vol, rec.getPrice(), rec.getStdt(), rec.getCntPers(), area, chrgTpRnd, 
+									calc.getReqConfig().getChng(), rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2());
+						}
+					} catch (EmptyStorable e) {
+						throw new RuntimeException();
+					}
+					
 					chrgAppend(chrg);
 				}
 			}
@@ -471,7 +484,7 @@ public class ChrgThr {
 				if (parCd!= null) {
 					if (parMng.getBool(rqn, kart, parCd, genDt) !=null && parMng.getBool(rqn, kart, parCd, genDt)) {
 						// с возможностью установки счетчика
-						raisCoeff = Utl.nvl(kartMng.getServPropByCD(rqn, calc, serv, "Коэффициент начисления осн.усл.", genDt), 0d); // Hard code установить коэфф 0.5
+						raisCoeff = Utl.nvl(kartMng.getServPropByCD(rqn, calc, serv, "Коэффициент начисления осн.усл.", genDt), 0d);
 					}
 				}
 			}
@@ -576,8 +589,7 @@ public class ChrgThr {
 				 rec = prepChrgMainServ.parallelStream().filter(t -> t.getMainServ().equals(serv.getServDep()) && t.getDt().equals(genDt) ).findAny();
 			}
 			if (rec.isPresent()) {
-				// взять сумму в качестве объема, повыш.коэфф в качестве цены - СТРАННОВАТО! TODO!
-				//log.info("CHECK! = {}, {}", rec.get().getSum(), raisCoeff);
+				// взять сумму в качестве объема, повыш.коэфф в качестве цены (потом занулить объем и цену в методе их умножения)
 				chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt);
 			}
 			

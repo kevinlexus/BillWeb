@@ -121,7 +121,7 @@ public class ChrgStore {
 									Utl.cmp(lastRec.getMet(), met) &&
 										Utl.cmp(lastRec.getEntry(), entry)
 					) {
-						//добавить данные в последнюю строку, прибавить объем и площадь 
+						//добавить данные в последнюю строку, прибавить объем и площадь ##**##
 						if (lastRec.getVol() != null) {
 							lastRec.setVol(lastRec.getVol().add(vol));
 						} else {

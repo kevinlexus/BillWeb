@@ -172,63 +172,6 @@ public class ChrgServ {
 		}
 
     }
-    
-	//получить список N следующих услуг, для расчета в потоках
-/*    private List<Serv> getNextServ(int cnt) {
-    	List<Serv> lst = new ArrayList<Serv>(); 
-		int i=1;
-		Iterator<Serv> itr = servThr.iterator();
-		while (itr.hasNext()) {
-			Serv serv = itr.next(); 
-    		lst.add(serv);
-    		itr.remove();
-    		i++;
-			if (i > cnt) {
-				break;
-			}
-		}
-		
-    	return lst;
-	}*/
-    
-    /**
-     * получить список N следующих услуг, для расчета в потоках 
-     * @param cnt // кол-во услуг
-     * @param lstDep // список зависимых услуг
-     * @return // вернуть - список услуг
-     */
-/*    private List<Serv> getNextServ(int cnt) {
-    	List<Serv> lst = new ArrayList<Serv>(); 
-		int i=1;
-		Iterator<Serv> itr = servThr.iterator();
-		while (itr.hasNext()) {
-			Serv serv = itr.next(); 
-    		
-			if (lstDep.size()==0) {
-				// если список зависимых услуг пуст
-				lst.add(serv);
-				lstDep.add(serv);
-	    		itr.remove();
-			} else {
-				// проверить, ссылается ли услуга на родительскую (является ли зависимой)
-				Optional<Serv> parentServ = lstDep.stream().filter(t -> t.equals(serv.getServDep())).findAny();
-				if (parentServ.isPresent()) {
-					// да, ссылается, добавить в список обработки
-					lst.add(serv);
-					lstDep.add(serv);
-		    		itr.remove();
-				}
-			}
-    		
-    		i++;
-			if (i > cnt) {
-				break;
-			}
-		}
-		
-    	return lst;
-	}*/
-
 
     /**
      * получить список N следующих услуг, для расчета в потоках

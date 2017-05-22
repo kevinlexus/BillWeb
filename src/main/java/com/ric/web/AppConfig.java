@@ -10,7 +10,7 @@ import org.springframework.web.servlet.view.jasperreports.JasperReportsMultiForm
 import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResolver;
 
 @Configuration
-//@ComponentScan({"com.ric.bill"})
+@ComponentScan({"com.ric.st", "com.ric.bill.dao", "com.ric.bill.mm", "com.ric.bill", "com.ric.st.builder"}) // это нужно чтобы работали Unit-тесты! (по сути можно закомментить)
 @ImportResource("spring.xml")
 @EnableCaching
 @EnableAsync

@@ -135,10 +135,6 @@ public class ChrgThr {
 		
 		//Объект, временно хранящий записи начисления
 		chStore = new ChrgStore(); 
-		if (serv.getId()==89) {
-			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		}
-		log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		/*if (serv.getId()==72) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
@@ -297,7 +293,7 @@ public class ChrgThr {
 		
 		log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 
-		if (serv.getId() == 72) {
+		if (serv.getId() == 480) {
 			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 		}
 
@@ -460,7 +456,7 @@ public class ChrgThr {
 		Double raisCoeff = 0d;
 		// при отсутствии ПУ и возможности его установки, применить повышающий коэффициент для определённых услуг
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
-			if (!metMng.checkExsKartMet(rqn, kart, serv.getServDep(), genDt)) {	
+			if (serv.getServDep()!=null && !metMng.checkExsKartMet(rqn, kart, serv.getServDep(), genDt)) {	
 				// если не установлен счетчик по основной родительской услуге	
 				String parCd = null;
 				if (serv.getCd().equals("ГВС(инд) п.344 РФ")) {

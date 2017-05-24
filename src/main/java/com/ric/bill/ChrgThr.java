@@ -242,7 +242,8 @@ public class ChrgThr {
 			}
 		} 
 
-		return new AsyncResult<Result>(res);
+		Future ar = new AsyncResult<Result>(res);
+		return ar;
 	}
 
 	// получить подмененную организацию по перерасчету
@@ -315,6 +316,8 @@ public class ChrgThr {
 		woKprServ = serv.getServWokpr();
 		// если услуга по соцнорме пустая, присвоить изначальную услугу
 		if (stServ == null) {
+			// Добавить ошибку, что отсутствует услуга (если это контролируется)
+			res.addErr(rqn, 7, kart, serv);
 			stServ = serv;
 		}
 		
@@ -357,6 +360,8 @@ public class ChrgThr {
 
 		
 		if (stPrice == null) {
+			// Добавить ошибку, что нет расценки по услуге (если это контролируется)
+			res.addErr(rqn, 8, kart, serv);
 			stPrice = 0d;
 		}
 
@@ -418,8 +423,6 @@ public class ChrgThr {
 						res.addErr(rqn, 6, kart, serv);
 						woKprPrice = stPrice;
 					} else {
-						// Добавить ошибку, что отсутствует расценка
-						res.addErr(rqn, 6, kart, serv);
 						woKprPrice = upStPrice;
 					}
 				} 
@@ -826,5 +829,5 @@ public class ChrgThr {
 			prepChrgMainServ.addAll(lst);
 		}
 	}
-	
+
 }

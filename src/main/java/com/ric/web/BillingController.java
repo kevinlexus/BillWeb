@@ -650,12 +650,13 @@ public class BillingController {
 				log.info("OK /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
 						lsk, dist, tp, chngId);
 				// Создать и отправить список некритических ошибок, если есть
-				String msg = ":";
+				String msg = "";
+				log.info("size err={}", fut.get().getLstErr().size());
 				for (Result.Err t: fut.get().getLstErr()) {
 					msg = msg.concat("Услуга:"+t.getServ().getName()+", "+t.getErrMsg()+"; ");
 					log.info("msg={}", msg);
 				}
-				return "OK"+msg;
+				return "OK"+(msg.equals("") ? "" : ":"+msg);
 			} else {
 				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
 				config.unCheckLsk(lsk); // снять лицевой с обработки

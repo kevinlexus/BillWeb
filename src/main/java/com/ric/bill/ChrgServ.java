@@ -305,6 +305,7 @@ public class ChrgServ {
 					ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
  					chrgThr.set(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
 			    	try {
+						log.info("*** запущен поток={}", serv.getCd());
 						fut = chrgThr.run1();
 					} catch (EmptyStorable e) {
 						e.printStackTrace();
@@ -320,17 +321,10 @@ public class ChrgServ {
 				flag2=1;
 				for (Future<Result> fut : frl) {
 					if (!fut.isDone()) {
-						
-						// Добавить список всех некритических ошибок из выполненных потоков
-						try {
-							res.getLstErr().addAll(fut.get().getLstErr());
-						} catch (InterruptedException | ExecutionException e) {
-							errThread=true;
-							e.printStackTrace();
-						}
-
+						// Если хотя бы один поток продолжил выполенение, отменить выход из цикла
 						flag2=0;
 					} else {
+						// Поток завершен
 						try {
 							if (fut.get().getErr()==1) {
 								//errThread=true; - сюда не заходит при ошибке, разобраться потом TODO!
@@ -344,13 +338,30 @@ public class ChrgServ {
 				try {
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+					errThread=true;
 					e.printStackTrace();
 				}
 			}
-			
+
+			// Потоки в данной пачке завершены, создать список некритических ошибок
+			for (Future<Result> fut : frl) {
+				// Поток завершен
+				// Добавить список всех некритических ошибок из завершенного потока
+				try {
+					//log.info("*** завершен поток={}", fut.get().blabla2);
+					log.info("*** ошибок из потока={}", fut.get().getLstErr().size());
+					//log.info("*** blabla из потока={}", fut.get().blabla);
+					res.getLstErr().addAll(fut.get().getLstErr());
+				} catch (InterruptedException | ExecutionException e) {
+					errThread=true;
+					e.printStackTrace();
+				}
+			}
+
 		}
 		
+//		log.info("err SIZE={}", res.getLstErr().size());
+
 		// Если была ошибка в потоке - приостановить выполнение, выйти
 		if (errThread) {
 			log.info("ChrgServ.chrgLsk: Error in thread, exiting!", 2);

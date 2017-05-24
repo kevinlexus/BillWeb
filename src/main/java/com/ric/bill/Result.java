@@ -25,7 +25,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 @Slf4j
 public class Result {
 
-    // Внутренний класс ошибки
+	// Внутренний класс ошибки
 	public class Err {
 		// Услуга
     	Serv serv;
@@ -100,6 +100,11 @@ public class Result {
 	 * @throws EmptyStorable 
 	 */
 	public void addErr(int rqn, int errId, Kart kart, Serv serv) throws EmptyStorable {
+		//log.info("test! Услуга id={}, cd={}, ctrl={}", serv.getId(), serv.getCd(), Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия расценки св.нормы"));
+		//if (serv.getId()==71) {
+		//	log.info("добавлена ошибка errId={}", errId);
+		//}
+		
 		Err findErr = lstErr.stream().filter(t-> t.getServ().equals(serv) && t.getErrId()==errId).findFirst().orElse(null);
 		if (findErr == null){
 			String str = null;
@@ -130,19 +135,19 @@ public class Result {
 				str="В тарифе отсутствует расценка свыше соцнормы!";
 				break;
 			case 6:
-				if (Utl.nvl(!parMng.getBool(rqn, serv, "Контроль наличия расценки 0 прожив"), false)) {
+				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия расценки 0 прожив"), false)) {
 					return;
 				}
 				str="В тарифе отсутствует расценка с 0 проживающими!";
 				break;
 			case 7:
-				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия услуги по нормативу"), false)) {
+				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия услуги по норме"), false)) {
 					return;
 				}
 				str="В тарифе отсутствует нормативная услуга!";
 				break;
 			case 8:
-				if (Utl.nvl(!parMng.getBool(rqn, serv, "Контроль наличия расценки по нормативу"), false)) {
+				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия расценки по норме"), false)) {
 					return;
 				}
 				str="В тарифе отсутствует расценка по нормативу!";

@@ -598,7 +598,7 @@ public class BillingController {
 			}
 		}
 
-		Future<Result> fut = null;
+		Future<Result> fut;
 
 		// если пустой ID перерасчета
 		Integer chId = null;
@@ -617,6 +617,7 @@ public class BillingController {
 		beginTime = System.currentTimeMillis();
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
+		// Расчет начисления
 		fut = billServ.chrgLsk(reqConfig, null, lsk);
 
 		long endTime3 = System.currentTimeMillis() - beginTime; // время
@@ -627,13 +628,7 @@ public class BillingController {
 		// ждать окончание потока
 		try {
 			fut.get();
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-			log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
-			config.unCheckLsk(lsk); // снять лицевой с обработки
-			log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
-			return "ERROR";
-		} catch (ExecutionException e1) {
+		} catch (InterruptedException | ExecutionException e1) {
 			e1.printStackTrace();
 			log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
 			config.unCheckLsk(lsk); // снять лицевой с обработки
@@ -648,13 +643,19 @@ public class BillingController {
 				endTime1, endTime2, endTime3, endTime4);
 
 		try {
-			if (fut.get().err == 0) {
+			if (fut.get().getErr() == 0) {
 				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
 				config.unCheckLsk(lsk); // снять лицевой с обработки
 				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
 				log.info("OK /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
 						lsk, dist, tp, chngId);
-				return "OK";
+				// Создать и отправить список некритических ошибок, если есть
+				String msg = ":";
+				for (Result.Err t: fut.get().getLstErr()) {
+					msg = msg.concat("Услуга:"+t.getServ().getName()+", "+t.getErrMsg()+"; ");
+					log.info("msg={}", msg);
+				}
+				return "OK"+msg;
 			} else {
 				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
 				config.unCheckLsk(lsk); // снять лицевой с обработки
@@ -723,7 +724,7 @@ public class BillingController {
 		}
 
 		try {
-			if (fut.get().err == 0) {
+			if (fut.get().getErr() == 0) {
 				return "OK";
 			} else {
 				return "ERROR";

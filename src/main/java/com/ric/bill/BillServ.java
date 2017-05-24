@@ -115,7 +115,7 @@ public class BillServ {
 		// Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 		// Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);
 		Result res = new Result();
-		res.err = 0;
+		res.setErr(0);
 		// кол-во потоков
 		int cntThreads = 20;
 		// кол-во обраб.лиц.сч.
@@ -174,7 +174,7 @@ public class BillServ {
 				calc.setHouse(kart.getKw().getHouse());
 				if (calc.getArea() ==null) {
 					log.error("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
-					res.err=1;
+					res.setErr(1);
 				}
 				
 				try {
@@ -199,8 +199,8 @@ public class BillServ {
 					} else {
 						try {
 							log.trace("ChrgServ: Done Result.err:="
-									+ fut.get().err);
-							if (fut.get().err == 1) {
+									+ fut.get().getErr());
+							if (fut.get().getErr() == 1) {
 								errThread = true;
 							}
 						} catch (InterruptedException | ExecutionException e1) {
@@ -251,8 +251,6 @@ public class BillServ {
 	 * @throws ErrorWhileChrg
 	 */
 	@Async
-	//@CacheEvict(value = { "rrr1", "rrr2", "rrr3" }, allEntries = true) //чистить кэш, в то время как параллельно выполняется другой поток???
-	// TODO ОТКЛЮЧИТЬ КЭШ ЗДЕСЬ ПОСЛЕ ВВОДА RQN!
 	public Future<Result> chrgLsk(RequestConfig reqConfig, Kart kart,
 			Integer lsk) {
 		long beginTime = System.currentTimeMillis();
@@ -262,12 +260,12 @@ public class BillServ {
 		Result res = new Result();
 		Future<Result> fut = new AsyncResult<Result>(res);
 
-		res.err = 0;
+		res.setErr(0);
 		// Если был передан идентификатор лицевого, то найти лиц.счет
 		if (lsk != null) {
 			kart = em.find(Kart.class, lsk);
 			if (kart == null) {
-				res.err = 1;
+				res.setErr(1);
 				return fut;
 			}
 		}
@@ -286,7 +284,7 @@ public class BillServ {
 				distServ.distKartVol(calc);
 			} catch (ErrorWhileDist e) {
 				e.printStackTrace();
-				res.err = 1;
+				res.setErr(1);
 				return fut;
 			}
 			// присвоить обратно лиц.счет, который мог быть занулён в
@@ -301,7 +299,7 @@ public class BillServ {
 			fut = chrgServThr.chrgAndSaveLsk(calc);
 		} catch (ErrorWhileChrg e) {
 			e.printStackTrace();
-			res.err = 1;
+			res.setErr(1);
 			return fut;
 		}
 

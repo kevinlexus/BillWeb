@@ -249,6 +249,14 @@
 		    <version>1.0</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.apache.wicket/wicket-spring -->
+		<dependency>
+		    <groupId>org.apache.wicket</groupId>
+		    <artifactId>wicket-spring</artifactId>
+		    <version>8.0.0-M6</version>
+		</dependency>
+
+
 	</dependencies>
 
 

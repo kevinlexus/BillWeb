@@ -89,7 +89,7 @@ public class testChng {
 	     }
 
 	    try {
-			if (fut.get().err ==0) {
+			if (fut.get().getErr() ==0) {
 			} else {
 				log.error("ERROR");
 			}

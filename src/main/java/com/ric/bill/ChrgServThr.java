@@ -73,7 +73,7 @@ public class ChrgServThr {
 		//Выполнить начисление
 		Result res = chrgServ.chrgLsk(calc);
 		//Сохранить результат
-		if (res.err==0) {
+		if (res.getErr()==0) {
 			chrgServ.save(calc.getKart().getLsk()); 
 		}
 		

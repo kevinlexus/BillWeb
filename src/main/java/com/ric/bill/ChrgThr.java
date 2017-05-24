@@ -86,6 +86,9 @@ public class ChrgThr {
 
     private Calc calc;
     
+    // Результат исполнения
+    Result res;
+    
     //конструктор
 	public ChrgThr() {
 		super();
@@ -113,11 +116,11 @@ public class ChrgThr {
 	}
 
 	@Async
-	public  Future<Result> run1() {
+	public  Future<Result> run1() throws EmptyStorable {
 		Kart kart = calc.getKart();
 		
-		Result res = new Result();
-		res.err=0;
+		res = new Result();
+		res.setErr(0);
 
 		Thread t = Thread.currentThread();
 	    thrName = t.getName();
@@ -158,15 +161,11 @@ public class ChrgThr {
 			// только там, где лиц.счет существует в данном дне и существует услуга
 			if (Utl.between(genDt, kart.getDt1(), kart.getDt2()) &&  kartMng.getServ(rqn, calc, serv, genDt)) {
 				String tpOwn = null;
-				try {
-					tpOwn = parMng.getStr(rqn, kart, "FORM_S", genDt);
-				} catch (EmptyStorable e) {
-					e.printStackTrace();
-					throw new RuntimeException();
-				}
+				tpOwn = parMng.getStr(rqn, kart, "FORM_S", genDt);
 				
 				if (tpOwn == null) {
-					log.info("ОШИБКА! Не указанна форма собственности! lsk="+kart.getLsk(), 2);
+					res.addErr(rqn, 4, kart, serv);
+					//log.info("ОШИБКА! Не указанна форма собственности! lsk="+kart.getLsk(), 2);
 				}
 				// где лиц.счет является нежилым помещением, не начислять за данный день
 				if (tpOwn != null && (tpOwn.equals("Нежилое собственное") || tpOwn.equals("Нежилое муниципальное")
@@ -319,16 +318,16 @@ public class ChrgThr {
 			stServ = serv;
 		}
 		
-		// контроль наличия услуги св.с.нормы (по ряду услуг)
+		// контроль наличия услуги св.с.нормы (по ряду услуг) в справочнике услуг (не в тарифе!)
 		if ((Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) && serv.getServUpst() == null) {
 			throw new EmptyStorable("По услуге Id="+serv.getId()+" обнаружена пустая услуга свыше соц.нормы");
 		}
 
-		//Получить кол-во проживающих 
+		// Получить кол-во проживающих 
 		kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
 
-		//получить расценку по норме	
+		// получить расценку по норме	
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 			// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
 			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
@@ -370,7 +369,7 @@ public class ChrgThr {
 		}
 		
 		
-		//получить долю соц.нормы.свыше (не объем!!!)
+		// получить долю соц.нормы.свыше (не объем!!!)
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d ||
@@ -378,9 +377,8 @@ public class ChrgThr {
 			
 			
 			stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
-			//здесь же получить расценки по свыше соц.нормы и без проживающих 
+			// здесь же получить расценки по свыше соц.нормы и без проживающих 
 			if (serv.getServUpst() != null) {
-				
 				if (upStServ.getServPrice() != null) {
 					// указана услуга, откуда взять расценку
 					upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
@@ -392,12 +390,19 @@ public class ChrgThr {
 				if (upStPrice == null) {
 					upStPrice = 0d;
 				}
+				
+				if (upStPrice == 0d) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 5, kart, serv);
+				}
+				
 			} else {
+				// Добавить ошибку, что отсутствует услуга
+				res.addErr(rqn, 2, kart, serv);
 				upStPrice = 0d;
 			}
 
 			if (serv.getServWokpr() != null) {
-				
 				if (woKprServ.getServPrice() != null) {
 					// указана услуга, откуда взять расценку
 					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
@@ -409,12 +414,18 @@ public class ChrgThr {
 				if (woKprPrice == null) {
 					// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
 					if (upStPrice == null || upStPrice == 0d) {
+						// Добавить ошибку, что отсутствует расценка
+						res.addErr(rqn, 6, kart, serv);
 						woKprPrice = stPrice;
 					} else {
+						// Добавить ошибку, что отсутствует расценка
+						res.addErr(rqn, 6, kart, serv);
 						woKprPrice = upStPrice;
 					}
 				} 
 			} else {
+				// Добавить ошибку, что отсутствует услуга
+				res.addErr(rqn, 3, kart, serv);
 				woKprPrice = 0d;
 			} 
 		}

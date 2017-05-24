@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
@@ -256,7 +257,7 @@ public class ChrgServ {
     	this.calc=calc;
 		//log.info("Lsk="+calc.getKart().getLsk()+", FLsk="+calc.getKart().getFlsk());
 		Result res = new Result();
-		res.err=0;
+		res.setErr(0);
 
 		prepChrg = new ArrayList<Chrg>(0); 
 		prepChrgMainServ = new ArrayList<ChrgMainServRec>(0);
@@ -303,10 +304,14 @@ public class ChrgServ {
 					Future<Result> fut = null;
 					ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
  					chrgThr.set(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
-			    	fut = chrgThr.run1();
+			    	try {
+						fut = chrgThr.run1();
+					} catch (EmptyStorable e) {
+						e.printStackTrace();
+						throw new ErrorWhileChrg ("ОШИБКА! В потоке была попытка получить параметр по пустому объекту хранения");
+					}
 			    	frl.add(fut);
 			    	log.trace("ChrgServ: Begins "+serv.getCd());
-
 			}
 			
 			//проверить окончание всех потоков
@@ -315,14 +320,22 @@ public class ChrgServ {
 				flag2=1;
 				for (Future<Result> fut : frl) {
 					if (!fut.isDone()) {
+						
+						// Добавить список всех некритических ошибок из выполненных потоков
+						try {
+							res.getLstErr().addAll(fut.get().getLstErr());
+						} catch (InterruptedException | ExecutionException e) {
+							errThread=true;
+							e.printStackTrace();
+						}
+
 						flag2=0;
 					} else {
 						try {
-							if (fut.get().err==1) {
+							if (fut.get().getErr()==1) {
 								//errThread=true; - сюда не заходит при ошибке, разобраться потом TODO!
 							}
 						} catch (InterruptedException | ExecutionException e1) {
-							// TODO Auto-generated catch block
 							errThread=true;
 							e1.printStackTrace();
 						}
@@ -335,13 +348,13 @@ public class ChrgServ {
 					e.printStackTrace();
 				}
 			}
+			
 		}
 		
-		
-		//если была ошибка в потоке - приостановить выполнение, выйти
+		// Если была ошибка в потоке - приостановить выполнение, выйти
 		if (errThread) {
 			log.info("ChrgServ.chrgLsk: Error in thread, exiting!", 2);
-			res.err=1;
+			res.setErr(1);
 			return res;
 		}
 		

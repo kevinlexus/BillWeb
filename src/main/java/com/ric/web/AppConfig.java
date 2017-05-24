@@ -1,6 +1,9 @@
 package com.ric.web;
 
+import org.springframework.beans.BeansException;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +17,21 @@ import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResol
 @ImportResource("spring.xml")
 @EnableCaching
 @EnableAsync
-public class AppConfig {
+public class AppConfig  implements ApplicationContextAware {
+
+	static ApplicationContext ctx = null;
 	
+	public void setApplicationContext(ApplicationContext context) throws BeansException {
+		ctx = context;
+	}
+	
+	/**
+	 * Note that this is a static method which expose ApplicationContext
+	 **/
+	public static ApplicationContext getContext(){
+	      return ctx;
+	}
+
 	@Bean
 	public JasperReportsViewResolver getJasperReportsViewResolver() {
 	  JasperReportsViewResolver resolver = new JasperReportsViewResolver();

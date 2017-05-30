@@ -305,7 +305,6 @@ public class ChrgServ {
 					ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
  					chrgThr.set(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
 			    	try {
-						log.info("*** запущен поток={}", serv.getCd());
 						fut = chrgThr.run1();
 					} catch (EmptyStorable e) {
 						e.printStackTrace();
@@ -349,7 +348,7 @@ public class ChrgServ {
 				// Добавить список всех некритических ошибок из завершенного потока
 				try {
 					//log.info("*** завершен поток={}", fut.get().blabla2);
-					log.info("*** ошибок из потока={}", fut.get().getLstErr().size());
+					//log.info("*** ошибок из потока={}", fut.get().getLstErr().size());
 					//log.info("*** blabla из потока={}", fut.get().blabla);
 					res.getLstErr().addAll(fut.get().getLstErr());
 				} catch (InterruptedException | ExecutionException e) {
@@ -409,6 +408,7 @@ public class ChrgServ {
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void save (Integer lsk) throws ErrorWhileChrg {
+		log.info("Сохранение данных по лиц.счету");
 		long beginTime = System.currentTimeMillis();
 
 		Integer status;

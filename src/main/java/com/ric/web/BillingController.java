@@ -582,12 +582,12 @@ public class BillingController {
 		while (!config.checkLsk(lsk)) {
 			i++;
 			if (i > 100) {
-				log.info(
+				/*log.info(
 						"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ! /chrglsk with: lsk={}",
 						lsk);
 				log.info(
 						"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ ЛС В ТЕЧЕНИИ 10 сек! /chrglsk with: lsk={}",
-						lsk);
+						lsk);*/
 				i = 0;
 			}
 			try {

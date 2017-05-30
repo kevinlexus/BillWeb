@@ -306,7 +306,7 @@ public class ChrgThr {
 		
 		log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 
-		if (serv.getId() == 480) {
+		if (serv.getId() == 35) {
 			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 		}
 
@@ -316,8 +316,6 @@ public class ChrgThr {
 		woKprServ = serv.getServWokpr();
 		// если услуга по соцнорме пустая, присвоить изначальную услугу
 		if (stServ == null) {
-			// Добавить ошибку, что отсутствует услуга (если это контролируется)
-			res.addErr(rqn, 7, kart, serv);
 			stServ = serv;
 		}
 		
@@ -345,6 +343,7 @@ public class ChrgThr {
 				stPrice = 0d;
 				stVol = 0d;
 			} else {
+				// округлить
 				stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
 			}
 		} else {
@@ -402,8 +401,6 @@ public class ChrgThr {
 				}
 				
 			} else {
-				// Добавить ошибку, что отсутствует услуга
-				res.addErr(rqn, 2, kart, serv);
 				upStPrice = 0d;
 			}
 
@@ -413,22 +410,24 @@ public class ChrgThr {
 					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
 				} else {
 					// не указана услуга, откуда взять расценку
+					//log.info("Check={}", woKprServ.getId());
 					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
 				}
 
 				if (woKprPrice == null) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 6, kart, serv);
 					// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
 					if (upStPrice == null || upStPrice == 0d) {
-						// Добавить ошибку, что отсутствует расценка
-						res.addErr(rqn, 6, kart, serv);
 						woKprPrice = stPrice;
 					} else {
 						woKprPrice = upStPrice;
 					}
-				} 
+				} else if (woKprPrice == 0d) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 6, kart, serv);
+				}
 			} else {
-				// Добавить ошибку, что отсутствует услуга
-				res.addErr(rqn, 3, kart, serv);
 				woKprPrice = 0d;
 			} 
 		}
@@ -619,7 +618,7 @@ public class ChrgThr {
 		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 			chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, cntPers.cntVol, 
-						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt);			
+						BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt);			
 		} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 			//тип расчета, например:Коммерческий найм, где цена = сумме
 			chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntVol, 

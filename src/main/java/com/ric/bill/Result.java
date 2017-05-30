@@ -113,18 +113,6 @@ public class Result {
 			ParMng parMng = AppConfig.getContext().getBean(ParMng.class);
 			
 			switch (errId) {
-			case 2:
-				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия услуги св.нормы"), false) ) {
-					return;
-				}
-				str="В тарифе отсутствует услуга свыше соцнормы!";
-				break;
-			case 3:
-				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия услуги 0 прожив"), false)) {
-					return;
-				}
-				str="В тарифе отсутствует услуга с 0 проживающими!";
-				break;
 			case 4:
 				str="Не указанна форма собственности!";
 				break;
@@ -139,12 +127,6 @@ public class Result {
 					return;
 				}
 				str="В тарифе отсутствует расценка с 0 проживающими!";
-				break;
-			case 7:
-				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия услуги по норме"), false)) {
-					return;
-				}
-				str="В тарифе отсутствует нормативная услуга!";
 				break;
 			case 8:
 				if (!Utl.nvl(parMng.getBool(rqn, serv, "Контроль наличия расценки по норме"), false)) {

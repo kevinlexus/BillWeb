@@ -53,6 +53,12 @@ public class testWork {
 	public void mainWork() {
 		log.info("Test start");
 
+		System.out.println(Utl.ltrim("0000025"));
+		
+		if (1==1) {
+			return;
+		}
+		
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
 		reqConfig.setUp(config, "0", "0", null, 1, "", "");
 

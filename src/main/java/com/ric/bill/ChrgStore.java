@@ -39,14 +39,16 @@ public class ChrgStore {
 	 * @param vol - объем
 	 * @param price - расценка
      * @param stdt - норматив
+     * @param cntFact - кол-во прожив по факту (без собственников)
 	 * @param serv - услуга
 	 * @param org - организация
 	 * @param exsMet - наличие счетчика: false - нет, true - есть
 	 * @param entry - номер ввода
 	 * @param dt - дата
+     * @param cntOwn - кол-во собственников
 	 */
-	public void addChrg (BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, 
-						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt) {
+	public void addChrg (BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntFact, BigDecimal area, 
+						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt, Integer cntOwn) {
 		Integer met = 0;
 		if (exsMet) {
 			met = 1;
@@ -89,13 +91,10 @@ public class ChrgStore {
 			}
 		}
 
-		//log.info("lastRec.getServId()={}",serv.getId());
-
 		// СГРУППИРОВАТЬ по услуге, организации, расценке, дате
 		if (getStore().size() == 0) {
 			//завести новую строку
-			getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
-//			log.info("lastRec create 1 serv.id={}, stdt={}", serv.getId(), stdt);
+			getStore().add(new ChrgRec(vol, price, stdt, cntFact, area, serv, org, met, entry, dt, dt, cntOwn));
 		} else {
 			ChrgRec lastRec = null;
 			//получить последний добавленный элемент по данной услуге
@@ -106,20 +105,17 @@ public class ChrgStore {
 			}
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
-				getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
-//				log.info("lastRec create 2 serv.id={}, stdt={}", serv.getId(), stdt);
+				getStore().add(new ChrgRec(vol, price, stdt, cntFact, area, serv, org, met, entry, dt, dt, cntOwn));
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
-				
-//				log.info("lastRec found serv.id={}, stdt={}", lastRec.getServ().getId(), lastRec.getStdt());
-				
 				if (Utl.cmp(lastRec.getPrice(), price) &&
 					 	Utl.cmp(lastRec.getOrg(), org) &&
 						 	Utl.cmp(lastRec.getStdt(), stdt) &&
-								Utl.cmp(lastRec.getCntPers(), cntPers) &&
+								Utl.cmp(lastRec.getCntFact(), cntFact) &&
 									Utl.cmp(lastRec.getMet(), met) &&
-										Utl.cmp(lastRec.getEntry(), entry)
+										Utl.cmp(lastRec.getEntry(), entry) &&
+											Utl.cmp(lastRec.getCntOwn(), cntOwn)
 					) {
 						//добавить данные в последнюю строку, прибавить объем и площадь
 						if (lastRec.getVol() != null) {
@@ -138,8 +134,7 @@ public class ChrgStore {
 						lastRec.setDt2(dt);
 					} else {
 						//завести новую строку, если отличается расценкой или организацией
-						getStore().add(new ChrgRec(vol, price, stdt, cntPers, area, serv, org, met, entry, dt, dt));
-//						log.info("lastRec create 3 serv.id={}, stdt={}", serv.getId(), stdt);
+						getStore().add(new ChrgRec(vol, price, stdt, cntFact, area, serv, org, met, entry, dt, dt, cntOwn));
 					}
 			}
 		}

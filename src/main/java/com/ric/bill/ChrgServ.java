@@ -408,7 +408,6 @@ public class ChrgServ {
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void save (Integer lsk) throws ErrorWhileChrg {
-		log.info("Сохранение данных по лиц.счету");
 		long beginTime = System.currentTimeMillis();
 
 		Integer status;
@@ -554,13 +553,13 @@ public class ChrgServ {
 				// ЛОГГИНГ
 				log.info("");
 
-				kart.getChrg().stream().forEach(t -> log.info("*** ЛОГГИНГ kart.getChrg()  ***: RQN={}, serv.id={}, org.id={}, sum={}",
-						calc.getReqConfig().getRqn(), t.getServ().getId(), t.getOrg().getId(), t.getSumAmnt()) 
+				kart.getChrg().stream().forEach(t -> log.info("*** ЛОГГИНГ kart.getChrg()  ***: RQN={}, lsk={}, id={}, serv.id={}, org.id={}, sum={}",
+						calc.getReqConfig().getRqn(), kart.getLsk(), t.getId(), t.getServ().getId(), t.getOrg().getId(), t.getSumAmnt()) 
 						);
 				log.info("");
 				
-				prepChrg.stream().forEach(t -> 		 log.info("*** ЛОГГИНГ prepChrg        ***: RQN={}, serv.id={}, org.id={}, sum={}",
-						calc.getReqConfig().getRqn(), t.getServ().getId(), t.getOrg().getId(), t.getSumAmnt()) 
+				prepChrg.stream().forEach(t -> 		 log.info("*** ЛОГГИНГ prepChrg        ***: RQN={}, lsk={}, id={}, serv.id={}, org.id={}, sum={}",
+						calc.getReqConfig().getRqn(), kart.getLsk(), t.getId(), t.getServ().getId(), t.getOrg().getId(), t.getSumAmnt()) 
 						);
 				
 				log.info("");
@@ -570,8 +569,8 @@ public class ChrgServ {
 					it.next();
 					mk = (MultiKey) it.getKey();
 					val = (BigDecimal)it.getValue();
-					log.info("*** ЛОГГИНГ mapDeb Before ***: RQN={}, serv.id={}, org.id={}, sum={}",
-						  calc.getReqConfig().getRqn(), ((Serv) mk.getKey(0)).getId(), ((Org) mk.getKey(1)).getId(),  
+					log.info("*** ЛОГГИНГ mapDeb Before ***: RQN={}, lsk={}, serv.id={}, org.id={}, sum={}",
+						  calc.getReqConfig().getRqn(), kart.getLsk(), ((Serv) mk.getKey(0)).getId(), ((Org) mk.getKey(1)).getId(),  
 							val.doubleValue());
 				}
 
@@ -582,8 +581,8 @@ public class ChrgServ {
 					it.next();
 					mk = (MultiKey) it.getKey();
 					val = (BigDecimal)it.getValue();
-					log.info("*** ЛОГГИНГ mapDeb After  ***: RQN={}, serv.id={}, org.id={}, sum={}",
-						  calc.getReqConfig().getRqn(), ((Serv) mk.getKey(0)).getId(), ((Org) mk.getKey(1)).getId(),  
+					log.info("*** ЛОГГИНГ mapDeb After  ***: RQN={}, lsk={}, serv.id={}, org.id={}, sum={}",
+						  calc.getReqConfig().getRqn(), kart.getLsk(), ((Serv) mk.getKey(0)).getId(), ((Org) mk.getKey(1)).getId(),  
 							val.doubleValue());
 				}
 				
@@ -597,8 +596,8 @@ public class ChrgServ {
 		//Сохранить новое начисление (переписать из prepChrg)
 		for (Chrg chrg : prepChrg) {
 			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(), chrg.getSumFull(), chrg.getSumAmnt(), 
-					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntPers(), chrg.getArea(),  chrg.getTp(), chrg.getDt1(), chrg.getDt2(), 
-					chrg.getMet(), chrg.getEntry(), calc.getReqConfig().getChng()); 
+					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntFact(), chrg.getArea(),  chrg.getTp(), chrg.getDt1(), chrg.getDt2(), 
+					chrg.getMet(), chrg.getEntry(), calc.getReqConfig().getChng(), chrg.getCntOwn()); 
 
 			kart.getChrg().add(chrg2); 
 		}

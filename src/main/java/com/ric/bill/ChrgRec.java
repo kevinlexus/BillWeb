@@ -20,7 +20,8 @@ public class ChrgRec {
 	private Org org;
     private Date dt1, dt2;
 	private BigDecimal stdt;
-	private Integer cntPers;
+	private Integer cntFact;
+	private Integer cntOwn;
 	private BigDecimal area;
 	private Integer met;
 	private Integer entry;
@@ -31,19 +32,21 @@ public class ChrgRec {
      * @param vol - объем
      * @param price - расценка
      * @param stdt - норматив
+     * @param cntFact - кол-во прожив по факту (без собственников)
      * @param serv - услуга
      * @param org - организация
      * @param met - наличие счетчика
      * @param entry - номер ввода
      * @param dt1 - дата начала
      * @param dt2 - дата окончания
-     */
-	public ChrgRec(BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntPers, BigDecimal area, Serv serv, Org org, Integer met, Integer entry, Date dt1, Date dt2) {
+     * @param cntOwn - кол-во собственников
+	 */
+	public ChrgRec(BigDecimal vol, BigDecimal price, BigDecimal stdt, Integer cntFact, BigDecimal area, 
+				   Serv serv, Org org, Integer met, Integer entry, Date dt1, Date dt2, Integer cntOwn) {
 		super();
 		setVol(vol);
 		setPrice(price);
 		setStdt(stdt);
-		setCntPers(cntPers);
 		setArea(area);
 		setServ(serv);
 		setOrg(org);
@@ -51,6 +54,8 @@ public class ChrgRec {
 		setEntry(entry);
 		setDt1(dt1);
 		setDt2(dt2);
+		setCntFact(cntFact);
+		setCntOwn(cntOwn);
 	}
 	
 	public BigDecimal getVol() {
@@ -109,14 +114,6 @@ public class ChrgRec {
 		this.stdt = stdt;
 	}
 
-	public Integer getCntPers() {
-		return cntPers;
-	}
-
-	public void setCntPers(Integer cntPers) {
-		this.cntPers = cntPers;
-	}
-
 	public BigDecimal getArea() {
 		return area;
 	}
@@ -141,5 +138,21 @@ public class ChrgRec {
 		this.entry = entry;
 	}
 
+	public Integer getCntFact() {
+		return cntFact;
+	}
+
+	public void setCntFact(Integer cntFact) {
+		this.cntFact = cntFact;
+	}
+
+	public Integer getCntOwn() {
+		return cntOwn;
+	}
+
+	public void setCntOwn(Integer cntOwn) {
+		this.cntOwn = cntOwn;
+	}
+	
 }
 

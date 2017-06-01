@@ -165,7 +165,7 @@ public class DistServ {
 			long endTime;
 			long totalTime;
 			for (House o: houseMng.findAll2(houseId, areaId, config.getCurDt1())) {
-				System.out.println("ДОМ:"+o.getId());
+				log.info("ДОМ:"+o.getId());
 				//dist.clearCache();
 				//распределить объемы
 				startTime = System.currentTimeMillis();
@@ -179,9 +179,7 @@ public class DistServ {
 				}
 				endTime   = System.currentTimeMillis();
 				totalTime = endTime - startTime;
-				System.out.println("Время исполнения-1:"+totalTime);
-				
-				
+				log.info("Время исполнения-1:"+totalTime);
 			}
 		
     }

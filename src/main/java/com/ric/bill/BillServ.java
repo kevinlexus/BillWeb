@@ -162,8 +162,8 @@ public class BillServ {
 
 			for (Kart kart : kartWork) {
 
-				log.trace("BillServ.chrgAll: Prepare thread for lsk="
-						+ kart.getLsk());
+//				log.info("BillServ.chrgAll: Prepare thread for lsk="
+//						+ kart.getLsk());
 				Future<Result> fut = null;
 				ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
 
@@ -175,6 +175,9 @@ public class BillServ {
 				if (calc.getArea() ==null) {
 					log.error("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
 					res.setErr(1);
+				}
+				if (kart.getLsk() == 1511) {
+					log.info("area.id={}", calc.getArea().getId());
 				}
 				
 				try {

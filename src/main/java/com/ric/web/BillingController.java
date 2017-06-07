@@ -694,7 +694,7 @@ public class BillingController {
 			@RequestParam(value = "user", defaultValue = "", required = false) String user
 			) {
 
-		log.info("GOT /chrglsk with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}", houseId,
+		log.info("GOT /chrgall with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}", houseId,
 				dist, areaId, genDt1, genDt2);
 		
 		if (!checkDate(genDt1, genDt2)) {

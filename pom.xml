@@ -125,12 +125,39 @@
 		    <artifactId>spring-context</artifactId>
 		</dependency>
 		
-		<!-- http://mvnrepository.com/artifact/org.hibernate/hibernate-ehcache -->
+		<!-- http://mvnrepository.com/artifact/org.hibernate/hibernate-ehcache
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-ehcache</artifactId>
-		</dependency>
+			</dependency>  -->
 
+		<!---->
+		
+		<!--Для кэша START-->
+		<dependency>
+		    <groupId>org.hibernate</groupId>
+		    <artifactId>hibernate-ehcache</artifactId>
+		    </dependency> 
+
+		<dependency>
+	      <groupId>javax.cache</groupId>
+	      <artifactId>cache-api</artifactId>
+  	    </dependency>
+  
+		<dependency>
+	      <groupId>org.ehcache</groupId>
+	      <artifactId>ehcache2</artifactId>
+	      <version>3.3.1</version>
+	    </dependency>
+    
+		<!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache-terracotta -->
+		<dependency>
+		    <groupId>net.sf.ehcache</groupId>
+		    <artifactId>ehcache-terracotta</artifactId>
+		    <version>2.1.1</version>
+		</dependency>
+		<!--Для кэша END-->
+    
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

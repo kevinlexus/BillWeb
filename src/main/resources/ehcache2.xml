@@ -1,0 +1,88 @@
+<config
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xmlns='http://www.ehcache.org/v3'  
+    xmlns:jsr107='http://www.ehcache.org/v3/jsr107'>  
+
+
+  <!-- ВНИМАНИЕ! Кэши определены в CacheService.java -->
+
+  <service>
+    <jsr107:defaults>
+      <jsr107:cache name="defaultcache" template="heap-cache"/> 
+    </jsr107:defaults>
+  </service>
+
+   <cache-template name="heap-cache"> 
+  <!-- пока не понятно, идёт ошибка из-за этого:  Caused by: org.ehcache.jsr107.MultiCacheException: [Exception 0] org.terracotta.ehcache.EventLogger
+  <listeners>    
+      <listener>
+        <class>org.terracotta.ehcache.EventLogger</class>
+        <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
+        <event-ordering-mode>UNORDERED</event-ordering-mode>
+        <events-to-fire-on>CREATED</events-to-fire-on> 
+        <events-to-fire-on>UPDATED</events-to-fire-on> 
+        <events-to-fire-on>EXPIRED</events-to-fire-on> 
+        <events-to-fire-on>REMOVED</events-to-fire-on> 
+        <events-to-fire-on>EVICTED</events-to-fire-on> 
+      </listener>
+    </listeners>  -->
+     <resources>
+      <heap unit="entries">200000</heap> 
+      <offheap unit="MB">100</offheap> 
+    </resources>
+  </cache-template> 
+</config>
+
+
+<!-- 
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="ehcache.xsd">
+
+
+    <diskStore path="java.io.tmpdir"/>
+
+    <cache name="rrr1"
+       maxElementsInMemory="500000" 
+       eternal="true" 
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+
+    <cache name="rrr2"
+       maxElementsInMemory="500000" 
+       eternal="true" 
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <cache name="rrr3"
+       maxElementsInMemory="500000" 
+       eternal="false" 
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <cache name="rrr4"
+       maxElementsInMemory="10000" 
+       eternal="true" 
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <cache name="wipein1min"
+       maxElementsInMemory="10000" 
+       timeToLiveSeconds="60"
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+    <cache name="neverWipe"
+       maxElementsInMemory="500000" 
+       eternal="true" 
+       overflowToDisk="false" 
+       memoryStoreEvictionPolicy="LRU">
+    </cache>
+
+</ehcache> -->

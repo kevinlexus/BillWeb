@@ -49,6 +49,10 @@ public class CacheService {
 		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 3000000))) 
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("TarifMngImpl.getOrg", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
 	      
 	    }
 

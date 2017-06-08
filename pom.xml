@@ -134,11 +134,11 @@
 		<!---->
 		
 		<!--Для кэша START-->
-		<dependency>
+		<!--<dependency>
 		    <groupId>org.hibernate</groupId>
 		    <artifactId>hibernate-ehcache</artifactId>
 		    </dependency> 
-
+-->
 		<dependency>
 	      <groupId>javax.cache</groupId>
 	      <artifactId>cache-api</artifactId>

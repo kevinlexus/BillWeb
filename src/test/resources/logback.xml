@@ -13,7 +13,7 @@
   
   <logger name="org.hibernate.engine.loading.internal.CollectionLoadContext" level="ERROR"/>
   <logger name="com.ric" level="INFO"/>
-  <logger name="org.ehcache" level="DEBUG"/>
+  <logger name="org.ehcache" level="TRACE"/>
   <logger name="org.hibernate.stat" level="DEBUG"/>
   
   <!--<logger name="org.springframework.security" level="TRACE"/>-->

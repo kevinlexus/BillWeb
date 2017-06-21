@@ -209,22 +209,26 @@ public class DistServ {
 		distGen.clearLstChecks();
 
 		// найти все необходимые услуги для удаления объемов, здесь только по типу 0,1,2 и только те услуги, которые надо удалить для ЛС 
-		for (Serv serv : servMng.findForDistVolForKart()) {
-				log.trace("Удаление объема по услуге"+serv.getCd());
-				try {
-					// тип обработки = 0 - расход
-					calc.setCalcTp(0);
+		try {
+			for (Serv serv : servMng.findForDistVolForKart()) {
+				Boolean v = parMng.getBool(rqn, serv, "Распределять объем по только по дому");   
+				if (v==null || !v) {
+					// Если задано, распределять услугу, только при выборе дома (не ЛС!)
+					log.trace("Удаление объема по услуге"+serv.getCd());
+						// тип обработки = 0 - расход
+						calc.setCalcTp(0);
+							delKartServVolTp(rqn, kart, serv);
+						// тип обработки = 1 - площадь и кол-во прож.
+						calc.setCalcTp(1);
 						delKartServVolTp(rqn, kart, serv);
-					// тип обработки = 1 - площадь и кол-во прож.
-					calc.setCalcTp(1);
-					delKartServVolTp(rqn, kart, serv);
-					// тип обработки = 3 - пропорц.площади (отопление)
-					calc.setCalcTp(3);
-					delKartServVolTp(rqn, kart, serv);
-				} catch (CyclicMeter e) {
-					e.printStackTrace();
-					throw new ErrorWhileDist("Ошибка при распределении счетчиков в лс="+calc.getKart().getLsk());
+						// тип обработки = 3 - пропорц.площади (отопление)
+						calc.setCalcTp(3);
+						delKartServVolTp(rqn, kart, serv);
 				}
+			}
+		} catch (CyclicMeter | EmptyStorable e) {
+			e.printStackTrace();
+			throw new ErrorWhileDist("Ошибка при удалении объемов счетчиков в лс="+calc.getKart().getLsk());
 		}
 		
 		log.trace("Распределение объемов");
@@ -232,21 +236,25 @@ public class DistServ {
 		 
 		 try {
 			for (Serv serv : servMng.findForDistVol()) {
-				log.trace("Распределение услуги: "+serv.getCd());
-				calc.setCalcTp(0);
-			    distKartServTp(rqn, kart, serv);
-			    if (serv.getCd().equals("Отопление")) {
-				    // тип обработки = 1 - площадь и кол-во прож.
-					calc.setCalcTp(1);
+				Boolean v = parMng.getBool(rqn, serv, "Распределять объем по только по дому");   
+				if (v==null || !v) {
+					// Если задано, распределять услугу, только при выборе дома (не ЛС!)
+					log.trace("Распределение услуги: "+serv.getCd());
+					calc.setCalcTp(0);
 				    distKartServTp(rqn, kart, serv);
-					// тип обработки = 3 - пропорц.площади (отопление)
-					calc.setCalcTp(3);
-				    distKartServTp(rqn, kart, serv);
-			    }
+				    if (serv.getCd().equals("Отопление")) {
+					    // тип обработки = 1 - площадь и кол-во прож.
+						calc.setCalcTp(1);
+					    distKartServTp(rqn, kart, serv);
+						// тип обработки = 3 - пропорц.площади (отопление)
+						calc.setCalcTp(3);
+					    distKartServTp(rqn, kart, serv);
+				    }
+				}
 			}
-		} catch (ErrorWhileDist e) {
+		} catch (ErrorWhileDist | EmptyStorable e) {
 			e.printStackTrace();
-			throw new ErrorWhileDist("Dist.distHouseVol: ");
+			throw new ErrorWhileDist("Ошибка при распределении объемов счетчиков в лс="+calc.getKart().getLsk());
 		}
 
 	}

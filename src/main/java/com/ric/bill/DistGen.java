@@ -147,7 +147,8 @@ public class DistGen {
 	 */
 	public NodeVol distNode (Calc calc, MLogs ml, int tp, Date genDt) throws WrongGetMethod, EmptyServ, NotFoundODNLimit, NotFoundNode, EmptyStorable, EmptyPar, WrongValue {
 		// номер текущего запроса
-		if (ml.getId()==518451 && tp==0) {
+		if (ml.getId()==522998//526089 
+				&& tp==3) {
 			log.trace("счетчик!");
 		}
 

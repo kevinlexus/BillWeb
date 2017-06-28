@@ -53,7 +53,7 @@ public class testWork {
 	public void mainWork() {
 		log.info("Test start");
 
-		System.out.println(Utl.ltrim("0000025"));
+		System.out.println(Utl.ltrim("0000025", "0"));
 		
 		if (1==1) {
 			return;

@@ -306,7 +306,7 @@ public class ChrgThr {
 		
 		log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 
-		if (serv.getId() == 89) {
+		if (serv.getId() == 32) {
 			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 		}
 

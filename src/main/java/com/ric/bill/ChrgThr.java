@@ -332,12 +332,19 @@ public class ChrgThr {
 		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 			// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
 			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-			// получить расценку от родительской услуги
-			stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+			if (stServ.getServPrice()==null) {
+				// если пуста родительская услуга, получить из текущей услуги 
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+			} else {
+				// получить расценку от родительской услуги
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+			}
+
 			if (stPrice == null) {
 				// если пустая расценка в родительской услуге, получить из текущей услуги 
 				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
 			}
+			
 			// если пуст один из параметров - занулить все, чтобы не было exception
 			if (stPrice == null || stVol == null) {
 				stPrice = 0d;

@@ -24,5 +24,9 @@ Ext.define('BillWebApp.store.PayordGrpStore', {
             allowSingle: false, //запретить по одному отправлять отправлять объекты в Json - только массивом![объект] - иначе трудно описывать в Restful
             writeAllFields: true  //писать весь объект в json
         }
+    }, listeners: {
+        load: function() {
+            console.log("PayordGrpStore loaded!");
+        }
     }
 });

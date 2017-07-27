@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.3.1.final using JasperReports Library version 6.3.1  -->
-<!-- 2017-04-27T14:46:08 -->
+<!-- 2017-07-27T10:30:29 -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="repPayordFlow1" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="0d6c7770-f10d-4dc4-befe-aac83bc180d0">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<parameter name="strDt" class="java.lang.String"/>
@@ -50,10 +50,10 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 	<group name="GroupByPayordName">
 		<groupExpression><![CDATA[$F{payordName}]]></groupExpression>
 		<groupHeader>
-			<band height="20">
+			<band height="12">
 				<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
 				<textField isBlankWhenNull="true">
-					<reportElement x="0" y="0" width="535" height="20" uuid="d0d79ad3-9b26-43de-b594-d6d205a44982"/>
+					<reportElement x="0" y="0" width="535" height="12" uuid="d0d79ad3-9b26-43de-b594-d6d205a44982"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
@@ -65,30 +65,10 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 			</band>
 		</groupHeader>
 		<groupFooter>
-			<band height="20">
+			<band height="13">
 				<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
 				<textField isBlankWhenNull="true">
-					<reportElement x="234" y="0" width="52" height="20" uuid="e2e3caf2-53eb-46d0-ac3e-b77649a554a1"/>
-					<box>
-						<pen lineWidth="0.25"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans" size="8"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$V{Summa3Grp}]]></textFieldExpression>
-				</textField>
-				<textField isBlankWhenNull="true">
-					<reportElement x="436" y="0" width="50" height="20" uuid="07b25c4d-6ca9-406b-bfb8-367d0161f3c8"/>
-					<box>
-						<pen lineWidth="0.25"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans" size="8"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$V{SummaGrp}]]></textFieldExpression>
-				</textField>
-				<textField isBlankWhenNull="true">
-					<reportElement x="286" y="0" width="50" height="20" uuid="a556fa4f-e287-474f-8d25-744455db9757"/>
+					<reportElement x="286" y="0" width="50" height="13" uuid="a556fa4f-e287-474f-8d25-744455db9757"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
@@ -98,17 +78,17 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 					<textFieldExpression><![CDATA[$V{Summa2Grp}]]></textFieldExpression>
 				</textField>
 				<textField isBlankWhenNull="true">
-					<reportElement x="336" y="0" width="50" height="20" uuid="c6bec681-972c-4576-857c-a645744e4058"/>
+					<reportElement x="436" y="0" width="50" height="13" uuid="07b25c4d-6ca9-406b-bfb8-367d0161f3c8"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
 					<textElement>
 						<font fontName="DejaVu Sans" size="8"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$V{Summa4Grp}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$V{SummaGrp}]]></textFieldExpression>
 				</textField>
 				<textField isBlankWhenNull="true">
-					<reportElement x="386" y="0" width="50" height="20" uuid="83ba29bd-8114-45af-85f5-a623e3b822f7"/>
+					<reportElement x="386" y="0" width="50" height="13" uuid="83ba29bd-8114-45af-85f5-a623e3b822f7"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
@@ -118,7 +98,39 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 					<textFieldExpression><![CDATA[$V{Summa5Grp}]]></textFieldExpression>
 				</textField>
 				<textField isBlankWhenNull="true">
-					<reportElement x="486" y="0" width="49" height="20" uuid="59f34b3e-2706-4357-b702-d30515f559a2"/>
+					<reportElement x="234" y="0" width="52" height="13" uuid="e2e3caf2-53eb-46d0-ac3e-b77649a554a1"/>
+					<box>
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement>
+						<font fontName="DejaVu Sans" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Summa3Grp}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="184" y="0" width="50" height="13" uuid="81bdb099-d0d0-4f2f-8cd9-28f9be834442">
+						<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					</reportElement>
+					<box>
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement>
+						<font fontName="DejaVu Sans" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Summa1Grp}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="130" y="0" width="54" height="13" uuid="c3b191b1-dbd2-4a4c-8533-7736edda9ef9"/>
+					<box>
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement>
+						<font fontName="DejaVu Sans" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{InsalGrp}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="486" y="0" width="49" height="13" uuid="59f34b3e-2706-4357-b702-d30515f559a2"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
@@ -128,17 +140,17 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 					<textFieldExpression><![CDATA[$V{OutsalGrp}]]></textFieldExpression>
 				</textField>
 				<textField isBlankWhenNull="true">
-					<reportElement x="184" y="0" width="50" height="20" uuid="81bdb099-d0d0-4f2f-8cd9-28f9be834442"/>
+					<reportElement x="336" y="0" width="50" height="13" uuid="c6bec681-972c-4576-857c-a645744e4058"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
 					<textElement>
 						<font fontName="DejaVu Sans" size="8"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$V{Summa1Grp}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$V{Summa4Grp}]]></textFieldExpression>
 				</textField>
 				<staticText>
-					<reportElement x="0" y="0" width="130" height="20" uuid="ecc9ffa8-ca80-4301-8c0c-e480158de614"/>
+					<reportElement x="0" y="0" width="130" height="13" uuid="ecc9ffa8-ca80-4301-8c0c-e480158de614"/>
 					<box>
 						<pen lineWidth="0.25"/>
 					</box>
@@ -147,16 +159,6 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 					</textElement>
 					<text><![CDATA[Итого:]]></text>
 				</staticText>
-				<textField isBlankWhenNull="true">
-					<reportElement x="130" y="0" width="54" height="20" uuid="c3b191b1-dbd2-4a4c-8533-7736edda9ef9"/>
-					<box>
-						<pen lineWidth="0.25"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans" size="8"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$V{InsalGrp}]]></textFieldExpression>
-				</textField>
 			</band>
 		</groupFooter>
 	</group>
@@ -170,7 +172,7 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 				<textElement>
 					<font fontName="DejaVu Sans"/>
 				</textElement>
-				<textFieldExpression><![CDATA["1.0.2 Список платежей МП 'РИЦ' на дату:  "+$P{strDt}]]></textFieldExpression>
+				<textFieldExpression><![CDATA["1.0.4 Список платежей МП 'РИЦ' на дату:  "+$P{strDt}]]></textFieldExpression>
 			</textField>
 		</band>
 	</title>
@@ -297,20 +299,10 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 		</band>
 	</pageHeader>
 	<detail>
-		<band height="21" splitType="Stretch">
+		<band height="13" splitType="Stretch">
 			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
 			<textField isBlankWhenNull="true">
-				<reportElement x="0" y="0" width="130" height="21" uuid="fe3b0fee-931e-40bf-a7b7-f404b71a4e74"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{ukName}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="184" y="0" width="50" height="21" uuid="98fe155d-ed5c-47de-821b-9ddc675a18b7"/>
+				<reportElement x="184" y="0" width="50" height="13" uuid="98fe155d-ed5c-47de-821b-9ddc675a18b7"/>
 				<box>
 					<pen lineWidth="0.25"/>
 				</box>
@@ -320,57 +312,7 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 				<textFieldExpression><![CDATA[$F{summa1}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement x="234" y="0" width="52" height="21" uuid="34fcf7f5-3296-47a3-856a-9c4523585702"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{summa3}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="336" y="0" width="50" height="21" uuid="f412206b-82fc-4707-aeb9-bb13ca53e332"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{summa4}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="286" y="0" width="50" height="21" uuid="b2a52aeb-a81c-4d8e-a245-d10d762519ad"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{summa2}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="386" y="0" width="50" height="21" uuid="e9481e26-da3b-4ebc-809b-d7f0ca3c9eed"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{summa5}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="436" y="0" width="50" height="21" uuid="92eab827-ca87-4603-9e5a-521333f29fd9"/>
-				<box>
-					<pen lineWidth="0.25"/>
-				</box>
-				<textElement>
-					<font fontName="DejaVu Sans" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{summa}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="486" y="0" width="49" height="21" uuid="807be130-0dca-4f05-9be2-d3cded7b9f96"/>
+				<reportElement x="486" y="0" width="49" height="13" uuid="807be130-0dca-4f05-9be2-d3cded7b9f96"/>
 				<box>
 					<pen lineWidth="0.25"/>
 				</box>
@@ -380,7 +322,47 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 				<textFieldExpression><![CDATA[$F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3}).subtract($F{summa4}).subtract($F{summa5})]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement x="130" y="0" width="54" height="21" uuid="d13b6eae-8efd-43b5-886c-b831b0e2094a"/>
+				<reportElement x="286" y="0" width="50" height="13" uuid="b2a52aeb-a81c-4d8e-a245-d10d762519ad"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{summa2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="386" y="0" width="50" height="13" uuid="e9481e26-da3b-4ebc-809b-d7f0ca3c9eed"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{summa5}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="234" y="0" width="52" height="13" uuid="34fcf7f5-3296-47a3-856a-9c4523585702"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{summa3}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="436" y="0" width="50" height="13" uuid="92eab827-ca87-4603-9e5a-521333f29fd9"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{summa}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="130" y="0" width="54" height="13" uuid="d13b6eae-8efd-43b5-886c-b831b0e2094a"/>
 				<box>
 					<pen lineWidth="0.25"/>
 				</box>
@@ -388,6 +370,26 @@ $F{insal}.subtract($F{summa}).add($F{summa1}).subtract($F{summa2}).add($F{summa3
 					<font fontName="DejaVu Sans" size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{insal}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="130" height="13" uuid="fe3b0fee-931e-40bf-a7b7-f404b71a4e74"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ukName}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="336" y="0" width="50" height="13" uuid="f412206b-82fc-4707-aeb9-bb13ca53e332"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{summa4}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

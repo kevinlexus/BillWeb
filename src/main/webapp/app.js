@@ -8,18 +8,18 @@ Ext.application({
     name: 'BillWebApp',
 
     extend: 'BillWebApp.Application',
-
+    //stores: ['OrgStore'],
     requires: [
         'BillWebApp.view.main.Main'
     ],
     launch: function () {
         // TODO - Launch the application
-        console.log('Launch2');
-//        var store = Ext.getStore('OrgStore');
+        //console.log('Launch2');
+        //var store = Ext.getStore('OrgStore');
 //        console.log('Launch2='+store);
-//        store.on('load', function() {
+        //store.on('load', function() {
             BillWebApp.getApplication().setMainView('main.Main');
-//        });
+        //});
     },
     // The name of the initial view to create. With the classic toolkit this class
     // will gain a "viewport" plugin if it does not extend Ext.Viewport. With the

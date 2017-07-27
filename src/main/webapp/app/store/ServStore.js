@@ -22,5 +22,9 @@ Ext.define('BillWebApp.store.ServStore', {
         reader: {
             type: 'json'
         }
+    }, listeners: {
+        load: function() {
+            console.log("ServStore loaded!");
+        }
     }
 });

@@ -139,9 +139,9 @@ public class ChrgThr {
 		//Объект, временно хранящий записи начисления
 		chStore = new ChrgStore(); 
 		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		/*if (serv.getId()==72) {
+		if (serv.getId()==32) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		}*/
+		}
 		
 		//}
 		Calendar c = Calendar.getInstance();
@@ -264,6 +264,10 @@ public class ChrgThr {
 	 */
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
 		//log.info("serv.cd={}", serv.getCd());
+		if (serv.getId()==32) {
+			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		}
+
 		Kart kart = calc.getKart();
 		long startTime2;
 		long endTime;
@@ -440,12 +444,15 @@ public class ChrgThr {
 		}
 			
 		
-		//получить организацию
-		if (serv.getCheckOrg()) {
+		  // получить организацию
 		  org = kartMng.getOrg(rqn, calc, serv.getServOrg(), genDt);
-		  if (org == null) {
-				throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
-		  }
+		  //log.trace(""sss);
+  		  if (serv.getCheckOrg()) {
+			  if (org == null) {
+			    throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
+			  } else {
+				  log.trace("Организация по услуге: org.id={}", org.getId());
+			  }
 		}
 		
 

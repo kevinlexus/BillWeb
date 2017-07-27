@@ -92,12 +92,40 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
     onGridPayordFlowRefresh: function () {
         var store = this.getViewModel().getStore('payordflowstore');
         var genDt2 = this.lookupReference('genDt2');
-
         store.load({
             params : {
                 dt: Ext.Date.format(genDt2.getValue(), 'd.m.Y')
             }
         });
+
+        this.fireEvent('something', this, row.get('id'), row.get('name'));
+
+        /* попытка загрузить все store до показа платежек
+        var payordstore = this.getViewModel().getStore('payordstore');
+        var orgstore = this.getViewModel().getStore('orgstore');
+        var store = this.getViewModel().getStore('payordflowstore');
+        var genDt2 = this.lookupReference('genDt2');
+
+        payordstore.load({
+            callback: function(records, operation, success) {
+            if (success) {
+
+                orgstore.load({
+                    callback: function(records, operation, success) {
+                        if (success) {
+                            store.load({
+                                params : {
+                                    dt: Ext.Date.format(genDt2.getValue(), 'd.m.Y')
+                                }
+                            });
+                        }
+                    }
+                });
+
+            }
+        }
+        });
+*/
     },
     // Подписать все платежки
     onGridPayordFlowSignAll: function () {

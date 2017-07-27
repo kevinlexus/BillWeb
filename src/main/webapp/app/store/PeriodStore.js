@@ -25,5 +25,9 @@ Ext.define('BillWebApp.store.PeriodStore1', {
             repCd : 'RptPayDocList',
             tp: '0'
         }*/
+    }, listeners: {
+        load: function() {
+            console.log("PeriodStore1 loaded!");
+        }
     }
 });

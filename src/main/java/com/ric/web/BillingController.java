@@ -450,6 +450,10 @@ public class BillingController {
 //		Ko ko = em.find(Ko.class, 769857);
 //		log.info("Org={} cd={}",ko.getOrg(), ko.getAddrTp().getCd());
 		
+//		dtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt)).stream().forEach(
+//				t-> {log.info("lst={}, {}", t.getId(), t.getName());});
+		
+		//logdtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt)).size()
 		return dtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt));
 	}
 

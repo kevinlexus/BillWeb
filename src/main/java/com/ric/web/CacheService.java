@@ -53,7 +53,57 @@ public class CacheService {
 		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("KartMngImpl.getOrg", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("KartMngImpl.getServ", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("KartMngImpl.getServAll", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	      cacheManager.createCache("KartMngImpl.getCapPrivs", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
 	      
+	      cacheManager.createCache("KartMngImpl.getServPropByCD", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	      cacheManager.createCache("KartMngImpl.getStandartVol", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	      cacheManager.createCache("KartMngImpl.getCntPers", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	      cacheManager.createCache("KartMngImpl.checkPersNullStatus", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	      cacheManager.createCache("KartMngImpl.checkPersStatusExt", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+	      
+	      cacheManager.createCache("KartMngImpl.checkPersStatus", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+
+	     
+	      
+	     
 	    }
 
 	  }

@@ -1,14 +1,16 @@
+// Контейнер для формы настройки платежных поручений
 Ext.define('BillWebApp.view.main.Panel5', {
     extend: 'Ext.panel.Panel',
     xtype: 'panel5',
+    title: 'xxxxxxx',
     layout: {
         type: 'vbox'
     },
     scrollable: true,
-    maxHeight: 900,
+    //maxHeight: 550,
     bodyPadding: 10,
     reference: 'panel5',
-    frame: false,
+    frame: true,
     items: [{
         xtype: 'panel3'
     }]

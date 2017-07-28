@@ -1,14 +1,13 @@
 Ext.define('BillWebApp.view.main.Panel3', {
     extend: 'Ext.panel.Panel',
-    xtype: 'panel3',
+        xtype: 'panel3',
     title: 'Настройки платежек',
     layout: {
-        type: 'vbox',
-        pack: 'start',
-        align: 'stretch'
+        type: 'vbox'
     },
+    //flex: 1,
     width: 1010,
-    minHeight: 900,
+    //minHeight: 900,
     bodyPadding: 10,
     reference: 'panel3',
     controller: 'panel3controller',
@@ -72,7 +71,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         allowBlank: true
                     }
                 },
-                { text: 'Наименование',  dataIndex: 'name', width: 400, align: "left",
+                { text: 'Наименование',  dataIndex: 'name', width: 200, align: "left",
                     editor: {
                         allowBlank: false
                     }
@@ -137,7 +136,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
         columns: [
             { text: 'Id',  dataIndex: 'id', width: 50
             },
-            { text: 'Наименование',  dataIndex: 'name', width: 400, align: "left",
+            { text: 'Наименование',  dataIndex: 'name', width: 150, align: "left",
                 editor: {
                     allowBlank: false
                 }
@@ -145,7 +144,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
             {
                 text: 'Периодичность',
                 dataIndex: 'periodTpFk',
-                width: 170, align: "left",
+                width: 130, align: "left",
                 queryMode: 'local',
                 editor: {
                     xtype: 'combo',
@@ -169,12 +168,12 @@ Ext.define('BillWebApp.view.main.Panel3', {
                   renderer: 'onGridPayordPeriodRender'
             },
 
-            { text: 'Дни формир.',  dataIndex: 'selDays', width: 100, align: "left",
+            { text: 'Дни формир.',  dataIndex: 'selDays', width: 80, align: "left",
                 editor: {
                     allowBlank: true
                 }
             },
-            { text: 'Формула',  dataIndex: 'formula', width: 100, align: "left",
+            { text: 'Формула',  dataIndex: 'formula', width: 80, align: "left",
                 editor: {
                     allowBlank: true
                 }
@@ -247,7 +246,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                 {
                     header: 'Вар.сбора',
                     dataIndex: 'varFk',
-                    width: 200,
+                    width: 150,
                     queryMode: 'local',
                     editor: {
                         xtype: 'combo',
@@ -276,7 +275,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                 {
                     header: 'Услуга',
                     dataIndex: 'servFk',
-                    width: 200,
+                    width: 150,
                     queryMode: 'local',
                     editor: {
                         xtype: 'combo',
@@ -298,7 +297,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                 {
                     header: 'Организация',
                     dataIndex: 'orgFk',
-                    width: 200,
+                    width: 150,
                     queryMode: 'local',
                     editor: {
                         xtype: 'combo',
@@ -325,7 +324,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                 {
                     header: 'Объект',
                     dataIndex: 'koName',
-                    width: 200,
+                    width: 150,
                     queryMode: 'local',
                     editor: {
                         xtype: 'combo',

@@ -23,27 +23,8 @@ Ext.define('BillWebApp.store.OrgStore', {
             type: 'json'
         }
     }, listeners: {
-        beforeload: function() {
-            Ext.create('Ext.window.MessageBox', {
-                multiline: false,
-            }).show({
-                title: 'Внимание!',
-                msg: 'Дождитесь появления сообщения о загрузке приложения',
-                closable: false,
-                buttons: Ext.Msg.OK
-            });
-        }
-        ,load: function() {
+        load: function() {
             console.log("OrgStore loaded!");
-            Ext.create('Ext.window.MessageBox', {
-                multiline: false,
-            }).show({
-                title: 'Внимание!',
-                msg: 'Приложение загружено',
-                closable: false,
-                buttons: Ext.Msg.OK
-            });
-
         }
     }
 });

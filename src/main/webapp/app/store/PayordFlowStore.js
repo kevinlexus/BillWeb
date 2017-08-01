@@ -31,10 +31,6 @@ Ext.define('BillWebApp.store.PayordFlowStore', {
             tp : '2',
             dt: null
         }
-    }, listeners: {
-        load: function() {
-            console.log("PayordFlowStore loaded!");
-        }
     }
 
 });

@@ -4,8 +4,8 @@ Ext.define('BillWebApp.view.main.PanelEdit', {
     layout: {
         type: 'vbox'
     },
-    //scrollable: true,
-    //maxHeight: 900,
+    scrollable: true,
+    maxHeight: 900,
     bodyPadding: 10,
     reference: 'panelEdit',
     frame: false,

@@ -28,9 +28,5 @@ Ext.define('BillWebApp.store.OrgCurUserStore', {
             ,
             writeAllFields: true  //писать весь объект в json - не имеет смысла
         }
-    }, listeners: {
-        load: function() {
-            console.log("OrgCurUserStore loaded!");
-        }
     }
 });

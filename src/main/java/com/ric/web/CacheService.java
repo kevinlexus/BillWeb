@@ -101,6 +101,10 @@ public class CacheService {
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
 
+	      cacheManager.createCache("ObjDAOImpl.getByCD", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 300))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
 	     
 	      
 	     

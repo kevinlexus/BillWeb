@@ -382,7 +382,7 @@ public class DistGen {
 					SumNodeVol lnkODNVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), lnkLODN, tp, genDt, genDt);
 					//получить проживающих и площадь за период по счетчику данного лиц.счета (основываясь на meter_vol)
 					SumNodeVol sumVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, genDt, genDt);
-					//узнать наличие "Введено гкал." для расчета по значению, рассчитанному экономистом
+					//узнать наличие "Введено гкал." для расчета по значению, рассчитанному экономистом (почему то его переименовали в "Норматив отопления на м2" ред. Lev 01.08.2017
 					Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt);
 					if (tmp != null) {
 						//установлено значение "Введено гкал." 

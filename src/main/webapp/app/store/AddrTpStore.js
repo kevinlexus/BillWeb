@@ -22,9 +22,5 @@ Ext.define('BillWebApp.store.AddrTpSpec', {
         reader: {
             type: 'json'
         }
-    }, listeners: {
-        load: function() {
-            console.log("AddrTpStore loaded!");
-        }
     }
 });

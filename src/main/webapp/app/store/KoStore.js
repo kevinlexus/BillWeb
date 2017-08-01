@@ -22,9 +22,5 @@ Ext.define('BillWebApp.store.KoStore', {
         reader: {
             type: 'json'
         }
-    }, listeners: {
-        load: function() {
-            console.log("KoStore loaded!");
-        }
     }
 });

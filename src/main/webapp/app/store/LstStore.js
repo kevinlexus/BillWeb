@@ -22,9 +22,5 @@ Ext.define('BillWebApp.store.LstStore', {
         reader: {
             type: 'json'
         }
-    }, listeners: {
-        load: function() {
-            console.log("LstStore loaded!");
-        }
     }
 });

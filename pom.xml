@@ -6,7 +6,7 @@
 	<artifactId>BillWeb</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
-
+  
 	<repositories>
 		<repository>
 			<id>jasperreports</id>
@@ -53,6 +53,16 @@
 			<version>0.0.2-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
+
+
+		<!-- https://mvnrepository.com/artifact/org.antlr/antlr-complete -->
+<!-- 		<dependency>
+		    <groupId>org.antlr</groupId>
+		    <artifactId>antlr-complete</artifactId>
+		    <version>3.5.2</version>
+			<scope>provided</scope>
+		</dependency>
+ -->
 
 		<!-- http://mvnrepository.com/artifact/org.hibernate.javax.persistence/hibernate-jpa-2.1-api -->
 		<dependency>
@@ -121,25 +131,12 @@
 			</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
-		<dependency>
+<!-- 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-context</artifactId>
 		</dependency>
-		
-		<!-- http://mvnrepository.com/artifact/org.hibernate/hibernate-ehcache
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-ehcache</artifactId>
-			</dependency>  -->
-
-		<!---->
-		
+ -->
 		<!--Для кэша START-->
-		<!--<dependency>
-		    <groupId>org.hibernate</groupId>
-		    <artifactId>hibernate-ehcache</artifactId>
-		    </dependency> 
--->
 		<dependency>
 	      <groupId>javax.cache</groupId>
 	      <artifactId>cache-api</artifactId>
@@ -257,12 +254,14 @@
 		<!-- Jasper Report Specific Jars END -->
 		
 		<!-- https://mvnrepository.com/artifact/com.lowagie/itext -->
-		<dependency>
+<!-- TODO ВРЕМЕННО ЗАКОММЕНТИРОВАЛ!
+
+ 		<dependency>
 		    <groupId>com.lowagie</groupId>
 		    <artifactId>itext</artifactId>
 		    <version>2.1.7</version>
 		</dependency>
-
+ -->
 		<!-- Шрифты для Jasper -->
 		<dependency>
 		    <groupId>net.sf.jasperreports</groupId>
@@ -290,6 +289,16 @@
 
 	<build>
 		<plugins>
+
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-compiler-plugin</artifactId>
+			  <configuration>
+			    <source>1.8</source>
+			    <target>1.8</target>
+			  </configuration>
+			</plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

@@ -1,7 +1,7 @@
 Ext.define('BillWebApp.view.main.Panel2', {
     extend: 'Ext.panel.Panel',
     xtype: 'panel2',
-    title: 'Редактирование платежных поручений',
+    title: 'Редактирование поручений',
     layout: {
         type: 'vbox',
         pack: 'start',
@@ -135,7 +135,6 @@ Ext.define('BillWebApp.view.main.Panel2', {
                     renderer: 'onGridPayordFlowUkRender'
                 },
                 { text: 'Сумма к перечисл.',  dataIndex: 'summa', width: 150,
-                    xtype: 'numbercolumn', format:'0,000.00',
                     editor: {
                         allowBlank: true
                     }

@@ -15,8 +15,6 @@ import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.tr.Serv;
 import com.ric.web.AppConfig;
 
-import org.apache.wicket.spring.injection.annot.SpringBean;
-
 /**
  * Результат выполнения начисления
  * @author lev

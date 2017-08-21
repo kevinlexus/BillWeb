@@ -147,8 +147,8 @@ public class DistGen {
 	 */
 	public NodeVol distNode (Calc calc, MLogs ml, int tp, Date genDt) throws WrongGetMethod, EmptyServ, NotFoundODNLimit, NotFoundNode, EmptyStorable, EmptyPar, WrongValue {
 		// номер текущего запроса
-		if (ml.getId()==523800//526089 
-				&& tp==0) {
+		if (ml.getId()==520828//526089 
+				&& tp==3) {
 			log.trace("счетчик!");
 		}
 
@@ -301,6 +301,14 @@ public class DistGen {
 						}
 						//применить лимит по ОДН
 						Double limitVol = lnkODNVol.getLimit();
+
+						//если больше лимита - ограничить лимит * площадь
+						if (limitVol > 0) {
+							if (vl > limitVol * sumVol.getArea()) {
+								vl = limitVol * sumVol.getArea();
+							}
+						}
+						/*
 						if (parLimitODN == null) {
 							throw new NotFoundODNLimit("Не найден параметр рассчитываемый программно - лимит по ОДН в счетчике="+lnkLODN.getId());
 						} else if (parLimitODN == 1 && limitVol > 0) {
@@ -308,7 +316,8 @@ public class DistGen {
 							if (vl > limitVol * sumVol.getArea()) {
 								vl = limitVol * sumVol.getArea();
 							}
-						}
+						}*/
+						
 					} else {
 						//ЭКОНОМИЯ
 						//экономия, но в пределах потреблённого по основной услуге объема. Внимание! в квартплате решили так не учитывать, а учитывать в контексте услуги ОДН!

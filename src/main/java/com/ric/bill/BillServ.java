@@ -130,114 +130,120 @@ public class BillServ {
 		DistServ distServ = ctx.getBean(DistServ.class);
 
 		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
-		if (reqConfig.getIsDist()) {
-			Calc calc = new Calc(reqConfig);
-			distServ.distAll(calc, houseId, areaId);
-			log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
+		try {
+			if (reqConfig.getIsDist()) {
+				Calc calc = new Calc(reqConfig);
+					distServ.distAll(calc, houseId, areaId);
+				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
+			}
+		} catch (ErrorWhileDist e) {
+			log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
+			res.setErr(1);
 		}
 
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
-		long startTime3 = System.currentTimeMillis();
-		// загрузить все необходимые Лиц.счета
-		kartThr = kartMng.findAll(houseId, areaId, config.getCurDt1());
-		cntLsk = kartThr.size();
-		// флаг ошибки, произошедшей в потоке
-		errThread = false;
-
-		while (true) {
-			log.trace("BillServ.chrgAll: Loading karts for threads");
-			// получить следующие N лиц.счетов, рассчитать их в потоке
-			long startTime2;
-			long endTime2;
-			long totalTime2;
-			startTime2 = System.currentTimeMillis();
-
-			List<Kart> kartWork = getNextKart(cntThreads);
-			if (kartWork.isEmpty()) {
-				// выйти, если все услуги обработаны
-				break;
-			}
-
-			List<Future<Result>> frl = new ArrayList<Future<Result>>();
-
-			for (Kart kart : kartWork) {
-
-//				log.info("BillServ.chrgAll: Prepare thread for lsk="
-//						+ kart.getLsk());
-				Future<Result> fut = null;
-				ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
-
-				// под каждый поток - свой Calc
-				Calc calc = new Calc(reqConfig);
-
-				calc.setKart(kart);
-				calc.setHouse(kart.getKw().getHouse());
-				if (calc.getArea() ==null) {
-					log.error("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
-					res.setErr(1);
+		if (res.getErr() !=0) {
+			long startTime3 = System.currentTimeMillis();
+			// загрузить все необходимые Лиц.счета
+			kartThr = kartMng.findAll(houseId, areaId, config.getCurDt1());
+			cntLsk = kartThr.size();
+			// флаг ошибки, произошедшей в потоке
+			errThread = false;
+	
+			while (true) {
+				log.trace("BillServ.chrgAll: Loading karts for threads");
+				// получить следующие N лиц.счетов, рассчитать их в потоке
+				long startTime2;
+				long endTime2;
+				long totalTime2;
+				startTime2 = System.currentTimeMillis();
+	
+				List<Kart> kartWork = getNextKart(cntThreads);
+				if (kartWork.isEmpty()) {
+					// выйти, если все услуги обработаны
+					break;
 				}
-				if (kart.getLsk() == 1511) {
-					log.info("area.id={}", calc.getArea().getId());
-				}
-				
-				try {
-					fut = chrgServThr.chrgAndSaveLsk(calc);
-				} catch (ErrorWhileChrg e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				frl.add(fut);
-				log.trace("BillServ.chrgAll: Begins thread for lsk="
-						+ kart.getLsk());
-			}
-
-			// проверить окончание всех потоков
-			int flag2 = 0;
-			while (flag2 == 0) {
-				log.trace("BillServ.chrgAll: ========================================== Waiting for threads-2");
-				flag2 = 1;
-				for (Future<Result> fut : frl) {
-					if (!fut.isDone()) {
-						flag2 = 0;
-					} else {
-						try {
-							log.trace("ChrgServ: Done Result.err:="
-									+ fut.get().getErr());
-							if (fut.get().getErr() == 1) {
-								errThread = true;
-							}
-						} catch (InterruptedException | ExecutionException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-
+	
+				List<Future<Result>> frl = new ArrayList<Future<Result>>();
+	
+				for (Kart kart : kartWork) {
+	
+	//				log.info("BillServ.chrgAll: Prepare thread for lsk="
+	//						+ kart.getLsk());
+					Future<Result> fut = null;
+					ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
+	
+					// под каждый поток - свой Calc
+					Calc calc = new Calc(reqConfig);
+	
+					calc.setKart(kart);
+					calc.setHouse(kart.getKw().getHouse());
+					if (calc.getArea() ==null) {
+						log.error("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
+						res.setErr(1);
 					}
+					if (kart.getLsk() == 1511) {
+						log.info("area.id={}", calc.getArea().getId());
+					}
+					
+					try {
+						fut = chrgServThr.chrgAndSaveLsk(calc);
+					} catch (ErrorWhileChrg e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					frl.add(fut);
+					log.trace("BillServ.chrgAll: Begins thread for lsk="
+							+ kart.getLsk());
 				}
-
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+	
+				// проверить окончание всех потоков
+				int flag2 = 0;
+				while (flag2 == 0) {
+					log.trace("BillServ.chrgAll: ========================================== Waiting for threads-2");
+					flag2 = 1;
+					for (Future<Result> fut : frl) {
+						if (!fut.isDone()) {
+							flag2 = 0;
+						} else {
+							try {
+								log.trace("ChrgServ: Done Result.err:="
+										+ fut.get().getErr());
+								if (fut.get().getErr() == 1) {
+									errThread = true;
+								}
+							} catch (InterruptedException | ExecutionException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+	
+						}
+					}
+	
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	
 				}
-
+	
+				endTime2 = System.currentTimeMillis();
+				totalTime2 = endTime2 - startTime2;
+				log.info("Time for chrg One Lsk:" + totalTime2 / cntThreads, 2);
+	
 			}
-
-			endTime2 = System.currentTimeMillis();
-			totalTime2 = endTime2 - startTime2;
-			log.info("Time for chrg One Lsk:" + totalTime2 / cntThreads, 2);
-
+			endTime = System.currentTimeMillis();
+			totalTime = endTime - startTime;
+			totalTime3 = endTime - startTime3;
+			log.info("Ver=2.0", 2);
+			log.info("Counted lsk:" + cntLsk, 2);
+			log.info("Time for all process:" + totalTime, 2);
+			if (cntLsk > 0) {
+				log.info("Time per one Lsk: " + totalTime3 / cntLsk + " ms.", 2);
+			}
 		}
-		endTime = System.currentTimeMillis();
-		totalTime = endTime - startTime;
-		totalTime3 = endTime - startTime3;
-		log.info("Ver=2.0", 2);
-		log.info("Counted lsk:" + cntLsk, 2);
-		log.info("Time for all process:" + totalTime, 2);
-		if (cntLsk > 0) {
-			log.info("Time per one Lsk: " + totalTime3 / cntLsk + " ms.", 2);
-		}
-
 		return new AsyncResult<Result>(res);
 	}
 

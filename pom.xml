@@ -17,24 +17,27 @@
 			<name>JasperReports CE Snapshots</name>
 			<url>http://jaspersoft.artifactoryonline.com/jaspersoft/jr-ce-snapshots</url>
 		</repository>
+		
+		<repository>
+			<id>cata1</id>
+			<name>cata</name>
+			<url>http://repo.boundlessgeo.com/main/</url>
+		</repository>
+		
 	</repositories>
  
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
 		<!-- Spring -->
 		<spring-framework.version>4.2.5.RELEASE</spring-framework.version>
-
 		<!-- Hibernate / JPA -->
 		<hibernate.version>5.1.0.Final</hibernate.version>
-
 		<!-- Test -->
 		<junit.version>4.12</junit.version>
 
 		<start-class>com.ric.web.BillWebApplication</start-class>
 		<java.version>1.8</java.version>
-
 	</properties>
 
 	<parent>
@@ -54,68 +57,110 @@
 			<scope>compile</scope>
 		</dependency>
 
-
-		<!-- https://mvnrepository.com/artifact/org.antlr/antlr-complete -->
-<!-- 		<dependency>
-		    <groupId>org.antlr</groupId>
-		    <artifactId>antlr-complete</artifactId>
-		    <version>3.5.2</version>
-			<scope>provided</scope>
-		</dependency>
- -->
-
-		<!-- http://mvnrepository.com/artifact/org.hibernate.javax.persistence/hibernate-jpa-2.1-api -->
-		<dependency>
-			<groupId>org.hibernate.javax.persistence</groupId>
-			<artifactId>hibernate-jpa-2.1-api</artifactId>
-			<version>1.0.0.Final</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-orm</artifactId>
 		</dependency>
 
-		<!-- Spring and Transactions -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-loader</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			</dependency>
-		
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-tx</artifactId>
-			</dependency>
+			<artifactId>spring-aspects</artifactId>
+		</dependency>
 
-		<!-- Support for Ehcache and others -->
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context-support</artifactId>
-			</dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-web</artifactId>
+		    </dependency>
 
-		<!-- Hibernate -->
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
 		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-entitymanager</artifactId>
-			</dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-webmvc</artifactId>
+		</dependency>
 
-		<!-- <dependency> <groupId>org.hibernate</groupId> <artifactId>hibernate-core</artifactId> 
-			<version>5.1.0.Final</version> </dependency> -->
+		<!-- Не удалять! Используется для AuthConfigFactory!!! -->
 		<dependency>
-			<groupId>commons-dbcp</groupId>
-			<artifactId>commons-dbcp</artifactId>
-			</dependency>
+		    <groupId>org.apache.tomcat</groupId>
+		    <artifactId>tomcat-catalina</artifactId>
+		    <version>9.0.0.M6</version>
+		</dependency>
+<!-- 		<dependency>
+		    <groupId>org.apache.tomcat.embed</groupId>
+		    <artifactId>tomcat-embed-core</artifactId>
+		    <version>8.5.2</version>
+		</dependency> -->
+
+		<!-- https://mvnrepository.com/artifact/javax.security.auth.message/javax.security.auth.message-api -->
+		<dependency>
+		    <groupId>javax.security.auth.message</groupId>
+		    <artifactId>javax.security.auth.message-api</artifactId>
+		    <version>1.1</version>
+		</dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
 
 		<!-- Test Artifacts -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+	      <groupId>org.ehcache</groupId>
+	      <artifactId>ehcache2</artifactId>
+	      <version>3.3.1</version>
+	    </dependency>
+
+		<dependency>
+		    <groupId>net.sf.ehcache</groupId>
+		    <artifactId>ehcache-terracotta</artifactId>
+		    <version>2.1.1</version>
+		</dependency>
+
+		<dependency>
+	      <groupId>javax.cache</groupId>
+	      <artifactId>cache-api</artifactId>
+  	    </dependency>
+
+		<dependency>
+			<groupId>c3p0</groupId>
+			<artifactId>c3p0</artifactId>
+			<version>0.9.1.2</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports</artifactId>
+		    <version>6.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>jasperreports-functions</artifactId>
+			<version>6.0.5-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-collections4 -->
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-collections4</artifactId>
+		    <version>4.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -124,165 +169,21 @@
 		    <artifactId>junit</artifactId>
 		</dependency>
 
-		<!-- http://mvnrepository.com/artifact/org.springframework/spring-aspects -->
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-aspects</artifactId>
-			</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
-<!-- 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-context</artifactId>
-		</dependency>
- -->
-		<!--Для кэша START-->
-		<dependency>
-	      <groupId>javax.cache</groupId>
-	      <artifactId>cache-api</artifactId>
-  	    </dependency>
-  
-		<dependency>
-	      <groupId>org.ehcache</groupId>
-	      <artifactId>ehcache2</artifactId>
-	      <version>3.3.1</version>
-	    </dependency>
-    
-		<!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache-terracotta -->
-		<dependency>
-		    <groupId>net.sf.ehcache</groupId>
-		    <artifactId>ehcache-terracotta</artifactId>
-		    <version>2.1.1</version>
-		</dependency>
-		<!--Для кэша END-->
-    
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<scope>provided</scope>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-autoconfigure</artifactId>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/c3p0/c3p0 -->
-		<dependency>
-			<groupId>c3p0</groupId>
-			<artifactId>c3p0</artifactId>
-			<version>0.9.1.2</version>
-		</dependency>
-
-		<!-- Решил добавить - потому что не мог избавиться от зависших сессий https://mvnrepository.com/artifact/org.hibernate/hibernate-c3p0 -->
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-c3p0</artifactId>
-			<version>5.2.2.Final</version>
-		</dependency>
-
-
-		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-collections4 -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-collections4</artifactId>
-			<version>4.1</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/com.oracle/ojdbc14 -->
 		<dependency>
 			<groupId>com.oracle</groupId>
 			<artifactId>oracle</artifactId>
 			<version>10.2.0.2.0</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.0</version>
-		</dependency>
-
-
-		<!-- добавил согласно статьи http://zazos79.blogspot.ru/2015/02/spring-boot-12-run-as-windows-service.html -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-loader</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		
-		<!-- mxparser -->
-		<dependency>
-		    <groupId>mxParser</groupId>
-		    <artifactId>org.mariuszgromada</artifactId>
-		    <version>1.0</version>
-		</dependency>
-  				
-		<!-- Безопасность spring-boot START -->
-         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-		<!-- Безопасность spring-boot END -->
-           				
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-
-		<dependency>
-		    <groupId>com.diffplug.durian</groupId>
-		    <artifactId>durian</artifactId>
-		    <version>3.4.0</version>
-		</dependency>
-		
-		<!-- Jasper Report Specific Jars START -->
-		<dependency>
-		    <groupId>net.sf.jasperreports</groupId>
-		    <artifactId>jasperreports</artifactId>
-		    <version>6.4.0</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>net.sf.jasperreports</groupId>
-			<artifactId>jasperreports-functions</artifactId>
-			<version>6.0.5-SNAPSHOT</version>
-		</dependency>
-	
-		<!-- for report in xls format -->
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi</artifactId>
-			<version>3.10.1</version>
-		</dependency>
-		<!-- Jasper Report Specific Jars END -->
-		
-		<!-- https://mvnrepository.com/artifact/com.lowagie/itext -->
-<!-- TODO ВРЕМЕННО ЗАКОММЕНТИРОВАЛ!
-
- 		<dependency>
-		    <groupId>com.lowagie</groupId>
-		    <artifactId>itext</artifactId>
-		    <version>2.1.7</version>
-		</dependency>
- -->
-		<!-- Шрифты для Jasper -->
-		<dependency>
-		    <groupId>net.sf.jasperreports</groupId>
-		    <artifactId>jasperreports-fonts</artifactId>
-		    <version>6.0.0</version>
-		</dependency>
-		          				
-		<!-- myFonts - Шрифты для Jasper -->
-		<dependency>
-		    <groupId>myFonts</groupId>
-		    <artifactId>com.ric.fonts</artifactId>
-		    <version>1.0</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.wicket/wicket-spring -->
-		<dependency>
-		    <groupId>org.apache.wicket</groupId>
-		    <artifactId>wicket-spring</artifactId>
-		    <version>8.0.0-M6</version>
-		</dependency>
-
 
 	</dependencies>
 

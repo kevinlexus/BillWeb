@@ -146,9 +146,10 @@ public class DistServ {
 	 * Распределить объемы по домам
 	 * @param calc
 	 * @param areaId 
+	 * @throws ErrorWhileDist 
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-    public void distAll(Calc calc, Integer houseId, Integer areaId) {
+    public void distAll(Calc calc, Integer houseId, Integer areaId) throws ErrorWhileDist {
 			//distGen = ctx.getBean(DistGen.class);
 			this.calc=calc;
 			int rqn = calc.getReqConfig().getRqn();
@@ -172,11 +173,8 @@ public class DistServ {
 				//Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 				//Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);
 		    	
-				try {
-					distHouseVol(rqn, o.getId());
-				} catch (ErrorWhileDist e) {
-					e.printStackTrace();
-				}
+				distHouseVol(rqn, o.getId());
+				
 				endTime   = System.currentTimeMillis();
 				totalTime = endTime - startTime;
 				log.info("Время исполнения-1:"+totalTime);

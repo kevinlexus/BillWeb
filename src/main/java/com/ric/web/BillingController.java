@@ -695,11 +695,12 @@ public class BillingController {
 			@RequestParam(value = "areaId", defaultValue = "", required = false) Integer areaId,
 			@RequestParam(value = "dt1", defaultValue = "", required = false) String genDt1,
 			@RequestParam(value = "dt2", defaultValue = "", required = false) String genDt2,
-			@RequestParam(value = "user", defaultValue = "", required = false) String user
+			@RequestParam(value = "user", defaultValue = "", required = false) String user,
+			@RequestParam(value = "isAutoChrg", defaultValue = "0", required = false) Integer isAutoChrg
 			) {
 
-		log.info("GOT /chrgall with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}", houseId,
-				dist, areaId, genDt1, genDt2);
+		log.info("GOT /chrgall with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}, isAutoChrg={}", houseId,
+				dist, areaId, genDt1, genDt2, isAutoChrg);
 		
 		if (!checkDate(genDt1, genDt2)) {
 			log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);

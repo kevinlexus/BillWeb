@@ -21,6 +21,6 @@ Ext.define('BillWebApp.model.PayordFlow', {
         { name: 'summa6', type: 'float', persist: false },
         { name: 'npp', type: 'int', persist: true},
         { name: 'signed', type: 'boolean', persist: true},
-        { name: 'dt', dateFormat: 'Y-m-d H:i:s', type: 'date', persist: true},
+        { name: 'dt', dateFormat: 'Y-m-d H:i:s', dateWriteFormat: 'Y-m-d H:i:s', type: 'date', persist: true},
         { name: 'period', type: 'string', persist: false}]
 });

@@ -185,7 +185,7 @@ public class BillingController {
 	public List<PayordFlowDTO> getPayordFlowByTpDt(
 			@RequestParam(value = "tp") Integer tp,
 			@RequestParam(value = "dt") String dt) {
-		log.info("GOT /payord/getPayordByTpDt with tp={}, dt={}", tp, dt);
+		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt={}", tp, dt);
 		Date genDt = null;
 		if (dt != null && dt.length()!=0) {
 			genDt = Utl.getDateFromStr(dt);

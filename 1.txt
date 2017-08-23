@@ -1,14 +1,10 @@
 [INFO] Scanning for projects...
-[INFO]                                                                         
+[INFO] 
 [INFO] ------------------------------------------------------------------------
 [INFO] Building BillWeb 0.0.1-SNAPSHOT
 [INFO] ------------------------------------------------------------------------
 [INFO] 
 [INFO] --- maven-dependency-plugin:2.10:tree (default-cli) @ BillWeb ---
-Downloading: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.pom
-145/145 B               Downloaded: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.pom (145 B at 0.1 KB/sec)
-Downloading: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.jar
-3/350 KB    5/350 KB   8/350 KB   11/350 KB   13/350 KB   16/350 KB   19/350 KB   21/350 KB   24/350 KB   27/350 KB   29/350 KB   32/350 KB   36/350 KB   40/350 KB   44/350 KB   48/350 KB   52/350 KB   56/350 KB   60/350 KB   64/350 KB   68/350 KB   72/350 KB   76/350 KB   80/350 KB   84/350 KB   88/350 KB   92/350 KB   96/350 KB   100/350 KB   104/350 KB   108/350 KB   112/350 KB   116/350 KB   120/350 KB   124/350 KB   128/350 KB   132/350 KB   136/350 KB   140/350 KB   144/350 KB   148/350 KB   152/350 KB   156/350 KB   160/350 KB   164/350 KB   168/350 KB   172/350 KB   176/350 KB   180/350 KB   184/350 KB   188/350 KB   192/350 KB   196/350 KB   200/350 KB   204/350 KB   208/350 KB   212/350 KB   216/350 KB   220/350 KB   224/350 KB   228/350 KB   232/350 KB   236/350 KB   240/350 KB   244/350 KB   248/350 KB   252/350 KB   256/350 KB   260/350 KB   264/350 KB   268/350 KB   272/350 KB   276/350 KB   280/350 KB   284/350 KB   288/350 KB   292/350 KB   296/350 KB   300/350 KB   304/350 KB   308/350 KB   312/350 KB   316/350 KB   320/350 KB   324/350 KB   328/350 KB   332/350 KB   336/350 KB   340/350 KB   344/350 KB   348/350 KB   350/350 KB                Downloaded: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.jar (350 KB at 406.8 KB/sec)
 [INFO] com.ric.bill:BillWeb:jar:0.0.1-SNAPSHOT
 [INFO] +- com.ric.bill:BWC:jar:0.0.2-SNAPSHOT:compile
 [INFO] |  +- org.hibernate:hibernate-entitymanager:jar:5.1.0.Final:compile
@@ -30,26 +26,22 @@ Downloading: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.
 [INFO] |  +- mxParser:org.mariuszgromada:jar:1.0:compile
 [INFO] |  +- javax.inject:javax.inject:jar:1:compile
 [INFO] |  \- org.apache.commons:commons-lang3:jar:3.6:compile
+[INFO] +- org.springframework:spring-orm:jar:4.3.2.RELEASE:compile
+[INFO] |  +- org.springframework:spring-core:jar:4.3.2.RELEASE:compile
+[INFO] |  \- org.springframework:spring-jdbc:jar:4.3.2.RELEASE:compile
 [INFO] +- org.springframework.boot:spring-boot-loader:jar:1.4.0.RELEASE:provided
 [INFO] +- org.springframework:spring-aspects:jar:4.3.2.RELEASE:compile
 [INFO] |  \- org.aspectj:aspectjweaver:jar:1.8.9:compile
 [INFO] +- org.springframework:spring-web:jar:4.3.2.RELEASE:compile
 [INFO] |  +- org.springframework:spring-aop:jar:4.3.2.RELEASE:compile
-[INFO] |  +- org.springframework:spring-context:jar:4.3.2.RELEASE:compile
-[INFO] |  \- org.springframework:spring-core:jar:4.3.2.RELEASE:compile
+[INFO] |  \- org.springframework:spring-context:jar:4.3.2.RELEASE:compile
 [INFO] +- org.springframework:spring-webmvc:jar:4.3.2.RELEASE:compile
 [INFO] |  \- org.springframework:spring-expression:jar:4.3.2.RELEASE:compile
-[INFO] +- org.apache.tomcat:tomcat-catalina:jar:7.0.12:compile
-[INFO] |  +- org.apache.tomcat:tomcat-servlet-api:jar:7.0.12:compile
-[INFO] |  +- org.apache.tomcat:tomcat-juli:jar:7.0.12:compile
-[INFO] |  +- org.apache.tomcat:tomcat-annotations-api:jar:7.0.12:compile
-[INFO] |  +- org.apache.tomcat:tomcat-api:jar:7.0.12:compile
-[INFO] |  \- org.apache.tomcat:tomcat-util:jar:7.0.12:compile
+[INFO] +- org.springframework:spring-context-support:jar:4.3.10.RELEASE:compile
+[INFO] +- myFonts:com.ric.fonts:jar:1.0:compile
 [INFO] +- javax.security.auth.message:javax.security.auth.message-api:jar:1.1:compile
 [INFO] +- org.springframework.boot:spring-boot-starter-security:jar:1.4.0.RELEASE:compile
 [INFO] |  +- org.springframework.boot:spring-boot-starter:jar:1.4.0.RELEASE:compile
-[INFO] |  |  +- org.springframework.boot:spring-boot:jar:1.4.0.RELEASE:compile
-[INFO] |  |  +- org.springframework.boot:spring-boot-autoconfigure:jar:1.4.0.RELEASE:compile
 [INFO] |  |  +- org.springframework.boot:spring-boot-starter-logging:jar:1.4.0.RELEASE:compile
 [INFO] |  |  |  +- ch.qos.logback:logback-classic:jar:1.1.7:compile
 [INFO] |  |  |  |  \- ch.qos.logback:logback-core:jar:1.1.7:compile
@@ -99,11 +91,30 @@ Downloading: https://repo.maven.apache.org/maven2/antlr/antlr/2.7.2/antlr-2.7.2.
 [INFO] +- net.sf.jasperreports:jasperreports-functions:jar:6.0.5-SNAPSHOT:compile
 [INFO] |  \- joda-time:joda-time:jar:2.9.4:compile
 [INFO] +- org.projectlombok:lombok:jar:1.16.10:provided
-[INFO] \- org.apache.commons:commons-collections4:jar:4.0:compile
+[INFO] +- org.apache.commons:commons-collections4:jar:4.0:compile
+[INFO] +- junit:junit:jar:4.12:compile
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:compile
+[INFO] +- org.springframework.boot:spring-boot-autoconfigure:jar:1.4.0.RELEASE:compile
+[INFO] |  \- org.springframework.boot:spring-boot:jar:1.4.0.RELEASE:compile
+[INFO] +- com.oracle:oracle:jar:10.2.0.2.0:compile
+[INFO] \- org.springframework.boot:spring-boot-starter-thymeleaf:jar:1.4.0.RELEASE:compile
+[INFO]    +- org.springframework.boot:spring-boot-starter-web:jar:1.4.0.RELEASE:compile
+[INFO]    |  +- org.springframework.boot:spring-boot-starter-tomcat:jar:1.4.0.RELEASE:compile
+[INFO]    |  |  +- org.apache.tomcat.embed:tomcat-embed-core:jar:8.5.4:compile
+[INFO]    |  |  +- org.apache.tomcat.embed:tomcat-embed-el:jar:8.5.4:compile
+[INFO]    |  |  \- org.apache.tomcat.embed:tomcat-embed-websocket:jar:8.5.4:compile
+[INFO]    |  \- org.hibernate:hibernate-validator:jar:5.2.4.Final:compile
+[INFO]    |     \- javax.validation:validation-api:jar:1.1.0.Final:compile
+[INFO]    +- org.thymeleaf:thymeleaf-spring4:jar:2.1.5.RELEASE:compile
+[INFO]    |  \- org.thymeleaf:thymeleaf:jar:2.1.5.RELEASE:compile
+[INFO]    |     +- ognl:ognl:jar:3.0.8:compile
+[INFO]    |     \- org.unbescape:unbescape:jar:1.1.0.RELEASE:compile
+[INFO]    \- nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:jar:1.4.0:compile
+[INFO]       \- org.codehaus.groovy:groovy:jar:2.4.7:compile
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 4.313 s
-[INFO] Finished at: 2017-08-01T15:25:33+06:00
-[INFO] Final Memory: 25M/321M
+[INFO] Total time: 4.227 s
+[INFO] Finished at: 2017-08-23T14:30:41+06:00
+[INFO] Final Memory: 23M/309M
 [INFO] ------------------------------------------------------------------------

@@ -27,10 +27,9 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
             name: 'Заполнить наименование!',
             payordGrpFk : payordGrpGrid.selection.id
         });*/
-        var rec = new BillWebApp.model.Payord({
-            summa: 1111,
-            tp: 2,
-            period: '201704'
+        var rec = new BillWebApp.model.PayordFlow({
+            summa: 0,
+            tp: 2
         });
         var payordFlowGrid = this.lookupReference('payordFlowGrid');
         var payordflowstore = this.getViewModel().getStore('payordflowstore');

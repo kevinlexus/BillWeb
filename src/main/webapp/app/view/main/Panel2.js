@@ -23,6 +23,9 @@ Ext.define('BillWebApp.view.main.Panel2', {
             width: 1000,
             //minHeight: 120,
             margin: '0 0 10 0',
+            bind: {
+                store: '{payordflowstore}'
+            },
             tbar: [{
                 text: 'Добавить поручение',
                 handler: 'onGridPayordFlowAdd'
@@ -57,13 +60,6 @@ Ext.define('BillWebApp.view.main.Panel2', {
                         if (context.column.widget)
                             return false;
                     }
-                }
-            },
-            bind: {
-                store: '{payordflowstore}',
-                listeners: {
-                   // edit: 'onGridPayordGrpUpd',
-                   // cancelEdit: 'onGridPayordGrpCancel'
                 }
             },
             actions: {

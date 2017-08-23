@@ -84,13 +84,39 @@
 		    <artifactId>spring-webmvc</artifactId>
 		</dependency>
 
-		<!-- Не удалять! Используется для AuthConfigFactory!!! -->
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-context-support Не удалять! используется в Jasper Reports!!!-->
 		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-context-support</artifactId>
+		    <version>4.3.10.RELEASE</version>
+		</dependency>
+
+		<!-- Шрифты для Jasper -->
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports-fonts</artifactId>
+		    <version>6.0.0</version>
+		</dependency>
+		          				
+		<!-- myFonts - Шрифты для Jasper -->
+		<dependency>
+		    <groupId>myFonts</groupId>
+		    <artifactId>com.ric.fonts</artifactId>
+		    <version>1.0</version>
+		</dependency>
+
+		<!-- Не удалять! Используется для AuthConfigFactory!!! ЕСЛИ раскомментировать этот код, приведёт к НЕВОЗМОЖНОСТИ
+		Перехода по линку с такой ошибкой:
+		
+		javax.servlet.http.HttpServletRequest.getMapping()Ljavax/servlet/http/Mapping;
+		
+		 -->
+<!-- 		<dependency>
 		    <groupId>org.apache.tomcat</groupId>
 		    <artifactId>tomcat-catalina</artifactId>
 		    <version>9.0.0.M6</version>
 		</dependency>
-<!-- 		<dependency>
+ --><!-- 		<dependency>
 		    <groupId>org.apache.tomcat.embed</groupId>
 		    <artifactId>tomcat-embed-core</artifactId>
 		    <version>8.5.2</version>

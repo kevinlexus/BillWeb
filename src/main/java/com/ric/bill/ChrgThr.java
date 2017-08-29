@@ -308,480 +308,480 @@ public class ChrgThr {
 		// Номер ввода
 		Integer entry = null;
 		
-		log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
-
-		if (serv.getId() == 32) {
+		// проверить отключение услуги в данном дне (по наличию параметра, а не по его значению)
+		Double swithOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
+		if (swithOff != null) {
+			log.trace("Услуга id={}, cd={}, genDt={} отключена!", serv.getId(), serv.getCd(), genDt);
+		} else if (swithOff == null) {
 			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
-		}
-
-		// получить необходимые услуги
-		stServ = serv.getServSt();
-		upStServ = serv.getServUpst();
-		woKprServ = serv.getServWokpr();
-		// если услуга по соцнорме пустая, присвоить изначальную услугу
-		if (stServ == null) {
-			stServ = serv;
-		}
-		
-		// контроль наличия услуги св.с.нормы (по ряду услуг) в справочнике услуг (не в тарифе!)
-		if ((Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) && serv.getServUpst() == null) {
-			throw new EmptyStorable("По услуге Id="+serv.getId()+" обнаружена пустая услуга свыше соц.нормы");
-		}
-
-		// Получить кол-во проживающих 
-		kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
-
-		// получить расценку по норме	
-		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-			// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
-			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-			if (stServ.getServPrice()==null) {
-				// если пуста родительская услуга, получить из текущей услуги 
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-			} else {
-				// получить расценку от родительской услуги
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-			}
-
-			if (stPrice == null) {
-				// если пустая расценка в родительской услуге, получить из текущей услуги 
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+			// получить необходимые подуслуги
+			stServ = serv.getServSt();
+			upStServ = serv.getServUpst();
+			woKprServ = serv.getServWokpr();
+			// если услуга по соцнорме пустая, присвоить изначальную услугу
+			if (stServ == null) {
+				stServ = serv;
 			}
 			
-			// если пуст один из параметров - занулить все, чтобы не было exception
-			if (stPrice == null || stVol == null) {
-				stPrice = 0d;
-				stVol = 0d;
-			} else {
-				// округлить
-				stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+			// контроль наличия услуги св.с.нормы (по ряду услуг) в справочнике услуг (не в тарифе!)
+			if ((Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) && serv.getServUpst() == null) {
+				throw new EmptyStorable("По услуге Id="+serv.getId()+" обнаружена пустая услуга свыше соц.нормы");
 			}
-		} else {
-			// прочие варианты
-			if (stServ.getServPrice() != null) {
-				// указана услуга, откуда взять расценку
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-			} else {
-				// не указана услуга, откуда взять расценку
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-			}
-		}
-
-		
-		if (stPrice == null) {
-			// Добавить ошибку, что нет расценки по услуге (если это контролируется)
-			res.addErr(rqn, 8, kart, serv);
-			stPrice = 0d;
-		}
-
-		// получить составляющие перерасчета
-		Chng chng = calc.getReqConfig().getChng();
-		ChngLsk chngLsk = null;
-		if (chng != null && chng.getServ().equals(serv)) {
-			chngLsk = chng.getChngLsk().stream().filter(t-> t.getKart().equals(kart))
-					.findFirst().orElse(null);
-		}
-		
-		
-		// получить долю соц.нормы.свыше (не объем!!!)
-		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d ||
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
-			
-			
-			stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
-			// здесь же получить расценки по свыше соц.нормы и без проживающих 
-			if (serv.getServUpst() != null) {
-				if (upStServ.getServPrice() != null) {
-					// указана услуга, откуда взять расценку
-					upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
-				} else {
-					// не указана услуга, откуда взять расценку
-					upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
-				}
-					
-				if (upStPrice == null) {
-					upStPrice = 0d;
-				}
-				
-				if (upStPrice == 0d) {
-					// Добавить ошибку, что отсутствует расценка
-					res.addErr(rqn, 5, kart, serv);
-				}
-				
-			} else {
-				upStPrice = 0d;
-			}
-
-			if (serv.getServWokpr() != null) {
-				if (woKprServ.getServPrice() != null) {
-					// указана услуга, откуда взять расценку
-					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
-				} else {
-					// не указана услуга, откуда взять расценку
-					//log.info("Check={}", woKprServ.getId());
-					woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
-				}
-
-				if (woKprPrice == null) {
-					// Добавить ошибку, что отсутствует расценка
-					res.addErr(rqn, 6, kart, serv);
-					// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
-					if (upStPrice == null || upStPrice == 0d) {
-						woKprPrice = stPrice;
-					} else {
-						woKprPrice = upStPrice;
-					}
-				} else if (woKprPrice == 0d) {
-					// Добавить ошибку, что отсутствует расценка
-					res.addErr(rqn, 6, kart, serv);
-				}
-			} else {
-				woKprPrice = 0d;
-			} 
-		}
-			
-		
-		  // получить организацию
-		  org = kartMng.getOrg(rqn, calc, serv.getServOrg(), genDt);
-		  //log.trace(""sss);
-  		  if (serv.getCheckOrg()) {
-			  if (org == null) {
-			    throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
-			  } else {
-				  log.trace("Организация по услуге: org.id={}", org.getId());
-			  }
-		}
-		
-
-		// в случае перерасчета по расценке или по организации, выполнить замену
-		if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение расценки (тарифа)") ) {
-			
-			// организация
-			Org chngOrg = getChngOrg(serv.getServOrg(), genDt);
-			if (chngOrg != null) {
-				org = chngOrg; 
-			}
-
-			// расценка по норме
-			Double chngPrice;
+	
+			// Получить кол-во проживающих 
+			kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
+	
+			// получить расценку по норме	
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-				// по этому варианту получить расценку от родительской услуги
-				chngPrice = tarMng.getChngVal(calc, stServ.getServDep(), genDt, "Изменение расценки (тарифа)", 1);
+				// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
+				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+				if (stServ.getServPrice()==null) {
+					// если пуста родительская услуга, получить из текущей услуги 
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+				} else {
+					// получить расценку от родительской услуги
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+				}
+	
+				if (stPrice == null) {
+					// если пустая расценка в родительской услуге, получить из текущей услуги 
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+				}
+				
+				// если пуст один из параметров - занулить все, чтобы не было exception
+				if (stPrice == null || stVol == null) {
+					stPrice = 0d;
+					stVol = 0d;
+				} else {
+					// округлить
+					stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+				}
 			} else {
 				// прочие варианты
-				chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+				if (stServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+				} else {
+					// не указана услуга, откуда взять расценку
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+				}
 			}
-
-			if (chngPrice != null) {
-				stPrice = chngPrice; 
+	
+			
+			if (stPrice == null) {
+				// Добавить ошибку, что нет расценки по услуге (если это контролируется)
+				res.addErr(rqn, 8, kart, serv);
+				stPrice = 0d;
+			}
+	
+			// получить составляющие перерасчета
+			Chng chng = calc.getReqConfig().getChng();
+			ChngLsk chngLsk = null;
+			if (chng != null && chng.getServ().equals(serv)) {
+				chngLsk = chng.getChngLsk().stream().filter(t-> t.getKart().equals(kart))
+						.findFirst().orElse(null);
 			}
 			
-			// расценка св.нормы
-			chngPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
-			if (chngPrice != null) {
-				upStPrice = chngPrice; 
-			}
+			
+			// получить долю соц.нормы.свыше (не объем!!!)
+			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d || 
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d ||
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				
-			// расценка без проживающих
-			chngPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
-			if (chngPrice != null) {
-				woKprPrice = chngPrice; 
-			}
-			
-		}
-		
-		Double raisCoeff = 0d;
-		// при отсутствии ПУ и возможности его установки, применить повышающий коэффициент для определённых услуг
-		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
-			if (serv.getServDep()!=null && !metMng.checkExsKartMet(rqn, kart, serv.getServDep(), genDt)) {	
-				// если не установлен счетчик по основной родительской услуге	
-				String parCd = null;
-				if (serv.getCd().equals("ГВС(инд) п.344 РФ")) {
-					parCd = "Возможность установки ИПУ по гор. воде";
-				} else if (serv.getCd().equals("ХВС(инд) п.344 РФ")) {
-					parCd = "Возможность установки ИПУ по хол. воде";
-				} else if (serv.getCd().equals("Эл/эн(инд) п.344 РФ")) {
-					parCd = "Возможность установки ИПУ по эл/эн";
-				}
 				
-				// проверить наличие параметров возможности установки счетчиков
-				if (parCd!= null) {
-					if (parMng.getBool(rqn, kart, parCd, genDt) !=null && parMng.getBool(rqn, kart, parCd, genDt)) {
-						// с возможностью установки счетчика
-						raisCoeff = Utl.nvl(kartMng.getServPropByCD(rqn, calc, serv, "Коэффициент начисления осн.усл.", genDt), 0d);
-					}
-				}
-			}
-		}		
-		
-		// получить базу для начисления
-		baseCD = parMng.getStr(rqn, serv, "Name_CD_par_base_charge");
-		// доля площади в день, для любой услуги, чтобы записать в chrg
-		sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays();
-
-		// получить объем для начисления
-		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d || 
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
-				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d) {
-			//получить объем одного дня
-			vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
-			
-			vol = vol / calc.getReqConfig().getCntCurDays();
-			//проверить по капремонту, чтобы не была квартира муниципальной
-			if (serv.getCd().equals("Взносы на кап.рем.")) {
-				if (tpOwn != null && !(tpOwn.equals("Подсобное помещение") || tpOwn.equals("Приватизированная") || tpOwn.equals("Собственная"))) {
-					//не начислять, выход
-					return;
-				} else {
-					//применить льготу по капремонту по 70 - летним
-					vol = vol * kartMng.getCapPrivs(rqn, calc, kart, genDt);
-				}
-			}
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
-			// получить норматив 
-			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-			// объем: норматив * долю площади
-			if (stVol != null) {
-				vol = stVol * sqr;
-				//log.info("vol={} stVol={} sqr={}", vol, stVol, sqr);
-			} else {
-				vol = 0d;
-			}
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
-			//получить объем за месяц
-			vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
-			//получить долю объема за день HARD CODE
-			//площадь полива (в доле 1 дня)/100 * 60 дней / 12мес * норматив / среднее кол-во дней в месяце
-			vol = vol/100d*60d/12d*stdt.partVol/30.4d/calc.getReqConfig().getCntCurDays();
-			
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
-				   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
-			
-			
-			// Вариант подразумевает объём по лог.счётчику, Распределённый по дням
-			if (serv.getServMet() == null) {
-				throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
-			}
-			
-//			if (serv.getId() == 35) {
-				//log.info("check");
-			//}
-			// получить наличие физ.счетчика в данном периоде
-			exsMet = metMng.checkExsKartMet(rqn, kart, serv.getServMet(), genDt);
-			
-			// получить объем по лицевому счету и услуге за ДЕНЬ
-			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
-				// если перерасчет, то разделить на кол-во дней в месяце, так как передаётся объем за месяц
-				vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
-			} else {
-				// обычное начисление
-				SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), genDt, genDt);
-				vol = tmpNodeVol.getVol();
-				// сохранить номер ввода
-				entry = tmpNodeVol.getEntry();
-			}
-			
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
-			// Вариант подразумевает объём по лог.счётчику, НЕ распределённый по дням,
-			// а записанный одной строкой (одним периодом дата нач.-дата кон.)
-			if (serv.getServMet() == null) {
-				throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
-			}
-			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
-				// перерасчет
-				vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
-			} else {
-				// получить объем по услуге за период
-				SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), 
-						calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
-				vol = tmpNodeVol.getVol();
-			}
-			// разделить на кол-во дней в месяце, так как получен объем за весь месяц
-			vol = vol / calc.getReqConfig().getCntCurDays();
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
-			vol = 1 / calc.getReqConfig().getCntCurDays();
-		}
-
-		/****************************/
-		// ВЫПОЛНИТЬ РАСЧЕТ
-		/****************************/
-		 if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
-			
-			Optional<ChrgMainServRec> rec;
-			// обязательно синхронизировать (в prepChrgMainServ идёт запись из других потоков)
-			synchronized(prepChrgMainServ) {
-				 rec = prepChrgMainServ.parallelStream().filter(t -> t.getMainServ().equals(serv.getServDep()) && t.getDt().equals(genDt) ).findAny();
-			}
-			if (rec.isPresent()) {
-				// взять сумму в качестве объема, повыш.коэфф в качестве цены (потом занулить объем и цену в методе их умножения)
-				chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, 
-						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, null);
-			}
-			
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d ||
-			Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d ||
-			Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
-			//без соцнормы и свыше!
-			//тип расчета, например:Взносы на капремонт
-			//Вариант подразумевает объём, по параметру - базе, жилого фонда РАСПределённый по дням
-	        //тип расчета, например Х.В.ОДН, Г.В.ОДН, Эл.эн.ОДН
-			chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
-					BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
-			chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
-						BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);			
-		} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
-			//тип расчета, например:Коммерческий найм, где цена = сумме
-			chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
-					BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-		} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
-				   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) {
-			// тип расчета, например:текущее содержание, Х.В., Г.В., Канализ
-			// Вариант подразумевает объём по лог.счётчику, РАСПределённый по дням
-			// или по параметру - базе, жилого фонда, так же распределенного по дням
-			Double absVol= Math.abs(vol);
-
-
-			if (cntPers.cntEmpt != 0) {
-				// есть проживающие
-				// соцнорма
-				if (absVol <= stdt.partVol) {
-					tmpVol= absVol;
-				} else {
-					tmpVol= stdt.partVol;
-				}
-
-				BigDecimal tmpSqr = BigDecimal.ZERO;
-				if ( BigDecimal.valueOf(tmpVol * Math.signum(vol)) != BigDecimal.ZERO &&
-						BigDecimal.valueOf(stPrice) != BigDecimal.ZERO ) {
-					// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
-					tmpSqr = BigDecimal.valueOf(sqr);
-				}
-				if (serv.getId()==32) {
-					//log.info("serv.id={}, vol={}, stPrice={}, stdt.vol={}", serv.getId(), vol, stPrice, stdt.vol);
-				}
-
-				chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(stPrice), 
-								BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpSqr, stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-
-				// выше соцнормы
-				if (tmpSqr == BigDecimal.ZERO && BigDecimal.valueOf(tmpVol * Math.signum(vol)) != BigDecimal.ZERO &&
-						BigDecimal.valueOf(upStPrice) != BigDecimal.ZERO ) {
-					// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
-					tmpSqr = BigDecimal.valueOf(sqr);
-				} else {
-					tmpSqr = BigDecimal.ZERO;
-				}
-				tmpVol = absVol - tmpVol;
-				/*if (serv.getId() == 71) {
-					log.info("свыше dt={}, tmpVol={}", genDt, tmpVol);
-				}*/
-				chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), 
-								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
-								cntPers.cntFact, tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-			} else {
-				// нет проживающих
-				BigDecimal tmpSqr = BigDecimal.ZERO;
-				if (BigDecimal.valueOf(vol) != BigDecimal.ZERO &&
-						BigDecimal.valueOf(woKprPrice) != BigDecimal.ZERO ) {
-					// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
-					tmpSqr = BigDecimal.valueOf(sqr);
-				}
-			
-				if (woKprServ != null) {
-					// если существует услуга "без проживающих"
-					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), 
-								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
-							 	cntPers.cntFact /*здесь не cntEmpt*/, 
-							 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-				} else {
-					// услуги без проживающих не существует, поставить на свыше соц.нормы
-					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), 
-								BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
-								cntPers.cntFact, /*здесь не cntEmpt*/ 
-								tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-				}
-				
-			}
-
-		} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
-			//тип расчета, например:Отопление по Гкал
-			//Вариант подразумевает объём по лог.счётчику, записанный одной строкой, за период
-			//расчет долей соц.нормы и свыше
-			if (sqr > 0d) {
-				if (cntPers.cntEmpt != 0) {	
-					// площадь по норме
-					BigDecimal tmpArea = BigDecimal.ZERO;
-					// площадь св.нормы
-					BigDecimal tmpUpArea = BigDecimal.ZERO;
-					
-					//есть проживающие
-					if (stdt.partVol > sqr) {
-						// соцнорма больше площади
-						tmpArea = BigDecimal.valueOf(sqr);
+				stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
+				// здесь же получить расценки по свыше соц.нормы и без проживающих 
+				if (serv.getServUpst() != null) {
+					if (upStServ.getServPrice() != null) {
+						// указана услуга, откуда взять расценку
+						upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
 					} else {
-						// соцнорма меньше или равна площади
-						tmpArea = BigDecimal.valueOf(stdt.partVol);
+						// не указана услуга, откуда взять расценку
+						upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
 					}
-					tmpUpArea = BigDecimal.valueOf(sqr).subtract(tmpArea);
-					//найти коэфф соц.нормы к площади лиц.сч.
-					cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
-					//соцнорма
-					tmpVolD = BigDecimal.valueOf(vol).multiply(cf);
-					if (!tmpVolD.equals(BigDecimal.ZERO)) {
-						chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
-								tmpArea, stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+						
+					if (upStPrice == null) {
+						upStPrice = 0d;
 					}
-					//свыше соцнормы
-					tmpVolD = BigDecimal.valueOf(vol).subtract(tmpVolD);
-					if (!tmpVolD.equals(BigDecimal.ZERO)) {
-						chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
-								tmpUpArea, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+					
+					if (upStPrice == 0d) {
+						// Добавить ошибку, что отсутствует расценка
+						res.addErr(rqn, 5, kart, serv);
 					}
+					
+				} else {
+					upStPrice = 0d;
+				}
+	
+				if (serv.getServWokpr() != null) {
+					if (woKprServ.getServPrice() != null) {
+						// указана услуга, откуда взять расценку
+						woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
+					} else {
+						// не указана услуга, откуда взять расценку
+						//log.info("Check={}", woKprServ.getId());
+						woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
+					}
+	
+					if (woKprPrice == null) {
+						// Добавить ошибку, что отсутствует расценка
+						res.addErr(rqn, 6, kart, serv);
+						// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
+						if (upStPrice == null || upStPrice == 0d) {
+							woKprPrice = stPrice;
+						} else {
+							woKprPrice = upStPrice;
+						}
+					} else if (woKprPrice == 0d) {
+						// Добавить ошибку, что отсутствует расценка
+						res.addErr(rqn, 6, kart, serv);
+					}
+				} else {
+					woKprPrice = 0d;
+				} 
+			}
+				
+			
+			  // получить организацию
+			  org = kartMng.getOrg(rqn, calc, serv.getServOrg(), genDt);
+			  //log.trace(""sss);
+	  		  if (serv.getCheckOrg()) {
+				  if (org == null) {
+				    throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
+				  } else {
+					  log.trace("Организация по услуге: org.id={}", org.getId());
+				  }
+			}
+			
+	
+			// в случае перерасчета по расценке или по организации, выполнить замену
+			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение расценки (тарифа)") ) {
+				
+				// организация
+				Org chngOrg = getChngOrg(serv.getServOrg(), genDt);
+				if (chngOrg != null) {
+					org = chngOrg; 
+				}
+	
+				// расценка по норме
+				Double chngPrice;
+				if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+					// по этому варианту получить расценку от родительской услуги
+					chngPrice = tarMng.getChngVal(calc, stServ.getServDep(), genDt, "Изменение расценки (тарифа)", 1);
+				} else {
+					// прочие варианты
+					chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+				}
+	
+				if (chngPrice != null) {
+					stPrice = chngPrice; 
+				}
+				
+				// расценка св.нормы
+				chngPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
+				if (chngPrice != null) {
+					upStPrice = chngPrice; 
+				}
+					
+				// расценка без проживающих
+				chngPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
+				if (chngPrice != null) {
+					woKprPrice = chngPrice; 
+				}
+				
+			}
+			
+			Double raisCoeff = 0d;
+			// при отсутствии ПУ и возможности его установки, применить повышающий коэффициент для определённых услуг
+			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
+				if (serv.getServDep()!=null && !metMng.checkExsKartMet(rqn, kart, serv.getServDep(), genDt)) {	
+					// если не установлен счетчик по основной родительской услуге	
+					String parCd = null;
+					if (serv.getCd().equals("ГВС(инд) п.344 РФ")) {
+						parCd = "Возможность установки ИПУ по гор. воде";
+					} else if (serv.getCd().equals("ХВС(инд) п.344 РФ")) {
+						parCd = "Возможность установки ИПУ по хол. воде";
+					} else if (serv.getCd().equals("Эл/эн(инд) п.344 РФ")) {
+						parCd = "Возможность установки ИПУ по эл/эн";
+					}
+					
+					// проверить наличие параметров возможности установки счетчиков
+					if (parCd!= null) {
+						if (parMng.getBool(rqn, kart, parCd, genDt) !=null && parMng.getBool(rqn, kart, parCd, genDt)) {
+							// с возможностью установки счетчика
+							raisCoeff = Utl.nvl(kartMng.getServPropByCD(rqn, calc, serv, "Коэффициент начисления осн.усл.", genDt), 0d);
+						}
+					}
+				}
+			}		
+			
+			// получить базу для начисления
+			baseCD = parMng.getStr(rqn, serv, "Name_CD_par_base_charge");
+			// доля площади в день, для любой услуги, чтобы записать в chrg
+			sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays();
+	
+			// получить объем для начисления
+			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d || 
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
+					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d) {
+				//получить объем одного дня
+				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
+				
+				vol = vol / calc.getReqConfig().getCntCurDays();
+				//проверить по капремонту, чтобы не была квартира муниципальной
+				if (serv.getCd().equals("Взносы на кап.рем.")) {
+					if (tpOwn != null && !(tpOwn.equals("Подсобное помещение") || tpOwn.equals("Приватизированная") || tpOwn.equals("Собственная"))) {
+						//не начислять, выход
+						return;
+					} else {
+						//применить льготу по капремонту по 70 - летним
+						vol = vol * kartMng.getCapPrivs(rqn, calc, kart, genDt);
+					}
+				}
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+				// получить норматив 
+				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+				// объем: норматив * долю площади
+				if (stVol != null) {
+					vol = stVol * sqr;
+					//log.info("vol={} stVol={} sqr={}", vol, stVol, sqr);
+				} else {
+					vol = 0d;
+				}
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
+				//получить объем за месяц
+				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
+				//получить долю объема за день HARD CODE
+				//площадь полива (в доле 1 дня)/100 * 60 дней / 12мес * норматив / среднее кол-во дней в месяце
+				vol = vol/100d*60d/12d*stdt.partVol/30.4d/calc.getReqConfig().getCntCurDays();
+				
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
+					   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
+				
+				
+				// Вариант подразумевает объём по лог.счётчику, Распределённый по дням
+				if (serv.getServMet() == null) {
+					throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
+				}
+				
+	//			if (serv.getId() == 35) {
+					//log.info("check");
+				//}
+				// получить наличие физ.счетчика в данном периоде
+				exsMet = metMng.checkExsKartMet(rqn, kart, serv.getServMet(), genDt);
+				
+				// получить объем по лицевому счету и услуге за ДЕНЬ
+				if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
+					// если перерасчет, то разделить на кол-во дней в месяце, так как передаётся объем за месяц
+					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
+				} else {
+					// обычное начисление
+					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), genDt, genDt);
+					vol = tmpNodeVol.getVol();
+					// сохранить номер ввода
+					entry = tmpNodeVol.getEntry();
+				}
+				
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
+				// Вариант подразумевает объём по лог.счётчику, НЕ распределённый по дням,
+				// а записанный одной строкой (одним периодом дата нач.-дата кон.)
+				if (serv.getServMet() == null) {
+					throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
+				}
+				if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
+					// перерасчет
+					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
+				} else {
+					// получить объем по услуге за период
+					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), 
+							calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
+					vol = tmpNodeVol.getVol();
+				}
+				// разделить на кол-во дней в месяце, так как получен объем за весь месяц
+				vol = vol / calc.getReqConfig().getCntCurDays();
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
+				vol = 1 / calc.getReqConfig().getCntCurDays();
+			}
+	
+			/****************************/
+			// ВЫПОЛНИТЬ РАСЧЕТ
+			/****************************/
+			 if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
+				
+				Optional<ChrgMainServRec> rec;
+				// обязательно синхронизировать (в prepChrgMainServ идёт запись из других потоков)
+				synchronized(prepChrgMainServ) {
+					 rec = prepChrgMainServ.parallelStream().filter(t -> t.getMainServ().equals(serv.getServDep()) && t.getDt().equals(genDt) ).findAny();
+				}
+				if (rec.isPresent()) {
+					// взять сумму в качестве объема, повыш.коэфф в качестве цены (потом занулить объем и цену в методе их умножения)
+					chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, 
+							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, null);
+				}
+				
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d ||
+				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d ||
+				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
+				//без соцнормы и свыше!
+				//тип расчета, например:Взносы на капремонт
+				//Вариант подразумевает объём, по параметру - базе, жилого фонда РАСПределённый по дням
+		        //тип расчета, например Х.В.ОДН, Г.В.ОДН, Эл.эн.ОДН
+				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
+						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+				chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
+							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);			
+			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
+				//тип расчета, например:Коммерческий найм, где цена = сумме
+				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
+						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
+					   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) {
+				// тип расчета, например:текущее содержание, Х.В., Г.В., Канализ
+				// Вариант подразумевает объём по лог.счётчику, РАСПределённый по дням
+				// или по параметру - базе, жилого фонда, так же распределенного по дням
+				Double absVol= Math.abs(vol);
+	
+	
+				if (cntPers.cntEmpt != 0) {
+					// есть проживающие
+					// соцнорма
+					if (absVol <= stdt.partVol) {
+						tmpVol= absVol;
+					} else {
+						tmpVol= stdt.partVol;
+					}
+	
+					BigDecimal tmpSqr = BigDecimal.ZERO;
+					if ( BigDecimal.valueOf(tmpVol * Math.signum(vol)) != BigDecimal.ZERO &&
+							BigDecimal.valueOf(stPrice) != BigDecimal.ZERO ) {
+						// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
+						tmpSqr = BigDecimal.valueOf(sqr);
+					}
+					if (serv.getId()==32) {
+						//log.info("serv.id={}, vol={}, stPrice={}, stdt.vol={}", serv.getId(), vol, stPrice, stdt.vol);
+					}
+	
+					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(stPrice), 
+									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpSqr, stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+	
+					// выше соцнормы
+					if (tmpSqr == BigDecimal.ZERO && BigDecimal.valueOf(tmpVol * Math.signum(vol)) != BigDecimal.ZERO &&
+							BigDecimal.valueOf(upStPrice) != BigDecimal.ZERO ) {
+						// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
+						tmpSqr = BigDecimal.valueOf(sqr);
+					} else {
+						tmpSqr = BigDecimal.ZERO;
+					}
+					tmpVol = absVol - tmpVol;
+					/*if (serv.getId() == 71) {
+						log.info("свыше dt={}, tmpVol={}", genDt, tmpVol);
+					}*/
+					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), 
+									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
+									cntPers.cntFact, tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+				} else {
+					// нет проживающих
+					BigDecimal tmpSqr = BigDecimal.ZERO;
+					if (BigDecimal.valueOf(vol) != BigDecimal.ZERO &&
+							BigDecimal.valueOf(woKprPrice) != BigDecimal.ZERO ) {
+						// записать площадь только в одну из услуг, по норме или свыше, где есть объем и цена!
+						tmpSqr = BigDecimal.valueOf(sqr);
+					}
+				
+					if (woKprServ != null) {
+						// если существует услуга "без проживающих"
+						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), 
+									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
+								 	cntPers.cntFact /*здесь не cntEmpt*/, 
+								 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+					} else {
+						// услуги без проживающих не существует, поставить на свыше соц.нормы
+						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), 
+									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
+									cntPers.cntFact, /*здесь не cntEmpt*/ 
+									tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+					}
+					
+				}
+	
+			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
+				//тип расчета, например:Отопление по Гкал
+				//Вариант подразумевает объём по лог.счётчику, записанный одной строкой, за период
+				//расчет долей соц.нормы и свыше
+				if (sqr > 0d) {
+					if (cntPers.cntEmpt != 0) {	
+						// площадь по норме
+						BigDecimal tmpArea = BigDecimal.ZERO;
+						// площадь св.нормы
+						BigDecimal tmpUpArea = BigDecimal.ZERO;
+						
+						//есть проживающие
+						if (stdt.partVol > sqr) {
+							// соцнорма больше площади
+							tmpArea = BigDecimal.valueOf(sqr);
+						} else {
+							// соцнорма меньше или равна площади
+							tmpArea = BigDecimal.valueOf(stdt.partVol);
+						}
+						tmpUpArea = BigDecimal.valueOf(sqr).subtract(tmpArea);
+						//найти коэфф соц.нормы к площади лиц.сч.
+						cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+						//соцнорма
+						tmpVolD = BigDecimal.valueOf(vol).multiply(cf);
+						if (!tmpVolD.equals(BigDecimal.ZERO)) {
+							chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
+									tmpArea, stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+						}
+						//свыше соцнормы
+						tmpVolD = BigDecimal.valueOf(vol).subtract(tmpVolD);
+						if (!tmpVolD.equals(BigDecimal.ZERO)) {
+							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
+									tmpUpArea, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+						}
+					} else {
+						//нет проживающих
+						if (woKprServ != null) {
+							//если есть услуга "без проживающих"
+							tmpVolD = BigDecimal.valueOf(vol);
+							chStore.addChrg(tmpVolD, BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
+									BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+						} else {
+							//если нет услуги "без проживающих", взять расценку, по услуге свыше соц.нормы
+							tmpVolD = BigDecimal.valueOf(vol);
+							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
+									BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+						}
+						
+					}
+				}
+			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
+				
+				if (cntPers.cntEmpt != 0) {
+					//есть проживающие
+					//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(stPrice) );
+					//addChrg(kart, serv, tmpSum, vol, stPrice, genDt, chrgTpDet);
+					chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
+							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
 				} else {
 					//нет проживающих
-					if (woKprServ != null) {
-						//если есть услуга "без проживающих"
-						tmpVolD = BigDecimal.valueOf(vol);
-						chStore.addChrg(tmpVolD, BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
-								BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-					} else {
-						//если нет услуги "без проживающих", взять расценку, по услуге свыше соц.нормы
-						tmpVolD = BigDecimal.valueOf(vol);
-						chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
-								BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-					}
-					
-				}
+					//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(woKprPrice) );
+					//addChrg(kart, serv, tmpSum, vol, woKprPrice, genDt, chrgTpDet);
+					chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
+							BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+				}			
+				
 			}
-		} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
-			
-			if (cntPers.cntEmpt != 0) {
-				//есть проживающие
-				//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(stPrice) );
-				//addChrg(kart, serv, tmpSum, vol, stPrice, genDt, chrgTpDet);
-				chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
-						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-			} else {
-				//нет проживающих
-				//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(woKprPrice) );
-				//addChrg(kart, serv, tmpSum, vol, woKprPrice, genDt, chrgTpDet);
-				chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
-						BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
-			}			
-			
+			endTime   = System.currentTimeMillis();
+			totalTime = endTime - startTime2;
+			if (totalTime >10) {
+			  log.trace("ВРЕМЯ НАЧИСЛЕНИЯ по дате "+genDt.toLocaleString()+" услуге:"+totalTime);
+			}
 		}
-		endTime   = System.currentTimeMillis();
-		totalTime = endTime - startTime2;
-		if (totalTime >10) {
-		  log.trace("ВРЕМЯ НАЧИСЛЕНИЯ по дате "+genDt.toLocaleString()+" услуге:"+totalTime);
-		}
-		
 	}
 	
 	/**

@@ -570,126 +570,130 @@ public class BillingController {
 			@RequestParam(value = "dt2", defaultValue = "", required = false) String genDt2,
 			@RequestParam(value = "user", defaultValue = "", required = false) String user
 			) {
-		
 		log.info("GOT /chrglsk with: lsk={}, dist={}, tp={}, chngId={}, dt1={}, dt2={}", lsk,
 				dist, tp, chngId, genDt1, genDt2);
-		
-		if (!checkDate(genDt1, genDt2)) {
-			log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
-			return "ERROR IN DATES";
-		}
-		
-		// получить уникальный номер запроса
-		int rqn = config.incNextReqNum();
-
-		log.info("RQN={}, user={}", rqn, user);
-		long beginTime = System.currentTimeMillis();
-
-		// получить доступ к лиц.счету
-		int i = 0;
-		while (!config.checkLsk(lsk)) {
-			i++;
-			if (i > 100) {
-				/*log.info(
-						"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ! /chrglsk with: lsk={}",
-						lsk);
-				log.info(
-						"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ ЛС В ТЕЧЕНИИ 10 сек! /chrglsk with: lsk={}",
-						lsk);*/
-				i = 0;
+		if (!config.getIsRestrictChrgLsk()) {
+			
+			if (!checkDate(genDt1, genDt2)) {
+				log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
+				return "ERROR IN DATES";
 			}
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return "ERROR";
-			}
-		}
-
-		Future<Result> fut;
-
-		// если пустой ID перерасчета
-		Integer chId = null;
-		if (chngId.length() != 0 && chngId != null) {
-			log.info("chngId={}", chngId);
-			chId = Integer.valueOf(chngId);
-		}
-
-		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-		long endTime1 = System.currentTimeMillis() - beginTime;
-		beginTime = System.currentTimeMillis();
-
-		reqConfig.setUp(config, dist, tp, chId, rqn, genDt1, genDt2);
-
-		long endTime2 = System.currentTimeMillis() - beginTime;
-		beginTime = System.currentTimeMillis();
-
-		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
-		// Расчет начисления
-		fut = billServ.chrgLsk(reqConfig, null, lsk);
-
-		long endTime3 = System.currentTimeMillis() - beginTime; // время
-																// инициализации
-																// billServ bean
-		beginTime = System.currentTimeMillis();
-
-		// ждать окончание потока
-		try {
-			fut.get();
-		} catch (InterruptedException | ExecutionException e1) {
-			e1.printStackTrace();
-			log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
-			config.unCheckLsk(lsk); // снять лицевой с обработки
-			log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
-			return "ERROR";
-		}
-
-		long endTime4 = System.currentTimeMillis() - beginTime;
-
-		log.info(
-				"TIMING: доступ.к л.с.={}, конфиг={}, инит. bean={}, расчет={}",
-				endTime1, endTime2, endTime3, endTime4);
-
-		try {
-			if (fut.get().getErr() == 0) {
-				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
-				config.unCheckLsk(lsk); // снять лицевой с обработки
-				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
-				log.info("OK /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
-						lsk, dist, tp, chngId);
-				// Создать и отправить список некритических ошибок, если есть
-				String msg = "";
-				log.info("size err={}", fut.get().getLstErr().size());
-				for (Result.Err t: fut.get().getLstErr()) {
-					msg = msg.concat("Услуга:"+t.getServ().getName()+", "+t.getErrMsg()+"; ");
-					log.info("msg={}", msg);
+			
+			// получить уникальный номер запроса
+			int rqn = config.incNextReqNum();
+	
+			log.info("RQN={}, user={}", rqn, user);
+			long beginTime = System.currentTimeMillis();
+	
+			// получить доступ к лиц.счету
+			int i = 0;
+			while (!config.checkLsk(lsk)) {
+				i++;
+				if (i > 100) {
+					/*log.info(
+							"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ! /chrglsk with: lsk={}",
+							lsk);
+					log.info(
+							"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ ЛС В ТЕЧЕНИИ 10 сек! /chrglsk with: lsk={}",
+							lsk);*/
+					i = 0;
 				}
-				return "OK"+(msg.equals("") ? "" : ":"+msg);
-			} else {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					return "ERROR";
+				}
+			}
+	
+			Future<Result> fut;
+	
+			// если пустой ID перерасчета
+			Integer chId = null;
+			if (chngId.length() != 0 && chngId != null) {
+				log.info("chngId={}", chngId);
+				chId = Integer.valueOf(chngId);
+			}
+	
+			RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
+			long endTime1 = System.currentTimeMillis() - beginTime;
+			beginTime = System.currentTimeMillis();
+	
+			reqConfig.setUp(config, dist, tp, chId, rqn, genDt1, genDt2);
+	
+			long endTime2 = System.currentTimeMillis() - beginTime;
+			beginTime = System.currentTimeMillis();
+	
+			BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
+			// Расчет начисления
+			fut = billServ.chrgLsk(reqConfig, null, lsk);
+	
+			long endTime3 = System.currentTimeMillis() - beginTime; // время
+																	// инициализации
+																	// billServ bean
+			beginTime = System.currentTimeMillis();
+	
+			// ждать окончание потока
+			try {
+				fut.get();
+			} catch (InterruptedException | ExecutionException e1) {
+				e1.printStackTrace();
 				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
 				config.unCheckLsk(lsk); // снять лицевой с обработки
 				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
-				log.info(
-						"ERROR /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
-						lsk, dist, tp, chngId);
 				return "ERROR";
 			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
-			config.unCheckLsk(lsk); // снять лицевой с обработки
-			log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
-			return "ERROR";
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
-			config.unCheckLsk(lsk); // снять лицевой с обработки
-			log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+	
+			long endTime4 = System.currentTimeMillis() - beginTime;
+	
+			log.info(
+					"TIMING: доступ.к л.с.={}, конфиг={}, инит. bean={}, расчет={}",
+					endTime1, endTime2, endTime3, endTime4);
+	
+			try {
+				if (fut.get().getErr() == 0) {
+					log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
+					config.unCheckLsk(lsk); // снять лицевой с обработки
+					log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+					log.info("OK /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
+							lsk, dist, tp, chngId);
+					// Создать и отправить список некритических ошибок, если есть
+					String msg = "";
+					log.info("size err={}", fut.get().getLstErr().size());
+					for (Result.Err t: fut.get().getLstErr()) {
+						msg = msg.concat("Услуга:"+t.getServ().getName()+", "+t.getErrMsg()+"; ");
+						log.info("msg={}", msg);
+					}
+					return "OK"+(msg.equals("") ? "" : ":"+msg);
+				} else {
+					log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
+					config.unCheckLsk(lsk); // снять лицевой с обработки
+					log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+					log.info(
+							"ERROR /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
+							lsk, dist, tp, chngId);
+					return "ERROR";
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
+				config.unCheckLsk(lsk); // снять лицевой с обработки
+				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+				return "ERROR";
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
+				config.unCheckLsk(lsk); // снять лицевой с обработки
+				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+				return "ERROR";
+			}
+		} else {
+			// запрещено формировать начисление по лиц.счету, если формируется глобальное начисление
+			log.info("ЗАПРЕЩЕНО распределять объемы и формировать начисление по лиц.счету, если формируется глобальное начисление");
 			return "ERROR";
 		}
-
 	}
 
 	@RequestMapping("/chrgall")
@@ -705,6 +709,8 @@ public class BillingController {
 
 		log.info("GOT /chrgall with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}, isAutoChrg={}", houseId,
 				dist, areaId, genDt1, genDt2, isAutoChrg);
+		// запретить другим процессам формировать начисление по лиц.счетам
+		config.setIsRestrictChrgLsk(true);
 		
 		if (!checkDate(genDt1, genDt2)) {
 			log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
@@ -761,6 +767,9 @@ public class BillingController {
 			}
 		}
 			
+		// разрешить другим процессам формировать начисление по лиц.счетам
+		config.setIsRestrictChrgLsk(false);
+
 		return retStr;
 
 	}

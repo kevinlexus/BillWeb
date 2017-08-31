@@ -38,6 +38,7 @@ import com.ric.bill.Config;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Result;
 import com.ric.bill.Utl;
+import com.ric.bill.dao.AreaDAO;
 import com.ric.bill.dto.AddrTpDTO;
 import com.ric.bill.dto.AreaDTO;
 import com.ric.bill.dto.DTOBuilder;
@@ -58,6 +59,7 @@ import com.ric.bill.mm.ReportMng;
 import com.ric.bill.mm.SecMng;
 import com.ric.bill.mm.ServMng;
 import com.ric.bill.mm.TarifMng;
+import com.ric.bill.model.ar.Area;
 import com.ric.bill.model.bs.PeriodReports;
 import com.ric.bill.model.fn.Payord;
 import com.ric.bill.model.fn.PayordCmp;
@@ -94,6 +96,8 @@ public class BillingController {
 	private DTOBuilder dtoBuilder;
 	@Autowired
 	private SecMng secMng;
+	@Autowired
+	private AreaDAO areaDao;
 	@Autowired
 	private ReportMng repMng;	
 	@Autowired
@@ -506,7 +510,7 @@ public class BillingController {
 	@ResponseBody
 	public List<AreaDTO> getAreaAll() {
 		log.info("GOT /base/getAreaAll");
-		return dtoBuilder.getAreaDTOLst(lstMng.getAreaAll());
+		return dtoBuilder.getAreaDTOLst(areaDao.getAllHaveKlsk());
 	}
 
 	private Boolean checkDate(String genDt1, String genDt2) {
@@ -717,33 +721,48 @@ public class BillingController {
 		reqConfig.setUp(config, dist, "0", null, rqn, genDt1, genDt2);
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
-		fut = billServ.chrgAll(reqConfig, houseId, areaId);
+		String retStr = null;
+		for (Area area : areaDao.getAllHaveKlsk()) {
+			log.info("Выполняется начисление в Area.id={}, Area.Name={}", area.getId(), area.getName());
+			fut = billServ.chrgAll(reqConfig, houseId, area.getId());
 
-		while (!fut.isDone()) {
+			while (!fut.isDone()) {
+				try {
+					Thread.sleep(100);
+					// 100-millisecond Задержка
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 			try {
-				Thread.sleep(100);
-				// 100-millisecond Задержка
+				if (fut.get().getErr() == 0) {
+					log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+					retStr = "OK";
+				} else {
+					retStr = "ERROR";
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				retStr = "ERROR";
+				//return "ERROR";
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				retStr = "ERROR";
 			}
-		}
 
-		try {
-			if (fut.get().getErr() == 0) {
-				return "OK";
-			} else {
-				return "ERROR";
+			if (retStr.equals("ERROR")) {
+				log.info("Начисление выполнено с ОШИБКОЙ, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+				// Выйти из цикла
+				break;
 			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return "ERROR";
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return "ERROR";
 		}
+			
+		return retStr;
+
 	}
 
 }

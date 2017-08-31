@@ -142,7 +142,7 @@ public class BillServ {
 		}
 
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
-		if (res.getErr() !=0) {
+		if (res.getErr() ==0) {
 			long startTime3 = System.currentTimeMillis();
 			// загрузить все необходимые Лиц.счета
 			kartThr = kartMng.findAll(houseId, areaId, config.getCurDt1());

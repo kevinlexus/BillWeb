@@ -1,9 +1,6 @@
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -13,23 +10,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.ric.bill.BillServ;
-import com.ric.bill.Calc;
-import com.ric.bill.Config;
-import com.ric.bill.RequestConfig;
-import com.ric.bill.Utl;
-import com.ric.bill.excp.WrongDate;
 import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.MeterLogMng;
-import com.ric.bill.mm.ObjMng;
-import com.ric.bill.mm.ParMng;
-import com.ric.bill.mm.PayordMng;
-import com.ric.bill.mm.SecMng;
-import com.ric.bill.model.exs.UlistTp;
 import com.ric.bill.model.tr.Serv;
 import com.ric.web.AppConfig;
 

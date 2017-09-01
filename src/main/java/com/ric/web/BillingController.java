@@ -1,14 +1,11 @@
 package com.ric.web;
 
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
@@ -510,7 +507,7 @@ public class BillingController {
 	@ResponseBody
 	public List<AreaDTO> getAreaAll() {
 		log.info("GOT /base/getAreaAll");
-		return dtoBuilder.getAreaDTOLst(areaDao.getAllHaveKlsk());
+		return dtoBuilder.getAreaDTOLst(areaDao.getAllHaveKlsk(null));
 	}
 
 	private Boolean checkDate(String genDt1, String genDt2) {
@@ -728,8 +725,9 @@ public class BillingController {
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 		String retStr = null;
-		for (Area area : areaDao.getAllHaveKlsk()) {
-			log.info("Выполняется начисление в Area.id={}, Area.Name={}", area.getId(), area.getName());
+		if (areaId != null || areaId == null && houseId == null) {
+		for (Area area : areaDao.getAllHaveKlsk(areaId)) {
+			log.info("Выполняется начисление и распределение объемов в Area.id={}, Area.Name={}", area.getId(), area.getName());
 			fut = billServ.chrgAll(reqConfig, houseId, area.getId());
 
 			while (!fut.isDone()) {
@@ -744,7 +742,7 @@ public class BillingController {
 			
 			try {
 				if (fut.get().getErr() == 0) {
-					log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
 					retStr = "OK";
 				} else {
 					retStr = "ERROR";
@@ -753,7 +751,6 @@ public class BillingController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				retStr = "ERROR";
-				//return "ERROR";
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -761,12 +758,47 @@ public class BillingController {
 			}
 
 			if (retStr.equals("ERROR")) {
-				log.info("Начисление выполнено с ОШИБКОЙ, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+				log.info("Начисление и распределение объемов выполнено с ОШИБКОЙ, в Area.id={}, Area.Name={}", area.getId(), area.getName());
 				// Выйти из цикла
 				break;
 			}
 		}
+		} else if (houseId != null) {
 			
+			log.info("Выполняется начисление и распределение объемов в House.id={}", houseId);
+			fut = billServ.chrgAll(reqConfig, houseId, null);
+
+			while (!fut.isDone()) {
+				try {
+					Thread.sleep(100);
+					// 100-millisecond Задержка
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			try {
+				if (fut.get().getErr() == 0) {
+				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+					retStr = "OK";
+				} else {
+					retStr = "ERROR";
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				retStr = "ERROR";
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				retStr = "ERROR";
+			}
+
+			if (retStr.equals("ERROR")) {
+				log.info("Начисление выполнено с ОШИБКОЙ, в House.id={}", houseId);
+			}
+		}
 		// разрешить другим процессам формировать начисление по лиц.счетам
 		config.setIsRestrictChrgLsk(false);
 

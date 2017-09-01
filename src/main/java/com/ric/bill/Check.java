@@ -1,7 +1,6 @@
 package com.ric.bill;
 
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
 //@Service

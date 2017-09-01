@@ -1,8 +1,3 @@
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -19,13 +14,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ric.bill.BillServ;
-import com.ric.bill.Calc;
 import com.ric.bill.Config;
-import com.ric.bill.DistServ;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Result;
 import com.ric.bill.mm.ParMng;
-import com.ric.bill.model.fn.Chng;
 import com.ric.web.AppConfig;
 
 @RunWith(SpringJUnit4ClassRunner.class)

@@ -16,7 +16,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.ric.bill.BillServ;
-import com.ric.bill.Calc;
 import com.ric.bill.Config;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Utl;

@@ -1,8 +1,6 @@
 package com.ric.bill;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -22,18 +20,13 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.excp.ErrorWhileDist;
-import com.ric.bill.excp.WrongSetMethod;
 import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
-import com.ric.bill.mm.PayordMng;
 import com.ric.bill.model.ar.Kart;
-import com.ric.bill.model.bs.Dw;
-import com.ric.bill.model.bs.Obj;
 
 /**
  * Главный сервис биллинга

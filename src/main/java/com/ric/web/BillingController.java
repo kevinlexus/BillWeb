@@ -48,6 +48,7 @@ import com.ric.bill.dto.PayordGrpDTO;
 import com.ric.bill.dto.PeriodReportsDTO;
 import com.ric.bill.dto.RepItemDTO;
 import com.ric.bill.dto.ServDTO;
+import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.WrongDate;
 import com.ric.bill.mm.LstMng;
 import com.ric.bill.mm.OrgMng;
@@ -222,7 +223,14 @@ public class BillingController {
 		List<PayordFlow> lst2 = new ArrayList<PayordFlow>();
 		
 		// добавить созданные группы платежек в коллекцию
-		lst.stream().forEach(t -> lst2.add( payordMng.addPayordFlowDto(t)) );
+		lst.stream().forEach(t -> {
+			try {
+				lst2.add( payordMng.addPayordFlowDto(t));
+			} catch (EmptyStorable e) {
+				// TODO Сделать обработку Exception!
+				e.printStackTrace();
+			}
+		} );
 		// обновить группы платежки из базы
 		lst2.stream().forEach(t -> payordMng.refreshPayordFlow(t) );
 		
@@ -547,12 +555,18 @@ public class BillingController {
 			) {
 		
 		log.info("GOT /genPayord with: genDt={}, isFinal={}, isEndMonth={}", genDt, isFinal, isEndMonth);
-		Date dt = Utl.getDateFromStr(genDt);
+		Date dt = null;
+		if (genDt != null &&genDt != "") {
+			dt = Utl.getDateFromStr(genDt);
+		}
 		try {
 			payordMng.genPayord(dt, isFinal, isEndMonth);
 		} catch (WrongDate | ParseException e) {
 			e.printStackTrace();
 			// TODO сделать возврат ошибки!
+		} catch (EmptyStorable e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -616,7 +630,14 @@ public class BillingController {
 			long endTime1 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
 	
-			reqConfig.setUp(config, dist, tp, chId, rqn, genDt1, genDt2);
+			Date dt1 = null;
+			Date dt2 = null;
+			if (genDt1!=null && genDt1.length() !=0 && genDt2!=null && genDt2.length() !=0) {
+				dt1 = Utl.getDateFromStr(genDt1); 
+				dt2 = Utl.getDateFromStr(genDt2); 
+			}
+			
+			reqConfig.setUp(config, dist, tp, chId, rqn, dt1, dt2);
 	
 			long endTime2 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
@@ -721,7 +742,7 @@ public class BillingController {
 		Future<Result> fut = null;
 
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-		reqConfig.setUp(config, dist, "0", null, rqn, genDt1, genDt2);
+		reqConfig.setUp(config, dist, "0", null, rqn, Utl.getDateFromStr(genDt1), Utl.getDateFromStr(genDt2));
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 		String retStr = null;

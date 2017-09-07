@@ -19,6 +19,7 @@ import com.ric.bill.BillServ;
 import com.ric.bill.Config;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Utl;
+import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.WrongDate;
 import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
@@ -49,7 +50,7 @@ public class testWork {
 	private Config config;
 	
     @Test
-	public void mainWork() {
+	public void mainWork() throws EmptyStorable {
 		log.info("Test start");
 
 		System.out.println(Utl.ltrim("0000025", "0"));
@@ -59,7 +60,7 @@ public class testWork {
 		}
 		
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-		reqConfig.setUp(config, "0", "0", null, 1, "", "");
+		reqConfig.setUp(config, "0", "0", null, 1, null, null);
 
 		PayordMng pm = ctx.getBean(PayordMng.class);
 		

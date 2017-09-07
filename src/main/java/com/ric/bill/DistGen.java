@@ -572,7 +572,7 @@ public class DistGen {
 	 * @param genDt - дата расчета
 	 * @return - найденный объем
 	 */
-	@Cacheable(cacheNames="rrr3", key="{ #id, #tp, #genDt }")
+	@Cacheable(cacheNames="DistGen.findLstCheck", key="{ #id, #tp, #genDt }")
 	private NodeVol findLstCheck(int id, int tp, Date genDt) { //TODO переделать на ParallelStream Java 8!!!
 		Optional<Check> nv = lstCheck.parallelStream().filter(t -> t.getId()==id && t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
 		if (nv.isPresent()) {

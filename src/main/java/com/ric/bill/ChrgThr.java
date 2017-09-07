@@ -334,21 +334,16 @@ public class ChrgThr {
 	
 			// получить расценку по норме	
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-				// по этому варианту получить расценку от родительской услуги, умножить на норматив, округлить
+				// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
 				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
 				if (stServ.getServPrice()==null) {
-					// если пуста родительская услуга, получить из текущей услуги 
+					// если пуста услуга по которой хранится расценка, получить из текущей услуги - по нормативу
 					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
 				} else {
-					// получить расценку от родительской услуги
+					// получить расценку от услуги по которой хранится расценка
 					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
 				}
 	
-				if (stPrice == null) {
-					// если пустая расценка в родительской услуге, получить из текущей услуги 
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-				}
-				
 				// если пуст один из параметров - занулить все, чтобы не было exception
 				if (stPrice == null || stVol == null) {
 					stPrice = 0d;
@@ -456,7 +451,7 @@ public class ChrgThr {
 			}
 			
 	
-			// в случае перерасчета по расценке или по организации, выполнить замену
+			// в случае перерасчета по расценке или по организации, выполнить их замену 
 			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение расценки (тарифа)") ) {
 				
 				// организация
@@ -468,27 +463,94 @@ public class ChrgThr {
 				// расценка по норме
 				Double chngPrice;
 				if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-					// по этому варианту получить расценку от родительской услуги
-					chngPrice = tarMng.getChngVal(calc, stServ.getServDep(), genDt, "Изменение расценки (тарифа)", 1);
+					// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
+					Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+					if (stServ.getServPrice()==null) {
+						// если пуста услуга по которой хранится расценка, получить из текущей услуги - по нормативу
+						chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+						if (chngPrice == null) {
+							// если не найдена расценка в перерасчете, поставить из тарифа 
+							chngPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+						}
+					} else {
+						// получить расценку от услуги по которой хранится расценка
+						chngPrice = tarMng.getChngVal(calc, stServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
+						if (chngPrice == null) {
+							// если не найдена расценка в перерасчете, поставить из тарифа 
+							chngPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+						}
+					}
+		
+					// если пуст один из параметров - занулить все, чтобы не было exception
+					if (chngPrice == null || stVol == null) {
+						chngPrice = 0d;
+						stVol = 0d;
+					} else {
+						// округлить
+						chngPrice= Math.round (chngPrice * stVol * 100.0) / 100.0;
+					}
+					
+					
 				} else {
-					// прочие варианты
-					chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+					// прочие варианты (здесь точно должна быть расценка, иначе нет смысла в перерасчете)
+					if (stServ.getServPrice() != null) {
+						// указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, stServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
+					} else {
+						// не указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+					}
 				}
 	
 				if (chngPrice != null) {
 					stPrice = chngPrice; 
 				}
 				
+				//log.info("Serv.id={}, upStServ={}", serv.getId(), upStServ);
 				// расценка св.нормы
-				chngPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
-				if (chngPrice != null) {
-					upStPrice = chngPrice; 
+				if (serv.getServUpst() != null) {
+					if (upStServ.getServPrice() != null) {
+						// указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, upStServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
+					} else {
+						// не указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
+					}
+					if (chngPrice != null) {
+						upStPrice = chngPrice; 
+					} else {
+						// если не найдена расценка в перерасчете, поставить из тарифа 
+						if (upStServ.getServPrice() != null) {
+							// указана услуга, откуда взять расценку
+							upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
+						} else {
+							// не указана услуга, откуда взять расценку
+							upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
+						}
+					}
 				}
-					
+				
 				// расценка без проживающих
-				chngPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
-				if (chngPrice != null) {
-					woKprPrice = chngPrice; 
+				if (serv.getServWokpr() != null) {
+					if (woKprServ.getServPrice() != null) {
+						// указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, woKprServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
+					} else {
+						// не указана услуга, откуда взять расценку
+						chngPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
+					}
+					if (chngPrice != null) {
+						woKprPrice = chngPrice; 
+					} else {
+						// если не найдена расценка в перерасчете, поставить из тарифа 
+						if (woKprServ.getServPrice() != null) {
+							// указана услуга, откуда взять расценку
+							woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
+						} else {
+							// не указана услуга, откуда взять расценку
+							woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
+						}
+					}
 				}
 				
 			}

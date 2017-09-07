@@ -103,7 +103,7 @@ public class BillServ {
 	 * @return
 	 */
 	@Async
-	@CacheEvict(value = { "rrr1", "rrr2", "rrr3" }, allEntries = true)
+	@CacheEvict(value = {"MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd", "ParDAOImpl.checkPar", "rrr1" }, allEntries = true)
 	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId) {
 		// Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 		// Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);

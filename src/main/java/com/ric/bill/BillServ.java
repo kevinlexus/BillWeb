@@ -104,7 +104,7 @@ public class BillServ {
 	 */
 	@Async
 	@CacheEvict(value = {"MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd", "ParDAOImpl.checkPar", "rrr1" }, allEntries = true)
-	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId) {
+	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId, Integer tempLskId) {
 		// Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 		// Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);
 		Result res = new Result();
@@ -126,7 +126,7 @@ public class BillServ {
 		try {
 			if (reqConfig.getIsDist()) {
 				Calc calc = new Calc(reqConfig);
-					distServ.distAll(calc, houseId, areaId);
+					distServ.distAll(calc, houseId, areaId, tempLskId);
 				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {
@@ -138,7 +138,7 @@ public class BillServ {
 		if (res.getErr() ==0) {
 			long startTime3 = System.currentTimeMillis();
 			// загрузить все необходимые Лиц.счета
-			kartThr = kartMng.findAll(houseId, areaId, config.getCurDt1());
+			kartThr = kartMng.findAll(houseId, areaId, tempLskId, config.getCurDt1());
 			cntLsk = kartThr.size();
 			// флаг ошибки, произошедшей в потоке
 			errThread = false;
@@ -234,7 +234,7 @@ public class BillServ {
 			log.info("Counted lsk:" + cntLsk, 2);
 			log.info("Time for all process:" + totalTime, 2);
 			if (cntLsk > 0) {
-				log.info("Time per one Lsk: " + totalTime3 / cntLsk + " ms.", 2);
+				log.info("Time of charging per one Lsk: " + totalTime3 / cntLsk + " ms.", 2);
 			}
 		}
 		return new AsyncResult<Result>(res);

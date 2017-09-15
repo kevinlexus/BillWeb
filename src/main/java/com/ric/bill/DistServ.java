@@ -146,7 +146,7 @@ public class DistServ {
 	 * @throws ErrorWhileDist 
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-    public void distAll(Calc calc, Integer houseId, Integer areaId) throws ErrorWhileDist {
+    public void distAll(Calc calc, Integer houseId, Integer areaId, Integer tempLskId) throws ErrorWhileDist {
 			//distGen = ctx.getBean(DistGen.class);
 			this.calc=calc;
 			int rqn = calc.getReqConfig().getRqn();
@@ -162,7 +162,7 @@ public class DistServ {
 			long startTime;
 			long endTime;
 			long totalTime;
-			for (House o: houseMng.findAll2(houseId, areaId, config.getCurDt1())) {
+			for (House o: houseMng.findAll2(houseId, areaId, tempLskId, config.getCurDt1())) {
 				log.info("ДОМ:"+o.getId());
 				//dist.clearCache();
 				//распределить объемы
@@ -212,7 +212,7 @@ public class DistServ {
 					log.trace("Удаление объема по услуге"+serv.getCd());
 						// тип обработки = 0 - расход
 						calc.setCalcTp(0);
-							delKartServVolTp(rqn, kart, serv);
+						delKartServVolTp(rqn, kart, serv);
 						// тип обработки = 1 - площадь и кол-во прож.
 						calc.setCalcTp(1);
 						delKartServVolTp(rqn, kart, serv);

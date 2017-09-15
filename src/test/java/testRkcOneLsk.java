@@ -49,7 +49,7 @@ public class testRkcOneLsk {
     	Future<Result> fut = null;
 
     	RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-    	reqConfig.setUp(config, "1", "0", null, rqn, null, null); 
+    	reqConfig.setUp(/*config, */ "1", "0", null, rqn, null, null); 
     	
     	fut = billServ.chrgLsk(reqConfig, null, 1083); // FLSK=00001083
     	

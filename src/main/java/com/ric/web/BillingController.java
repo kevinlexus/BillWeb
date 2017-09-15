@@ -584,7 +584,7 @@ public class BillingController {
 		log.info("GOT /chrglsk with: lsk={}, dist={}, tp={}, chngId={}, dt1={}, dt2={}", lsk,
 				dist, tp, chngId, genDt1, genDt2);
 		if (!config.getIsRestrictChrgLsk()) {
-			
+			// Разрешено формировать
 			if (!checkDate(genDt1, genDt2)) {
 				log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
 				return "ERROR IN DATES";
@@ -637,7 +637,7 @@ public class BillingController {
 				dt2 = Utl.getDateFromStr(genDt2); 
 			}
 			
-			reqConfig.setUp(config, dist, tp, chId, rqn, dt1, dt2);
+			reqConfig.setUp(/*config, */dist, tp, chId, rqn, dt1, dt2);
 	
 			long endTime2 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
@@ -719,16 +719,23 @@ public class BillingController {
 			@RequestParam(value = "dist", defaultValue = "0", required = true) String dist,
 			@RequestParam(value = "houseId", defaultValue = "", required = false) Integer houseId,
 			@RequestParam(value = "areaId", defaultValue = "", required = false) Integer areaId,
+			@RequestParam(value = "tempLskId", defaultValue = "", required = false) Integer tempLskId,
 			@RequestParam(value = "dt1", defaultValue = "", required = false) String genDt1,
 			@RequestParam(value = "dt2", defaultValue = "", required = false) String genDt2,
 			@RequestParam(value = "user", defaultValue = "", required = false) String user,
-			@RequestParam(value = "isAutoChrg", defaultValue = "0", required = false) Integer isAutoChrg
+			@RequestParam(value = "restrictChrg", defaultValue = "0", required = false
+			) Integer restrictChrg
 			) {
 
-		log.info("GOT /chrgall with: houseId={}, dist={}, areaId={}, dt1={}, dt2={}, isAutoChrg={}", houseId,
-				dist, areaId, genDt1, genDt2, isAutoChrg);
-		// запретить другим процессам формировать начисление по лиц.счетам
-		config.setIsRestrictChrgLsk(true);
+		log.info("GOT /chrgall with: dist={}, houseId={}, areaId={}, tempLskId={}, dt1={}, dt2={}", dist, houseId,
+				areaId, tempLskId, genDt1, genDt2);
+		if (restrictChrg == 1) {
+			// запретить другим процессам формировать начисление по лиц.счетам
+			config.setIsRestrictChrgLsk(true);
+		} else {
+			// разрешить другим процессам формировать начисление по лиц.счетам
+			config.setIsRestrictChrgLsk(false);
+		}
 		
 		if (!checkDate(genDt1, genDt2)) {
 			log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
@@ -742,14 +749,21 @@ public class BillingController {
 		Future<Result> fut = null;
 
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-		reqConfig.setUp(config, dist, "0", null, rqn, Utl.getDateFromStr(genDt1), Utl.getDateFromStr(genDt2));
+		
+		Date dt1 = null;
+		Date dt2 = null;
+		if (genDt1!=null && genDt1.length() !=0 && genDt2!=null && genDt2.length() !=0) {
+			dt1 = Utl.getDateFromStr(genDt1); 
+			dt2 = Utl.getDateFromStr(genDt2); 
+		}
+		reqConfig.setUp(/*config, */dist, "0", null, rqn, dt1, dt2);
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 		String retStr = null;
-		if (areaId != null || areaId == null && houseId == null) {
+		if (areaId != null || areaId == null && houseId == null && tempLskId == null) {
 		for (Area area : areaDao.getAllHaveKlsk(areaId)) {
 			log.info("Выполняется начисление и распределение объемов в Area.id={}, Area.Name={}", area.getId(), area.getName());
-			fut = billServ.chrgAll(reqConfig, houseId, area.getId());
+			fut = billServ.chrgAll(reqConfig, houseId, area.getId(), null);
 
 			while (!fut.isDone()) {
 				try {
@@ -784,10 +798,13 @@ public class BillingController {
 				break;
 			}
 		}
-		} else if (houseId != null) {
-			
-			log.info("Выполняется начисление и распределение объемов в House.id={}", houseId);
-			fut = billServ.chrgAll(reqConfig, houseId, null);
+		} else if (houseId != null || tempLskId != null) {
+			if (houseId != null) {
+				log.info("Выполняется начисление и распределение объемов в House.id={}", houseId);
+			} else {
+				log.info("Выполняется начисление и распределение объемов по списку лиц.сч. TempLsk.fkId={}", tempLskId);
+			}
+			fut = billServ.chrgAll(reqConfig, houseId, null, tempLskId);
 
 			while (!fut.isDone()) {
 				try {

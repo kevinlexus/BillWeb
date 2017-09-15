@@ -8,7 +8,7 @@ Ext.define('BillWebApp.view.main.Panel2', {
         align: 'stretch'
     },
     width: 1010,
-    minHeight: 900,
+    minHeight: 2000,
     bodyPadding: 10,
     reference: 'panel2',
     controller: 'panel2controller',

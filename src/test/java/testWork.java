@@ -60,7 +60,7 @@ public class testWork {
 		}
 		
 		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-		reqConfig.setUp(config, "0", "0", null, 1, null, null);
+		reqConfig.setUp(/*config, */"0", "0", null, 1, null, null);
 
 		PayordMng pm = ctx.getBean(PayordMng.class);
 		

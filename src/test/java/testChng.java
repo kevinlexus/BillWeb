@@ -63,7 +63,7 @@ public class testChng {
     	Future<Result> fut = null;
 
     	RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-    	reqConfig.setUp(config, "0", "1", 175961, rqn, null, null); 
+    	reqConfig.setUp(/*config, */"0", "1", 175961, rqn, null, null); 
     	
     	
     	fut = billServ.chrgLsk(reqConfig, null, 453194); // FLSK=85020028

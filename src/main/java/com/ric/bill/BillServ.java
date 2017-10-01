@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -80,13 +81,9 @@ public class BillServ {
 		return lst;
 	}
 
-	// флаг ошибки, произошедшей в потоке
-	private static Boolean errThread;
-
 	// Exception из потока
 	Thread.UncaughtExceptionHandler expThr = new Thread.UncaughtExceptionHandler() {
 		public void uncaughtException(Thread th, Throwable ex) {
-			errThread = true;
 			System.out.println("BillServ: Error in thread: " + th.getName()
 					+ " " + ex.getMessage());
 			ex.printStackTrace();
@@ -103,7 +100,15 @@ public class BillServ {
 	 * @return
 	 */
 	@Async
-	@CacheEvict(value = {"MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd", "ParDAOImpl.checkPar", "rrr1" }, allEntries = true)
+	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
+			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
+			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
+			"ParDAOImpl.checkPar", "ServDAOImpl.findMain", "ServDAOImpl.getByCD", "DistGen.findLstCheck", "MeterLogMngImpl.getAllMetLogByServTp", "MeterLogMngImpl.checkExsKartMet",
+			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode", 
+			"MeterLogMngImpl.getKart", "ParMngImpl.isExByCd", "ParMngImpl.getBool1", "ParMngImpl.getBool2", "ParMngImpl.getDbl1", "ParMngImpl.getDbl2", "ParMngImpl.getDate",
+			"ParMngImpl.getStr1", "ParMngImpl.getStr2", "TarifMngImpl.getProp", "TarifDAOImpl.getPropByCD", "VsecDAOImpl.getPrivByUserRoleAct", "LstMngImpl.getByCD",
+			"ServMngImpl.getUpper", "ServMngImpl.getUpperTree", "MeterLogMngImpl.delNodeVol",
+			"rrr1" }, allEntries = true)
 	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId, Integer tempLskId) {
 		// Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 		// Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);
@@ -140,9 +145,6 @@ public class BillServ {
 			// загрузить все необходимые Лиц.счета
 			kartThr = kartMng.findAll(houseId, areaId, tempLskId, config.getCurDt1());
 			cntLsk = kartThr.size();
-			// флаг ошибки, произошедшей в потоке
-			errThread = false;
-	
 			while (true) {
 				log.trace("BillServ.chrgAll: Loading karts for threads");
 				// получить следующие N лиц.счетов, рассчитать их в потоке
@@ -203,7 +205,6 @@ public class BillServ {
 								log.trace("ChrgServ: Done Result.err:="
 										+ fut.get().getErr());
 								if (fut.get().getErr() == 1) {
-									errThread = true;
 								}
 							} catch (InterruptedException | ExecutionException e1) {
 								// TODO Auto-generated catch block
@@ -253,6 +254,15 @@ public class BillServ {
 	 * @throws ErrorWhileChrg
 	 */
 	@Async
+	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
+			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
+			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
+			"ParDAOImpl.checkPar", "ServDAOImpl.findMain", "ServDAOImpl.getByCD", "DistGen.findLstCheck", "MeterLogMngImpl.getAllMetLogByServTp", "MeterLogMngImpl.checkExsKartMet",
+			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode", 
+			"MeterLogMngImpl.getKart", "ParMngImpl.isExByCd", "ParMngImpl.getBool1", "ParMngImpl.getBool2", "ParMngImpl.getDbl1", "ParMngImpl.getDbl2", "ParMngImpl.getDate",
+			"ParMngImpl.getStr1", "ParMngImpl.getStr2", "TarifMngImpl.getProp", "TarifDAOImpl.getPropByCD", "VsecDAOImpl.getPrivByUserRoleAct", "LstMngImpl.getByCD",
+			"ServMngImpl.getUpper", "ServMngImpl.getUpperTree", "MeterLogMngImpl.delNodeVol",
+			"rrr1" }, allEntries = true)
 	public Future<Result> chrgLsk(RequestConfig reqConfig, Kart kart,
 			Integer lsk) {
 		long beginTime = System.currentTimeMillis();
@@ -261,6 +271,8 @@ public class BillServ {
 
 		Result res = new Result();
 		Future<Result> fut = new AsyncResult<Result>(res);
+		// признак распределения по дому (в случае перерасчета по Отоплению)
+		boolean isDistHouse = false;
 
 		res.setErr(0);
 		// Если был передан идентификатор лицевого, то найти лиц.счет
@@ -277,20 +289,38 @@ public class BillServ {
 		calc.setHouse(kart.getKw().getHouse());
 		calc.setKart(kart);
 
-		long endTime1 = System.currentTimeMillis() - beginTime;
 		beginTime = System.currentTimeMillis();
 
-		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
-		if (reqConfig.getIsDist()) {
-			try {
-				distServ.distKartVol(calc);
-			} catch (ErrorWhileDist e) {
-				e.printStackTrace();
-				res.setErr(1);
-				return fut;
+		// установить признак распределения объема по дому
+		if (reqConfig.getOperTp().equals(1)) {
+			// список CD услуг, входящих в перерасчет
+			reqConfig.getChng().getChngLsk().stream().forEach(t->{
+				log.info("check-1={}", t.getId());
+				log.info("check0={}", t.getServ());
+				log.info("check1={}", t.getServ().getId());
+				log.info("check2={}", t.getServ().getCd());
+				
+			});
+			List<String> lstServCd = reqConfig.getChng().getChngLsk().stream().map(t-> t.getServ().getCd()).collect(Collectors.toList());
+			if (lstServCd.contains("Отопление") || lstServCd.contains("Отопление(объем), соц.н.") || 
+					lstServCd.contains("Отопление(объем), св.соц.н.") || lstServCd.contains("Отопление(объем), без прожив.")) {
+				isDistHouse = true;
 			}
-			// присвоить обратно лиц.счет, который мог быть занулён в
-			calc.setKart(kart);
+		}
+		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
+		try {
+			if (isDistHouse == true) {
+				// задано распределить по дому, для перерасчета (например по отоплению, когда поменялась площадь и надо пересчитать гКал)
+				distServ.distAll(calc, calc.getHouse().getId(), null, null);
+			} else if (reqConfig.getIsDist()) {
+				distServ.distKartVol(calc);
+				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах
+				calc.setKart(kart);
+			}
+		} catch (ErrorWhileDist e) {
+			e.printStackTrace();
+			res.setErr(1);
+			return fut;
 		}
 
 		long endTime2 = System.currentTimeMillis() - beginTime;

@@ -29,6 +29,7 @@ import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -289,7 +290,7 @@ public class ChrgServ {
 		while (true) {
 			log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
-			List<Serv> servWork = getNextServ(10);
+			List<Serv> servWork = getNextServ(1); // ограничил 1 потоком (подозрение на нехватку памяти в JVM при начислении многих лс) 
 
 			if (servWork.size()==0) {
 				//выйти, если все услуги обработаны
@@ -302,7 +303,8 @@ public class ChrgServ {
 			for (Serv serv : servWork) {
 					Future<Result> fut = null;
 					ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
- 					chrgThr.set(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
+					
+ 					chrgThr.setUp(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
 			    	try {
 						fut = chrgThr.run1();
 					} catch (EmptyStorable e) {
@@ -367,7 +369,7 @@ public class ChrgServ {
 			return res;
 		}
 		
-		// КОРРЕКЦИЯ на сумму разности между основной и виртуальной услуг
+		// КОРРЕКЦИЯ на сумму разности между основной и виртуальной услугой
 		for (Map.Entry<Serv, BigDecimal> entryVrt : mapVrt.entrySet()) {
 		    Serv servVrt = entryVrt.getKey();
 			//найти сумму, для сравнения, полученную от основных услуг
@@ -392,9 +394,10 @@ public class ChrgServ {
 		}		
 
 		// проверить коллекцию
-		//for (ChrgMainServRec rec : prepChrgMainServ) {
-		//	log.info("CHECK collection: mainServ={}, sum={}, dt={}", rec.getMainServ().getCd(), rec.getSum(), rec.getDt());
-		//}		
+/*		prepChrg.stream().forEach(t->{
+			log.info("*************Check: serv.cd={}, vol={}, area={}, cntPers={}, summa={}, price={}", 
+					t.getServ().getCd(), t.getVol(), t.getArea(), t.getCntFact(), t.getSumAmnt(), t.getPrice());
+		});*/
 		
 		return res;
 	}
@@ -407,6 +410,8 @@ public class ChrgServ {
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void save (Integer lsk) throws ErrorWhileChrg {
+		Utl.logger(false, 28, -1, -1); //###
+
 		long beginTime = System.currentTimeMillis();
 
 		Integer status;
@@ -432,6 +437,8 @@ public class ChrgServ {
 		long endTime1=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
 		
+		Utl.logger(false, 29, -1, -1); //###
+		
 		//ДЕЛЬТА
 		//ПОДГОТОВИТЬСЯ для сохранения дельты
 		//сгруппировать до укрупнённых услуг текущий расчет по debt
@@ -446,6 +453,8 @@ public class ChrgServ {
 			//Сохранить сумму по укрупнённой услуге, для расчета дельты для debt
 			putSumDeb(mapDeb, servMain, chrg.getOrg(), BigDecimal.valueOf(chrg.getSumAmnt()));
 		}
+
+		Utl.logger(false, 30, -1, -1); //###
 
 		long endTime2=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
@@ -468,6 +477,7 @@ public class ChrgServ {
 				putSumDeb(mapDeb, servMain, chrg.getOrg(), BigDecimal.valueOf(-1d * Utl.nvl(chrg.getSumAmnt(), 0d)));
 			}
 		}
+		Utl.logger(false, 31, -1, -1); //###
 		
 		MultiKeyMap mapDebLogAfter = new MultiKeyMap(); // логгинг
 		mapDebLogAfter.putAll(mapDeb);
@@ -498,6 +508,7 @@ public class ChrgServ {
 		query.setParameter("lsk", kart.getLsk());
 		query.setParameter("period", calc.getReqConfig().getPeriod());
 		query.executeUpdate();
+		Utl.logger(false, 32, -1, -1); //###
 		
 		long endTime4=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
@@ -588,7 +599,8 @@ public class ChrgServ {
 			}
 			
 		}
-		
+		Utl.logger(false, 33, -1, -1); //###
+
 		long endTime5=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
 
@@ -600,6 +612,14 @@ public class ChrgServ {
 
 			kart.getChrg().add(chrg2); 
 		}
+		Utl.logger(false, 34, -1, -1); //###
+
+		// Почистить коллекции
+	    prepChrg=null;
+	    prepChrgMainServ=null;
+	    mapServ=null;
+	    mapVrt=null;
+	    servThr=null;
 		
 		long endTime6=System.currentTimeMillis()-beginTime;
 	}

@@ -8,15 +8,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.concurrent.Future;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -38,22 +36,22 @@ import com.ric.bill.model.fn.ChngLsk;
 import com.ric.bill.model.fn.Chrg;
 import com.ric.bill.model.tr.Serv;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * РАСЧЕТ НАЧИСЛЕНИЯ, ВЫЗЫВАЕТСЯ В ПОТОКЕ
+ * РАСЧЕТ НАЧИСЛЕНИЯ ПО УСЛУГЕ, ВЫЗЫВАЕТСЯ В ПОТОКЕ
  * @author lev
  *
  */
 
 
 @Component
-@Scope("prototype") //собственный бин для каждого потока
+@Scope("prototype") //собственный бин для каждого потока по услуге
 @Slf4j
 public class ChrgThr {
 	
 	@Autowired
 	private LstMng lstMng;
-	@Autowired
-	private Config config;
 	@Autowired
 	private ParMng parMng;
 	@Autowired
@@ -64,10 +62,7 @@ public class ChrgThr {
 	@Autowired
 	private MeterLogMng metMng;
 
-	@Autowired
-	private ApplicationContext ctx;
-	
-    @PersistenceContext
+	@PersistenceContext
     private EntityManager em;
 
 	// основная услуга
@@ -102,7 +97,7 @@ public class ChrgThr {
 	 * @param mapVrt   - коллекция для округления
 	 * @param prepChrg - коллекция для сгруппированных записей начисления
 	 */
-	public void set(Calc calc, Serv serv,  
+	public void setUp(Calc calc, Serv serv,  
 			HashMap<Serv, BigDecimal> mapServ, 
 			HashMap<Serv, BigDecimal> mapVrt, 
 			List<Chrg> prepChrg,
@@ -167,11 +162,12 @@ public class ChrgThr {
 					res.addErr(rqn, 4, kart, serv);
 					//log.info("ОШИБКА! Не указанна форма собственности! lsk="+kart.getLsk(), 2);
 				}
-				// где лиц.счет является нежилым помещением, не начислять за данный день
-				if (tpOwn != null && (tpOwn.equals("Нежилое собственное") || tpOwn.equals("Нежилое муниципальное")
+				// где лиц.счет является нежилым помещением, не начислять за данный день - ред.28.09.17 откkючил - решили занулить таким расценки, чтобы оставалась площадь
+				//и гигакаллории по нежилым
+				/*if (tpOwn != null && (tpOwn.equals("Нежилое собственное") || tpOwn.equals("Нежилое муниципальное")
 					|| tpOwn.equals("Аренда некоммерч.") || tpOwn.equals("Для внутр. пользования"))) {
 					continue;
-				}
+				}*/
 					try {
 					  // Расчет начисления по одной услуге и дню
 					  genChrg(calc, serv, tpOwn, genDt);
@@ -189,10 +185,13 @@ public class ChrgThr {
 			}
 			//break;
 		}
-		
+		Utl.logger(false, 25, -1, -1); //###
+
 		// ДОБАВИТЬ сгруппированные по основной услуге суммы начислений
 		chrgMainServAppend(chStore.getStoreMainServ());
 		
+		Utl.logger(false, 26, -1, -1); //###
+
 		// ОКОНЧАТЕЛЬНО рассчитать данные (умножить расценку на объем, округлить)
 		for (ChrgRec rec : chStore.getStore()) {
 			BigDecimal vol, area, sum;
@@ -220,7 +219,9 @@ public class ChrgThr {
 			}
 
 			if (!rec.getServ().getVrt()) {
-				if (sum.compareTo(BigDecimal.ZERO) != 0) {
+				if (sum.compareTo(BigDecimal.ZERO) != 0  ||
+						Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {  
+					// Если сумма <> 0 или по услуге принудительно сохранить объемы при нулевой сумме 	
 					Chrg chrg = new Chrg();
 					try {
 						if (Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
@@ -241,7 +242,16 @@ public class ChrgThr {
 				}
 			}
 		} 
+		Utl.logger(false, 27, -1, -1); //###
 
+		// Почистить коллекции
+		chStore = null;
+	    prepChrg = null;
+	    prepChrgMainServ = null;
+	    mapServ = null;
+	    mapVrt = null;
+
+		
 		Future ar = new AsyncResult<Result>(res);
 		return ar;
 	}
@@ -258,17 +268,19 @@ public class ChrgThr {
 	
 	
 	/**
-	 * РАСЧЕТ начисления по дню
+	 * РАСЧЕТ НАЧИСЛЕНИЯ ПО ДНЮ
 	 * @param serv - услуга
 	 * @throws InvalidServ 
 	 */
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
+
 		//log.info("serv.cd={}", serv.getCd());
 		if (serv.getId()==32) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 
 		Kart kart = calc.getKart();
+		Utl.logger(true, 1, kart.getLsk(), serv.getId());
 		long startTime2;
 		long endTime;
 		long totalTime;
@@ -308,11 +320,21 @@ public class ChrgThr {
 		// Номер ввода
 		Integer entry = null;
 		
+		// признак жилого помещения
+		Boolean isResid = true;
+		if (tpOwn != null && (tpOwn.equals("Нежилое собственное") || tpOwn.equals("Нежилое муниципальное")
+				|| tpOwn.equals("Аренда некоммерч.") || tpOwn.equals("Для внутр. пользования"))) {
+			isResid = false;
+		} else {
+			isResid = true;
+		}
+		
+		Utl.logger(false, 2, kart.getLsk(), serv.getId()); //###
 		// проверить отключение услуги в данном дне (по наличию параметра, а не по его значению)
-		Double swithOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
-		if (swithOff != null) {
+		Double switсhOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
+		if (switсhOff != null) {
 			log.trace("Услуга id={}, cd={}, genDt={} отключена!", serv.getId(), serv.getCd(), genDt);
-		} else if (swithOff == null) {
+		} else if (switсhOff == null) {
 			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 			// получить необходимые подуслуги
 			stServ = serv.getServSt();
@@ -328,10 +350,13 @@ public class ChrgThr {
 					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) && serv.getServUpst() == null) {
 				throw new EmptyStorable("По услуге Id="+serv.getId()+" обнаружена пустая услуга свыше соц.нормы");
 			}
-	
+			Utl.logger(false, 3, kart.getLsk(), serv.getId()); //###
+
 			// Получить кол-во проживающих 
 			kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
 	
+			Utl.logger(false, 4, kart.getLsk(), serv.getId()); //###
+
 			// получить расценку по норме	
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
@@ -363,8 +388,9 @@ public class ChrgThr {
 				}
 			}
 	
+			Utl.logger(false, 5, kart.getLsk(), serv.getId()); //###
 			
-			if (stPrice == null) {
+			if (stPrice == null && isResid) {
 				// Добавить ошибку, что нет расценки по услуге (если это контролируется)
 				res.addErr(rqn, 8, kart, serv);
 				stPrice = 0d;
@@ -401,7 +427,7 @@ public class ChrgThr {
 						upStPrice = 0d;
 					}
 					
-					if (upStPrice == 0d) {
+					if (upStPrice == 0d && isResid) {
 						// Добавить ошибку, что отсутствует расценка
 						res.addErr(rqn, 5, kart, serv);
 					}
@@ -420,7 +446,7 @@ public class ChrgThr {
 						woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
 					}
 	
-					if (woKprPrice == null) {
+					if (woKprPrice == null && isResid) {
 						// Добавить ошибку, что отсутствует расценка
 						res.addErr(rqn, 6, kart, serv);
 						// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
@@ -429,7 +455,7 @@ public class ChrgThr {
 						} else {
 							woKprPrice = upStPrice;
 						}
-					} else if (woKprPrice == 0d) {
+					} else if (woKprPrice == 0d && isResid) {
 						// Добавить ошибку, что отсутствует расценка
 						res.addErr(rqn, 6, kart, serv);
 					}
@@ -437,6 +463,7 @@ public class ChrgThr {
 					woKprPrice = 0d;
 				} 
 			}
+			Utl.logger(false, 6, kart.getLsk(), serv.getId()); //###
 				
 			
 			  // получить организацию
@@ -450,6 +477,7 @@ public class ChrgThr {
 				  }
 			}
 			
+	  		Utl.logger(false, 7, kart.getLsk(), serv.getId()); //###
 	
 			// в случае перерасчета по расценке или по организации, выполнить их замену 
 			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение расценки (тарифа)") ) {
@@ -555,6 +583,8 @@ public class ChrgThr {
 				
 			}
 			
+			Utl.logger(false, 8, kart.getLsk(), serv.getId()); //###
+
 			Double raisCoeff = 0d;
 			// при отсутствии ПУ и возможности его установки, применить повышающий коэффициент для определённых услуг
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
@@ -579,19 +609,57 @@ public class ChrgThr {
 				}
 			}		
 			
+			Utl.logger(false, 9, kart.getLsk(), serv.getId()); //###
+
 			// получить базу для начисления
 			baseCD = parMng.getStr(rqn, serv, "Name_CD_par_base_charge");
+			
+			Utl.logger(false, 10, kart.getLsk(), serv.getId()); //###
+			
 			// доля площади в день, для любой услуги, чтобы записать в chrg
-			sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays();
+			/* ред.28.09.17  СОСТОЯЛСЯ разговор с Дмитрием М. на тему того что почему параметр chng_val.fk_val_tp смотрит на list?
+			 мною было предложено чтобы он смотрел на Par и тогда можно будет переписать получение параметра parMng.getDbl
+			 на то, что он будет проверять наличие перерасчета и брать значение оттуда
+			*/
+			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры")
+					 && calc.getReqConfig().getChng().getServ().equals(serv)
+					) {
+				// Проверить наличие перерасчета по данному параметру
+				OptionalDouble chngSqr = calc.getReqConfig().getChng().getChngLsk().stream()
+						.flatMap(t -> t.getChngVal().stream()
+								.filter(d-> Utl.between(genDt, d.getDtVal1(), d.getDtVal2())) // фильтр по дате 
+								.filter(d -> d.getDtVal1() != null && d.getDtVal2() != null ))  // фильтр по не пустой дате
+								.filter(d -> d.getValTp().getCd().equals("Площадь (м2)")) // фильтр по типу параметра
+								.mapToDouble(d -> Utl.nvl(d.getVal(), 0d)) // преобразовать в массив Double
+								.max(); // макс.значение
+				if (chngSqr.isPresent()) {
+					// значение из перерасчета
+					sqr = chngSqr.getAsDouble();
+					//log.info("******** площадь из перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
+				} else {
+					//получить объем
+					sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d);
+					//log.info("******** 0площадь без перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
+				}
+			} else {
+				//получить объем
+				sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d);
+				//log.info("******** площадь без перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
+			}
+			Utl.logger(false, 11, kart.getLsk(), serv.getId()); //###
+			
+			//получить площадь одного дня
+			sqr =  sqr / calc.getReqConfig().getCntCurDays();
 	
-			// получить объем для начисления
+			/*******************************
+			 * ПОЛУЧИТЬ ОБЪЕМ ДЛЯ НАЧИСЛЕНИЯ
+			 *******************************/
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d || 
 					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
 					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d) {
-				//получить объем одного дня
-				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
 				
-				vol = vol / calc.getReqConfig().getCntCurDays();
+				//получить объем одного дня
+				vol = sqr;
 				//проверить по капремонту, чтобы не была квартира муниципальной
 				if (serv.getCd().equals("Взносы на кап.рем.")) {
 					if (tpOwn != null && !(tpOwn.equals("Подсобное помещение") || tpOwn.equals("Приватизированная") || tpOwn.equals("Собственная"))) {
@@ -602,6 +670,8 @@ public class ChrgThr {
 						vol = vol * kartMng.getCapPrivs(rqn, calc, kart, genDt);
 					}
 				}
+				Utl.logger(false, 12, kart.getLsk(), serv.getId()); //###
+
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 				// получить норматив 
@@ -613,16 +683,18 @@ public class ChrgThr {
 				} else {
 					vol = 0d;
 				}
+				Utl.logger(false, 13, kart.getLsk(), serv.getId()); //###
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				//получить объем за месяц
 				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
 				//получить долю объема за день HARD CODE
 				//площадь полива (в доле 1 дня)/100 * 60 дней / 12мес * норматив / среднее кол-во дней в месяце
 				vol = vol/100d*60d/12d*stdt.partVol/30.4d/calc.getReqConfig().getCntCurDays();
+				Utl.logger(false, 14, kart.getLsk(), serv.getId()); //###
 				
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d ||
 					   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
-				
+				// например Отопление гКал
 				
 				// Вариант подразумевает объём по лог.счётчику, Распределённый по дням
 				if (serv.getServMet() == null) {
@@ -635,9 +707,9 @@ public class ChrgThr {
 				// получить наличие физ.счетчика в данном периоде
 				exsMet = metMng.checkExsKartMet(rqn, kart, serv.getServMet(), genDt);
 				
-				// получить объем по лицевому счету и услуге за ДЕНЬ
+				// получить объем по лицевому счету и услуге за ДЕНЬ 
 				if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
-					// если перерасчет, то разделить на кол-во дней в месяце, так как передаётся объем за месяц
+					// если перерасчет в гКал!!, то разделить на кол-во дней в месяце, так как передаётся объем за месяц
 					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
 				} else {
 					// обычное начисление
@@ -646,6 +718,7 @@ public class ChrgThr {
 					// сохранить номер ввода
 					entry = tmpNodeVol.getEntry();
 				}
+				Utl.logger(false, 15, kart.getLsk(), serv.getId()); //###
 				
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
 				// Вариант подразумевает объём по лог.счётчику, НЕ распределённый по дням,
@@ -664,13 +737,17 @@ public class ChrgThr {
 				}
 				// разделить на кол-во дней в месяце, так как получен объем за весь месяц
 				vol = vol / calc.getReqConfig().getCntCurDays();
+				Utl.logger(false, 16, kart.getLsk(), serv.getId()); //###
+				
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				vol = 1 / calc.getReqConfig().getCntCurDays();
 			}
 	
-			/****************************/
-			// ВЫПОЛНИТЬ РАСЧЕТ
-			/****************************/
+			Utl.logger(false, 17, kart.getLsk(), serv.getId()); //###
+
+			/***************************
+			 *	   ВЫПОЛНИТЬ РАСЧЕТ
+			 ***************************/
 			 if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
 				
 				Optional<ChrgMainServRec> rec;
@@ -683,7 +760,8 @@ public class ChrgThr {
 					chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, 
 							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, null);
 				}
-				
+				Utl.logger(false, 18, kart.getLsk(), serv.getId()); //###
+
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
@@ -693,14 +771,18 @@ public class ChrgThr {
 		        //тип расчета, например Х.В.ОДН, Г.В.ОДН, Эл.эн.ОДН
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+				Utl.logger(false, 19, kart.getLsk(), serv.getId()); //###
+
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 				chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
 							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);			
+				Utl.logger(false, 20, kart.getLsk(), serv.getId()); //###
 			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				//тип расчета, например:Коммерческий найм, где цена = сумме
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+				Utl.logger(false, 21, kart.getLsk(), serv.getId()); //###
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-1"), 0d) == 1d ||
 					   Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) {
 				// тип расчета, например:текущее содержание, Х.В., Г.В., Канализ
@@ -770,7 +852,8 @@ public class ChrgThr {
 					}
 					
 				}
-	
+				Utl.logger(false, 22, kart.getLsk(), serv.getId()); //###
+
 			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
 				//тип расчета, например:Отопление по Гкал
 				//Вариант подразумевает объём по лог.счётчику, записанный одной строкой, за период
@@ -795,13 +878,15 @@ public class ChrgThr {
 						cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
 						//соцнорма
 						tmpVolD = BigDecimal.valueOf(vol).multiply(cf);
-						if (!tmpVolD.equals(BigDecimal.ZERO)) {
+						if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+								Utl.nvl(parMng.getDbl(rqn, stServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 							chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
 									tmpArea, stServ, org, exsMet, entry, genDt, cntPers.cntOwn);
 						}
 						//свыше соцнормы
 						tmpVolD = BigDecimal.valueOf(vol).subtract(tmpVolD);
-						if (!tmpVolD.equals(BigDecimal.ZERO)) {
+						if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+								Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
 									tmpUpArea, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
 						}
@@ -810,17 +895,25 @@ public class ChrgThr {
 						if (woKprServ != null) {
 							//если есть услуга "без проживающих"
 							tmpVolD = BigDecimal.valueOf(vol);
-							chStore.addChrg(tmpVolD, BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
-									BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+							if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+									Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+								chStore.addChrg(tmpVolD, BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
+										BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+							}
 						} else {
 							//если нет услуги "без проживающих", взять расценку, по услуге свыше соц.нормы
 							tmpVolD = BigDecimal.valueOf(vol);
-							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
-									BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+							if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+									Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+								chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, cntPers.cntFact, 
+										BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn);
+							}
 						}
 						
 					}
 				}
+				Utl.logger(false, 23, kart.getLsk(), serv.getId()); //###
+
 			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				
 				if (cntPers.cntEmpt != 0) {
@@ -836,7 +929,9 @@ public class ChrgThr {
 					chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, cntPers.cntFact, 
 							BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn);
 				}			
-				
+
+				Utl.logger(false, 24, kart.getLsk(), serv.getId()); //###
+
 			}
 			endTime   = System.currentTimeMillis();
 			totalTime = endTime - startTime2;

@@ -143,8 +143,8 @@
 		
 		<dependency>
 	      <groupId>org.ehcache</groupId>
-	      <artifactId>ehcache2</artifactId>
-	      <version>3.3.1</version>
+	      <artifactId>ehcache</artifactId>
+	      <version>3.4.0</version>
 	    </dependency>
 
 		<dependency>
@@ -215,7 +215,19 @@
 
 
 	<build>
-		<plugins>
+
+	<plugins>
+
+<!-- 			исключить конфигурационные файлы -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>config.properties</exclude>
+ 					</excludes>
+				</configuration>
+			</plugin> 
 
 			<plugin>
 			  <groupId>org.apache.maven.plugins</groupId>
@@ -262,37 +274,17 @@
 							</target>
 						</configuration>
 
-<!--						<configuration>
-							<target> 
-								<zip destfile="${project.build.directory}/${project.build.finalName}.jar"
-									update="true" compress="store">
-									<fileset dir="${project.build.directory}/classes"
-										includes="com/ric/bill/*.class" /> 
-								</zip>
-								
- 			РАСКОММЕНТИРУЙ ЭТО, когда надо выгрузить все классы Андрейке!					
-				<zip destfile="${project.build.directory}/${project.build.finalName}.jar"
-									update="true" compress="store">
-									<fileset dir="${project.build.directory}/classes"
-										includes="com/ric/web/*.class" />
-								</zip>
- 							</target>
-						</configuration>
--->
 						<goals>
 							<goal>run</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
+			
  		</plugins>
 	</build>
 
 
-	<!-- исключить конфигурационные файлы из jar - Пример! <build> <plugins> 
-		<plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> 
-		<version>2.3</version> <configuration> <excludes> <exclude>**/*.xml</exclude> 
-		<exclude>**/*.properties</exclude> <exclude>com/ric/web/*.*</exclude> </excludes> 
-		</configuration> </plugin> </plugins> </build> -->
+	
 
 </project>

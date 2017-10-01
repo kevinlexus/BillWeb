@@ -1,5 +1,7 @@
 package com.ric.web;
 
+import java.util.concurrent.Executor;
+
 import org.springframework.beans.BeansException;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.view.jasperreports.JasperReportsMultiFormatView;
 import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResolver;
 
@@ -46,6 +49,20 @@ public class AppConfig  implements ApplicationContextAware {
 	  return resolver;
 	}  
 
+	/**
+	 * Для многопоточности, добавил 01.10.17 - УБРАТЬ ЕСЛИ НЕ РАЗБЕРУСЬ TODO 
+	 * @return
+	 */
+	public Executor getAsyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("MyExecutor-");
+        executor.initialize();
+        return executor;
+    }
+	
 /*	@Bean
 	public InternalResourceViewResolver getInternalResourceViewResolver() {
 	  InternalResourceViewResolver resolver = new InternalResourceViewResolver();

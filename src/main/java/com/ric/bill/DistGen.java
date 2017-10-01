@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -155,8 +156,6 @@ public class DistGen {
 		int rqn = calc.getReqConfig().getRqn();
 		
 		NodeVol nv = findLstCheck(ml.getId(), tp, genDt); 
-		// вытащить перерасчет, для удобства
-		Chng chng = calc.getReqConfig().getChng();
 		//если рассчитанный узел найден, вернуть готовый объем
 		if (nv != null) { 
 			return nv; 
@@ -183,13 +182,29 @@ public class DistGen {
 		if (servChrg == null) {
 			throw new EmptyServ("При расчете счетчика MeterLog.Id="+ml.getId()+" , обнаружена пустая услуга для расчета начисления");
 		}
-
+		// Проверка отключения услуги
+		Double switсhOff = null;
+		if (calc.getKart() != null) {
+			switсhOff = kartMng.getServPropByCD(rqn, calc, ml.getServ(), "Отключение", genDt);
+			
+			if (!Utl.between(genDt, calc.getKart().getDt1(), calc.getKart().getDt2())) {
+				// Сделать отключение, если лиц. счет закрыт
+				switсhOff = 1D;
+			}
+			//if (calc.getKart().getLsk().equals(1832)) {
+			//	log.info("проверка={}, serv={}", switсhOff, ml.getServ().getName());
+			//}
+		}
+		boolean isSwitchOff = false;
+		if (switсhOff !=null) {
+			isSwitchOff = true;
+		}
 		
 		if (tp==0) {
 			//log.info("Наличие услуги={} услуга={}",kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt), ml.getServ().getServOrg().getId()); 
 			// по расчетной связи
 			// только там, где существует услуга в данном дне (по услуге, содержащей Поставщика) (для ЛИПУ)
-			if (mLogTp.equals("ЛИПУ") && kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt) || 
+			if (!isSwitchOff && mLogTp.equals("ЛИПУ") && kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt) || 
 			   mLogTp.equals("ЛОДПУ") || mLogTp.equals("ЛГрупп")) {
 				// посчитать объемы, по физическим счетчикам, прикрепленным к узлу
 			    // (если такие есть) в пропорции на кол-во дней объема
@@ -235,18 +250,37 @@ public class DistGen {
 				}
 			}
 				
-		} else if (tp==1 && (mLogTp.equals("ЛНрм") || mLogTp.equals("ЛИПУ") || mLogTp.equals("Лсчетчик"))) {
+		} else if (tp==1 && !isSwitchOff && (mLogTp.equals("ЛНрм") || mLogTp.equals("ЛИПУ") || mLogTp.equals("Лсчетчик"))) {
+			//по связи по площади и кол.прож. (только по Лнрм, ЛИПУ) в доле 1 дня
 			//только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
-				//по связи по площади и кол.прож. (только по Лнрм, ЛИПУ) в доле 1 дня
 				//площадь
-				partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays(); 
+				if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры") ) {
+					OptionalDouble chngSqr = calc.getReqConfig().getChng().getChngLsk().stream()
+							.flatMap(t -> t.getChngVal().parallelStream().filter(d-> Utl.between(genDt, d.getDtVal1(), d.getDtVal2())) // фильтр по дате 
+									.filter(d -> d.getDtVal1() != null && d.getDtVal2() != null ))  // фильтр по не пустой дате
+									.filter(d -> d.getValTp().getCd().equals("Площадь (м2)")) // фильтр по типу параметра
+									.mapToDouble(d -> Utl.nvl(d.getVal(), 0d) * Utl.getPartDays(d.getDtVal1(), d.getDtVal2()) ) // преобразовать в массив Double
+									.max(); // макс.значение
+					if (chngSqr.isPresent()) {
+						// значение из перерасчета
+						partArea = chngSqr.getAsDouble(); 
+						//log.info("******** площадь из перерасч={}",partArea);
+					} else {
+						// не найдено значение, взять из текущих параметров
+						partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays(); 
+						//log.info("******** площадь={}",partArea);
+					}
+				} else {
+					partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays(); 
+					//log.info("******** площадь без перерасч={}",partArea);
+				}
 				//проживающие
 				CntPers cntPers= new CntPers();
 				kartMng.getCntPers(rqn, calc, kart, servChrg, cntPers, genDt);
 				partPers = cntPers.cntVol / calc.getReqConfig().getCntCurDays();
 			}
-		} else if (tp==2 && mLogTp.equals("Лсчетчик")) {
+		} else if (tp==2 && !isSwitchOff && mLogTp.equals("Лсчетчик")) {
 			//по расчетной связи ОДН (только у лог.счетчиков, при наличии расчетной связи ОДН)
 			//получить дельту ОДН, площадь, кол-во людей, для расчета пропорции в последствии
 			//сохранить счетчик ЛОДН
@@ -355,7 +389,7 @@ public class DistGen {
 					//или нет объема по ОДПУ
 					Double limit = parLimitODN;
 					if (limit == null) {
-						log.warn("Не найден обязательный параметр - лимит по ОДН в счетчике="+lnkLODN.getId());
+						//log.warn("Не найден обязательный параметр - лимит по ОДН в счетчике="+lnkLODN.getId());
 						//throw new NotFoundODNLimit("Не найден обязательный параметр - лимит по ОДН в счетчике="+lnkLODN.getId());
 					} else if (limit == 1) {
 						//если больше лимита - ограничить лимит * площадь
@@ -365,7 +399,7 @@ public class DistGen {
 				}
 				
 			}
-		} else if (tp==3 && mLogTp.equals("Лсчетчик")) {
+		} else if (tp==3 && !isSwitchOff && mLogTp.equals("Лсчетчик")) {
 			//по расчетной связи пропорц.площади (Отопление например)
 			//только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
@@ -391,18 +425,28 @@ public class DistGen {
 					SumNodeVol lnkODNVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), lnkLODN, tp, genDt, genDt);
 					//получить проживающих и площадь за период по счетчику данного лиц.счета (основываясь на meter_vol)
 					SumNodeVol sumVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, genDt, genDt);
-					//узнать наличие "Введено гкал." для расчета по значению, рассчитанному экономистом (почему то его переименовали в "Норматив отопления на м2" ред. Lev 01.08.2017
-					Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt);
-					if (tmp != null) {
-						//установлено значение "Введено гкал." 
-						vl = tmp * sumVol.getArea();
-					} else {
-						//НЕ установлено значение "Введено гкал.", распределить по объему счетчика пропорционально площадей квартир
+					// Вариант распределения
+					Double var =parMng.getDbl(rqn, lnkLODN, "METODN", genDt);
+					if (var == 2D) {
+						// распределить по счетчику
 						if (lnkODNVol.getArea()==0d) {
 							vl = 0d;
 						} else {
 							vl = lnkODNVol.getVol() * sumVol.getArea() / lnkODNVol.getArea();
 						}
+						//log.info("*************метод 1 счетчик существует, объем={}", vl);
+					} else if (var == 1D) {
+						// рассчитать по среднему
+						//узнать наличие "Введено гкал." для расчета по значению, рассчитанному экономистом (почему то его переименовали в "Норматив отопления на м2" ред. Lev 01.08.2017
+						Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt);
+						if (tmp != null) {
+							// установлено значение "Введено гкал." 
+							vl = tmp * sumVol.getArea();
+						} else {
+							// не установлено
+							vl = 0D;
+						}
+						//log.info("*************метод 2, объем={}", vl);
 					}
 				} else {
 					// если НЕ существует физ.счетчик ОДПУ
@@ -418,6 +462,7 @@ public class DistGen {
 						//НЕ установлено значение "Введено гкал."
 						// TODO сделать ветку если нет параметра "Введённое значение объёма на м2", рассчитать по строительному объему!
 					}
+					//log.info("*************счетчик Не существует, объем={}", vl);
 				}
 			}
 		}
@@ -540,26 +585,11 @@ public class DistGen {
 							calc.getReqConfig().getOperTp(), calc.getReqConfig().getStatusVol());
 
 			ml.getVol().add(vol);
-			//saveVol(ml, vol);
-
-			if (ml.getId()==3625271 && !ml.getTp().getCd().equals("ЛИПУ") && !ml.getTp().getCd().equals("ЛНрм")) {
-				log.trace("записана площадь по счетчику id="+ml.getId()+" area="+nv.getPartArea()+" pers="+nv.getPartPers());
-			}
 		}
 		
 		
 		//добавить в список рассчитанных узлов
 		addLstCheck(ml.getId(), tp, genDt, nv);
-		//счетчик рекурсии на -1
-		//rec--;
-
-		if (ml.getId().equals(468737)) {
-			log.trace("Счетчик!");
-		}
-
-		//if (nv.getVol().isNaN() || nv.getPartArea().isNaN() || nv.getPartPers().isNaN()) {
-		//	log.info("*********VOL id={}, nv.vol={},{}", ml.getId(), nv.getVol(), nv.getPartArea(), nv.getPartPers());
-		//}
 
 		return nv;
 	}

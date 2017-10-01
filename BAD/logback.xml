@@ -12,14 +12,20 @@
   <logger name="org.hibernate.type" level="DEBUG" /> -->
   
   <logger name="org.hibernate.engine.loading.internal.CollectionLoadContext" level="ERROR"/>
-  <logger name="com.ric" level="TRACE"/>
+  <logger name="com.ric" level="INFO"/>
+  
+<!--    не пашет не фига! -->
+  <logger name="o.s.w.s.handler.SimpleUrlHandlerMapping" level="ERROR"/>
+  <logger name="o.s.w.s.c.a.WebMvcConfigurerAdapter" level="ERROR"/>
+  <logger name="s.w.s.m.m.a.RequestMappingHandlerMapping" level="ERROR"/>
+  
   <!--<logger name="org.ehcache" level="ERROR"/>
   <logger name="org.hibernate.stat" level="DEBUG"/>--> 
   
   <!--<logger name="org.springframework.security" level="TRACE"/>-->
 
   <!-- Setting the root level of logging to INFO - Здесь менять уровни логгинга в Spring Boot-->
-  <root level="INFO">
+  <root level="TRACE">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

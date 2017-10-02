@@ -48,23 +48,20 @@ http://www.springframework.org/schema/cache http://www.springframework.org/schem
 		<property name="jdbcUrl" value="jdbc:oracle:thin:@192.168.100.187:1521:RKCDB" />
 
 <!--   		<property name="jdbcUrl" value="jdbc:oracle:thin:@192.168.100.187:1521:RKCDB" />
- --> 		<property name="user" value="gen" />
+ --> 	
+ 		<!--Внимание! текущие настройки показали стабильную работу JVM, без зависаний, замедлений процесса начисления (без распр.объемов)
+ 		безконтрольного увеличения памяти ред. 01.10.2017 -->	
+ 		<property name="user" value="gen" />
 		<property name="password" value="buzzlighter" />
-<!-- 		<property name="maxStatementsPerConnection" value="5000" />Поставил 0 ред.07.09.17 чтобы убрать  c.m.v2.c3p0.stmt.GooGooStatementCache    : Multiply prepared statement!
- -->
- 		<property name="maxStatements" value="2000" />
- 		<property name="maxIdleTime" value="30" />
-		<property name="maxPoolSize" value="20" />
-		<property name="minPoolSize" value="5" />
+		<property name="maxStatements" value="0" /> <!-- Поставил 0 ред.07.09.17 чтобы убрать  c.m.v2.c3p0.stmt.GooGooStatementCache    : Multiply prepared statement! -->
+		<property name="maxStatementsPerConnection" value="0" /><!-- Поставил 0 ред.07.09.17 чтобы убрать  c.m.v2.c3p0.stmt.GooGooStatementCache    : Multiply prepared statement! -->
+		<property name="maxIdleTime" value="30" />
+		<property name="maxPoolSize" value="100" />
+		<property name="minPoolSize" value="10" />
 		<property name="initialPoolSize" value="10" />
 		<property name="idleConnectionTestPeriod" value="20" />
 		<property name="testConnectionOnCheckin" value="false" />
 		<property name="testConnectionOnCheckout" value="false" />
-		<property name="numHelperThreads" value="10" />  <!-- Чтобы не было APPARENT DEADLOCK - попробовал -->
-		<!-- <property name="maxStatements" value="0" /> --> <!-- Поставил 0 ред.07.09.17 чтобы убрать  c.m.v2.c3p0.stmt.GooGooStatementCache    : Multiply prepared statement! -->
-<!-- 		<property name="maxStatements" value="5000" /> Чтобы не было APPARENT DEADLOCK - попробовал 5000
-		<property name="numHelperThreads" value="10" />  Чтобы не было APPARENT DEADLOCK - попробовал
- -->		
 	</bean>
 
 	<bean

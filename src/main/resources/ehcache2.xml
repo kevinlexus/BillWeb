@@ -26,13 +26,12 @@
         <events-to-fire-on>EVICTED</events-to-fire-on> 
       </listener>
     </listeners>  -->
+	<!--Внимание! текущие настройки показали стабильную работу JVM, без зависаний, замедлений процесса начисления (без распр.объемов)
+	безконтрольного увеличения памяти ред. 01.10.2017 -->
      <resources>
       <heap unit="entries">200000</heap> 
       <offheap unit="MB">100</offheap> 
-
-<!--       <heap unit="entries">200000</heap> 
-      <offheap unit="MB">100</offheap> 
- -->    </resources>
+    </resources>
   </cache-template> 
 </config>
 

@@ -22,6 +22,8 @@ public class CacheService {
 	  public static class CachingSetup implements JCacheManagerCustomizer
 	  {
 
+	 	/*Внимание! текущие настройки показали стабильную работу JVM, без зависаний, замедлений процесса начисления (без распр.объемов)
+	 	безконтрольного увеличения памяти ред. 01.10.2017*/
 		@Override
 	    public void customize(CacheManager cacheManager)
 	    {

@@ -8,6 +8,15 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.panel2controller',
 
+    // KMP!
+    onPayordFlowGridBeforeEdit: function(editor, context, eOpts) {
+        console.log('onBeforeEdit!!!:', context);
+
+        // workaround for error at clicking a widgetcolumn
+        if (context.column.widget)
+            return false;
+    },
+
     // Сохранить отредактированное платежное поручение
     onGridPayordFlowUpd: function() {
         console.log('test');

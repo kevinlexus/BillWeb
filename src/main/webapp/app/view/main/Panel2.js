@@ -55,11 +55,12 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 ptype: 'cellediting',
                 clicksToEdit: 1,
                 listeners: {
-                    beforeedit: function(editor, context, eOpts){
+                    beforeedit: 'onPayordFlowGridBeforeEdit'
+                    /*beforeedit: function(editor, context, eOpts){
                         // workaround for error at clicking a widgetcolumn
                         if (context.column.widget)
                             return false;
-                    }
+                    }*/
                 }
             },
             actions: {

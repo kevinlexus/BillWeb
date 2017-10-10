@@ -1,5 +1,6 @@
 package com.ric.bill;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.persistence.EntityManager;
@@ -39,7 +40,7 @@ public class ChrgServThr {
     private EntityManager em;
 	
 	@Async
-	public Future<Result> chrgAndSaveLsk(Calc calc) throws ErrorWhileChrg {
+	public Future<Result> chrgAndSaveLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
 		ChrgServ chrgServ = ctx.getBean(ChrgServ.class);
 		//загрузить все Lazy параметры, чтобы не было concurrensy issue в потоках например, на getDbl()
 		//ну или использовать EAGER в дочерних коллекциях, что более затратно

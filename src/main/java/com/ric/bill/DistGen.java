@@ -154,6 +154,7 @@ public class DistGen {
 		}
 
 		int rqn = calc.getReqConfig().getRqn();
+		Chng chng = calc.getReqConfig().getChng();
 		
 		NodeVol nv = findLstCheck(ml.getId(), tp, genDt); 
 		//если рассчитанный узел найден, вернуть готовый объем
@@ -268,11 +269,11 @@ public class DistGen {
 						//log.info("******** площадь из перерасч={}",partArea);
 					} else {
 						// не найдено значение, взять из текущих параметров
-						partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays(); 
+						partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d) / calc.getReqConfig().getCntCurDays(); 
 						//log.info("******** площадь={}",partArea);
 					}
 				} else {
-					partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d) / calc.getReqConfig().getCntCurDays(); 
+					partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d) / calc.getReqConfig().getCntCurDays(); 
 					//log.info("******** площадь без перерасч={}",partArea);
 				}
 				//проживающие
@@ -293,8 +294,8 @@ public class DistGen {
 				//поиск счетчика ЛОДН
 				lnkLODN = metMng.getLinkedNode(rqn, ml, "ЛОДН", genDt);
 				//параметр Доначисление по ОДН
-				Double parAddODN = Utl.nvl(parMng.getDbl(rqn, (Storable)lnkLODN, "Доначисление по ОДН", genDt), 0d);
-				Double parLimitODN = parMng.getDbl(rqn, (Storable)lnkLODN, "Лимит по ОДН", genDt);
+				Double parAddODN = Utl.nvl(parMng.getDbl(rqn, (Storable)lnkLODN, "Доначисление по ОДН", genDt, chng), 0d);
+				Double parLimitODN = parMng.getDbl(rqn, (Storable)lnkLODN, "Лимит по ОДН", genDt, chng);
 				
 				if (lnkLODN == null) {
 					// не найден счетчик
@@ -426,7 +427,7 @@ public class DistGen {
 					//получить проживающих и площадь за период по счетчику данного лиц.счета (основываясь на meter_vol)
 					SumNodeVol sumVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, genDt, genDt);
 					// Вариант распределения
-					Double var =parMng.getDbl(rqn, lnkLODN, "METODN", genDt);
+					Double var =parMng.getDbl(rqn, lnkLODN, "METODN", genDt, chng);
 					if (var == 2D) {
 						// распределить по счетчику
 						if (lnkODNVol.getArea()==0d) {
@@ -438,7 +439,7 @@ public class DistGen {
 					} else if (var == 1D) {
 						// рассчитать по среднему
 						//узнать наличие "Введено гкал." для расчета по значению, рассчитанному экономистом (почему то его переименовали в "Норматив отопления на м2" ред. Lev 01.08.2017
-						Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt);
+						Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt, chng);
 						if (tmp != null) {
 							// установлено значение "Введено гкал." 
 							vl = tmp * sumVol.getArea();
@@ -451,7 +452,7 @@ public class DistGen {
 				} else {
 					// если НЕ существует физ.счетчик ОДПУ
 					// начислить по "Введённое значение объёма на м2"
-					Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt);
+					Double tmp =parMng.getDbl(rqn, lnkLODN, "VOL_SQ_MT", genDt, chng);
 					//получить проживающих и площадь за период по счетчику данного лиц.счета (основываясь на meter_vol)
 					SumNodeVol sumVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, genDt, genDt);
 	
@@ -526,7 +527,7 @@ public class DistGen {
 				//получить площадь и кол-во прожив по вводу, за месяц  
 				lnkODNVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
 				
-				Double areaComm = parMng.getDbl(rqn, ml, "Площадь общего имущества.Электроэнергия", genDt);
+				Double areaComm = parMng.getDbl(rqn, ml, "Площадь общего имущества.Электроэнергия", genDt, chng);
 				if (areaComm != null) {
 					//log.warn("ВНИМАНИЕ! НЕ проверяется параметр Площадь общего имущества.Электроэнергия!!!!!!");
 					//throw new EmptyPar("Не установлен параметр Площадь общего имущества.Электроэнергия во вводе с id="+ml.getId()+" по дате="+genDt);

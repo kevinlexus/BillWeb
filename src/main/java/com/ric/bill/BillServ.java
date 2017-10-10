@@ -99,7 +99,7 @@ public class BillServ {
 	 *            - выполнять ли начисление
 	 * @return
 	 */
-	@Async
+	@Async(value = "BWEEEEE: chrgAll")
 	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
 			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
 			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
@@ -183,7 +183,7 @@ public class BillServ {
 					
 					try {
 						fut = chrgServThr.chrgAndSaveLsk(calc);
-					} catch (ErrorWhileChrg e) {
+					} catch (ErrorWhileChrg | ExecutionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
@@ -291,17 +291,11 @@ public class BillServ {
 
 		beginTime = System.currentTimeMillis();
 
-		// установить признак распределения объема по дому
+		// установить признак распределения объема по дому, если перерасчет
 		if (reqConfig.getOperTp().equals(1)) {
-			// список CD услуг, входящих в перерасчет
-			reqConfig.getChng().getChngLsk().stream().forEach(t->{
-				log.info("check-1={}", t.getId());
-				log.info("check0={}", t.getServ());
-				log.info("check1={}", t.getServ().getId());
-				log.info("check2={}", t.getServ().getCd());
-				
-			});
-			List<String> lstServCd = reqConfig.getChng().getChngLsk().stream().map(t-> t.getServ().getCd()).collect(Collectors.toList());
+			List<String> lstServCd = reqConfig.getChng().getChngLsk().stream().filter(t -> t.getKart().getLsk().equals(lsk))
+					.filter(t -> t.getServ() != null)
+					.map(t-> t.getServ().getCd()).collect(Collectors.toList());
 			if (lstServCd.contains("Отопление") || lstServCd.contains("Отопление(объем), соц.н.") || 
 					lstServCd.contains("Отопление(объем), св.соц.н.") || lstServCd.contains("Отопление(объем), без прожив.")) {
 				isDistHouse = true;
@@ -329,7 +323,7 @@ public class BillServ {
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО 1 ЛС
 		try {
 			fut = chrgServThr.chrgAndSaveLsk(calc);
-		} catch (ErrorWhileChrg e) {
+		} catch (ErrorWhileChrg | ExecutionException e) {
 			e.printStackTrace();
 			res.setErr(1);
 			return fut;

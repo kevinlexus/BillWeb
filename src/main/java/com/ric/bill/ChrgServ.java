@@ -253,7 +253,7 @@ public class ChrgServ {
 	 * @param kart - объект лиц.счета
 	 * @throws ErrorWhileChrg 
 	 */
-	public Result chrgLsk(Calc calc) throws ErrorWhileChrg {
+	public Result chrgLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
     	this.calc=calc;
 		//log.info("Lsk="+calc.getKart().getLsk()+", FLsk="+calc.getKart().getFlsk());
 		Result res = new Result();
@@ -268,13 +268,9 @@ public class ChrgServ {
 		mapServ = new HashMap<Serv, BigDecimal>();  
 		mapVrt = new HashMap<Serv, BigDecimal>();  
 
-		// список потоков
-		List<ChrgThr> trl = new ArrayList<ChrgThr>();
-
 		//найти все услуги, действительные в лиц.счете
 		//и создать потоки по кол-ву услуг
 		
-		Kart kart = calc.getKart();
 		//загрузить все услуги по данному л.с.
 		servThr = kartMng.getServAll(calc.getReqConfig().getRqn(), calc);
 		
@@ -287,6 +283,8 @@ public class ChrgServ {
 		
 		errThread=false;
 
+		ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
+		
 		while (true) {
 			log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
@@ -297,67 +295,18 @@ public class ChrgServ {
 				break;
 			}
 
-			List<Future<Result>> frl = new ArrayList<Future<Result>>();
-
 			// РАСЧЕТ услуг в потоке
 			for (Serv serv : servWork) {
-					Future<Result> fut = null;
-					ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
-					
  					chrgThr.setUp(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
 			    	try {
-						fut = chrgThr.run1();
+						chrgThr.run1();
 					} catch (EmptyStorable e) {
 						e.printStackTrace();
-						throw new ErrorWhileChrg ("ОШИБКА! В потоке была попытка получить параметр по пустому объекту хранения");
+						throw new ErrorWhileChrg ("ОШИБКА! Была попытка получить параметр по пустому объекту хранения");
 					}
-			    	frl.add(fut);
-			    	log.trace("ChrgServ: Begins "+serv.getCd());
+			    	// добавить некритические ошибки выполнения 
+					res.getLstErr().addAll(res.getLstErr());
 			}
-			
-			//проверить окончание всех потоков
-		    int flag2 = 0;
-			while (flag2==0) {
-				flag2=1;
-				for (Future<Result> fut : frl) {
-					if (!fut.isDone()) {
-						// Если хотя бы один поток продолжил выполенение, отменить выход из цикла
-						flag2=0;
-					} else {
-						// Поток завершен
-						try {
-							if (fut.get().getErr()==1) {
-								//errThread=true; - сюда не заходит при ошибке, разобраться потом TODO!
-							}
-						} catch (InterruptedException | ExecutionException e1) {
-							errThread=true;
-							e1.printStackTrace();
-						}
-					}
-				}
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e) {
-					errThread=true;
-					e.printStackTrace();
-				}
-			}
-
-			// Потоки в данной пачке завершены, создать список некритических ошибок
-			for (Future<Result> fut : frl) {
-				// Поток завершен
-				// Добавить список всех некритических ошибок из завершенного потока
-				try {
-					//log.info("*** завершен поток={}", fut.get().blabla2);
-					//log.info("*** ошибок из потока={}", fut.get().getLstErr().size());
-					//log.info("*** blabla из потока={}", fut.get().blabla);
-					res.getLstErr().addAll(fut.get().getLstErr());
-				} catch (InterruptedException | ExecutionException e) {
-					errThread=true;
-					e.printStackTrace();
-				}
-			}
-
 		}
 		
 //		log.info("err SIZE={}", res.getLstErr().size());

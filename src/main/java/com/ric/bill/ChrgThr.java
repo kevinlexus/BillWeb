@@ -110,10 +110,11 @@ public class ChrgThr {
 		this.prepChrgMainServ = prepChrgMainServ;
 	}
 
-	@Async
-	public  Future<Result> run1() throws EmptyStorable {
+	//@Async
+	public Result run1() throws EmptyStorable {
 		Kart kart = calc.getKart();
-		
+		// перерасчет
+		Chng chng = calc.getReqConfig().getChng();
 		res = new Result();
 		res.setErr(0);
 
@@ -146,7 +147,7 @@ public class ChrgThr {
 			genDt = c.getTime();
 			// только там, где нет статуса "не начислять" за данный день
 			try {
-				if (Utl.nvl(parMng.getDbl(rqn, kart, "IS_NOT_CHARGE", genDt), 0d) == 1d) {
+				if (Utl.nvl(parMng.getDbl(rqn, kart, "IS_NOT_CHARGE", genDt, chng), 0d) == 1d) {
 					continue;
 				}
 			} catch (EmptyStorable e) {
@@ -228,11 +229,11 @@ public class ChrgThr {
 							// Убрать расценку и объем по данному типу услуг
 							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
 									null, null, rec.getStdt(), rec.getCntFact(), area, chrgTpRnd, 
-									calc.getReqConfig().getChng(), rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
+									chng, rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
 						} else {
 							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
 									vol, rec.getPrice(), rec.getStdt(), rec.getCntFact(), area, chrgTpRnd, 
-									calc.getReqConfig().getChng(), rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
+									chng, rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
 						}
 					} catch (EmptyStorable e) {
 						throw new RuntimeException();
@@ -252,16 +253,16 @@ public class ChrgThr {
 	    mapVrt = null;
 
 		
-		Future ar = new AsyncResult<Result>(res);
-		return ar;
+		//Future ar = new AsyncResult<Result>(res);
+		return res;
 	}
 
 	// получить подмененную организацию по перерасчету
-	private Org getChngOrg(Serv serv, Date genDt) {
+	private Org getChngOrg(Serv serv, Date genDt, Chng chng) {
 		Org org = null; 
-		if ( Utl.between(genDt, calc.getReqConfig().getChng().getDt1(), calc.getReqConfig().getChng().getDt2()) &&
-				calc.getReqConfig().getChng().getServ().equals(serv) ) {
-			org = calc.getReqConfig().getChng().getOrg();
+		if ( Utl.between(genDt, chng.getDt1(), chng.getDt2()) &&
+				chng.getServ().equals(serv) ) {
+			org = chng.getOrg();
 		}
 		return org;
 	}
@@ -280,6 +281,8 @@ public class ChrgThr {
 		}
 
 		Kart kart = calc.getKart();
+		// перерасчет
+		Chng chng = calc.getReqConfig().getChng();
 		Utl.logger(true, 1, kart.getLsk(), serv.getId());
 		long startTime2;
 		long endTime;
@@ -397,7 +400,6 @@ public class ChrgThr {
 			}
 	
 			// получить составляющие перерасчета
-			Chng chng = calc.getReqConfig().getChng();
 			ChngLsk chngLsk = null;
 			if (chng != null && chng.getServ().equals(serv)) {
 				chngLsk = chng.getChngLsk().stream().filter(t-> t.getKart().equals(kart))
@@ -480,10 +482,10 @@ public class ChrgThr {
 	  		Utl.logger(false, 7, kart.getLsk(), serv.getId()); //###
 	
 			// в случае перерасчета по расценке или по организации, выполнить их замену 
-			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение расценки (тарифа)") ) {
+			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
 				
 				// организация
-				Org chngOrg = getChngOrg(serv.getServOrg(), genDt);
+				Org chngOrg = getChngOrg(serv.getServOrg(), genDt, chng);
 				if (chngOrg != null) {
 					org = chngOrg; 
 				}
@@ -621,11 +623,11 @@ public class ChrgThr {
 			 мною было предложено чтобы он смотрел на Par и тогда можно будет переписать получение параметра parMng.getDbl
 			 на то, что он будет проверять наличие перерасчета и брать значение оттуда
 			*/
-			if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры")
-					 && calc.getReqConfig().getChng().getServ().equals(serv)
+			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение площади квартиры")
+					 && chng.getServ().equals(serv)
 					) {
 				// Проверить наличие перерасчета по данному параметру
-				OptionalDouble chngSqr = calc.getReqConfig().getChng().getChngLsk().stream()
+				OptionalDouble chngSqr = chng.getChngLsk().stream()
 						.flatMap(t -> t.getChngVal().stream()
 								.filter(d-> Utl.between(genDt, d.getDtVal1(), d.getDtVal2())) // фильтр по дате 
 								.filter(d -> d.getDtVal1() != null && d.getDtVal2() != null ))  // фильтр по не пустой дате
@@ -638,12 +640,12 @@ public class ChrgThr {
 					//log.info("******** площадь из перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
 				} else {
 					//получить объем
-					sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d);
+					sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d);
 					//log.info("******** 0площадь без перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
 				}
 			} else {
 				//получить объем
-				sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt), 0d);
+				sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d);
 				//log.info("******** площадь без перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
 			}
 			Utl.logger(false, 11, kart.getLsk(), serv.getId()); //###
@@ -686,7 +688,7 @@ public class ChrgThr {
 				Utl.logger(false, 13, kart.getLsk(), serv.getId()); //###
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				//получить объем за месяц
-				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt), 0d);
+				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt, chng), 0d);
 				//получить долю объема за день HARD CODE
 				//площадь полива (в доле 1 дня)/100 * 60 дней / 12мес * норматив / среднее кол-во дней в месяце
 				vol = vol/100d*60d/12d*stdt.partVol/30.4d/calc.getReqConfig().getCntCurDays();

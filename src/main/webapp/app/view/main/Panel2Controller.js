@@ -8,9 +8,24 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.panel2controller',
 
-    // KMP!
+/*    onPanel2BeforeRender: function(panel, eOpts) {
+            console.log('CHECK!!!!!!!!!!!!');
+        var store = this.getViewModel().getStore('orgstore');
+        var index = store.findExact('id', value);
+        if (index != -1){
+            var rs = store.getAt(index);
+            return rs.get('name');
+        } else {
+            console.log('Возможно не загружен OrgStore');
+        }
+
+    },*/
+    // при попытке редактирования
     onPayordFlowGridBeforeEdit: function(editor, context, eOpts) {
-        console.log('onBeforeEdit!!!:', context);
+        if (context.record.data.signed) {
+            console.log('Запрещено редактировать!');
+            return false;
+        }
 
         // workaround for error at clicking a widgetcolumn
         if (context.column.widget)
@@ -100,10 +115,12 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
     onGridPayordFlowRefresh: function () {
         var store = this.getViewModel().getStore('payordflowstore');
         var genDt2 = this.lookupReference('genDt2');
+        var genDt3 = this.lookupReference('genDt3');
 
         store.load({
             params : {
-                dt: Ext.Date.format(genDt2.getValue(), 'd.m.Y')
+                dt1: Ext.Date.format(genDt2.getValue(), 'd.m.Y'),
+                dt2: Ext.Date.format(genDt3.getValue(), 'd.m.Y'),
             }
         });
     },

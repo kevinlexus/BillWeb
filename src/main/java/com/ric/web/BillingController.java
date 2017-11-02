@@ -50,6 +50,7 @@ import com.ric.bill.dto.RepItemDTO;
 import com.ric.bill.dto.ServDTO;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.WrongDate;
+import com.ric.bill.excp.WrongExpression;
 import com.ric.bill.mm.LstMng;
 import com.ric.bill.mm.OrgMng;
 import com.ric.bill.mm.PayordMng;
@@ -186,13 +187,17 @@ public class BillingController {
 	@ResponseBody
 	public List<PayordFlowDTO> getPayordFlowByTpDt(
 			@RequestParam(value = "tp") Integer tp,
-			@RequestParam(value = "dt") String dt) {
-		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt={}", tp, dt);
-		Date genDt = null;
-		if (dt != null && dt.length()!=0) {
-			genDt = Utl.getDateFromStr(dt);
+			@RequestParam(value = "dt1") String dt1,
+			@RequestParam(value = "dt2") String dt2) {
+		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt1={}, dt2={}", tp, dt1, dt2);
+		Date genDt1=null, genDt2 = null;
+		if (dt1 != null && dt1.length()!=0) {
+			genDt1 = Utl.getDateFromStr(dt1);
 		}
-		return dtoBuilder.getPayordFlowDTOLst(payordMng.getPayordFlowByTpDt(tp, genDt));
+		if (dt2 != null && dt2.length()!=0) {
+			genDt2 = Utl.getDateFromStr(dt2);
+		}
+		return dtoBuilder.getPayordFlowDTOLst(payordMng.getPayordFlowByTpDt(tp, genDt1, genDt2));
 	}
 
 	// Сохранить движение по платежкам
@@ -561,14 +566,39 @@ public class BillingController {
 		}
 		try {
 			payordMng.genPayord(dt, isFinal, isEndMonth);
-		} catch (WrongDate | ParseException e) {
+		} catch (WrongDate | ParseException | EmptyStorable | WrongExpression e) {
 			e.printStackTrace();
 			// TODO сделать возврат ошибки!
-		} catch (EmptyStorable e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * Ожидание разблокировки
+	 * @param elem - элемент (лиц.счет, и т.п.)
+	 * @param waitTick - кол-во итераций ожиданий по N мс
+	 * @return - получен доступ
+	 */
+	private boolean getAccess(int elem, int waitTick) {
+		while (!config.checkLsk(elem)) {
+			waitTick++;
+			if (waitTick > 100) {
+				log.error(
+						"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!",
+						elem);
+				log.error(
+						"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ к elem={} В ТЕЧЕНИИ N сек!{}",
+						elem);
+				waitTick = 0;
+			}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	@RequestMapping("/chrglsk")
@@ -589,7 +619,6 @@ public class BillingController {
 				log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
 				return "ERROR IN DATES";
 			}
-			
 			// получить уникальный номер запроса
 			int rqn = config.incNextReqNum();
 	
@@ -597,26 +626,9 @@ public class BillingController {
 			long beginTime = System.currentTimeMillis();
 	
 			// получить доступ к лиц.счету
-			int i = 0;
-			while (!config.checkLsk(lsk)) {
-				i++;
-				if (i > 100) {
-					/*log.info(
-							"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ! /chrglsk with: lsk={}",
-							lsk);
-					log.info(
-							"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ ЛС В ТЕЧЕНИИ 10 сек! /chrglsk with: lsk={}",
-							lsk);*/
-					i = 0;
-				}
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-					return "ERROR";
-				}
+			if (!getAccess(lsk, 100)) {
+				return "ERROR";
 			}
-	
 			Future<Result> fut;
 	
 			// если пустой ID перерасчета
@@ -637,7 +649,13 @@ public class BillingController {
 				dt2 = Utl.getDateFromStr(genDt2); 
 			}
 			
-			reqConfig.setUp(/*config, */dist, tp, chId, rqn, dt1, dt2);
+			if (!reqConfig.setUp(/*config, */dist, tp, chId, rqn, dt1, dt2)) {
+				// ошибка конфигурации
+				log.info("BEGINING UNLOCK /chrglsk with: lsk={}", lsk);
+				config.unCheckLsk(lsk); // снять лицевой с обработки
+				log.info("ENDING UNLOCK /chrglsk with: lsk={}", lsk);
+				return "ERROR";
+			}
 	
 			long endTime2 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
@@ -756,7 +774,10 @@ public class BillingController {
 			dt1 = Utl.getDateFromStr(genDt1); 
 			dt2 = Utl.getDateFromStr(genDt2); 
 		}
-		reqConfig.setUp(/*config, */dist, "0", null, rqn, dt1, dt2);
+		if (!reqConfig.setUp(/*config, */dist, "0", null, rqn, dt1, dt2)) {
+			// ошибка конфигурации
+			return "ERROR";
+		}
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 		String retStr = null;

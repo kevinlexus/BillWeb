@@ -21,6 +21,7 @@ import com.ric.bill.RequestConfig;
 import com.ric.bill.Utl;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.WrongDate;
+import com.ric.bill.excp.WrongExpression;
 import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
 import com.ric.bill.mm.PayordMng;
@@ -88,6 +89,9 @@ public class testWork {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (WrongExpression e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

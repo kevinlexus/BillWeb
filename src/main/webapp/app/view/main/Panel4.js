@@ -31,7 +31,7 @@ Ext.define('BillWebApp.view.main.Panel4', {
             reference: 'isFinalValue',
             value: 'isFinalValue',
             fieldLabel: '',
-            boxLabel: 'Итоговая платежка'
+            boxLabel: 'Итоговая платежка (Обычно дата следующего месяца или 31 число, если конец года)'
         }, {
             xtype: 'radiofield',
             name: 'radio1',

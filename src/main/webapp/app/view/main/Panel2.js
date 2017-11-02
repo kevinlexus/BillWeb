@@ -7,6 +7,9 @@ Ext.define('BillWebApp.view.main.Panel2', {
         pack: 'start',
         align: 'stretch'
     },
+/*    listeners: {
+        beforerender : 'onPanel2BeforeRender'
+    },*/
     width: 1010,
     minHeight: 2000,
     bodyPadding: 10,
@@ -37,9 +40,20 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 handler: 'onGridPayordFlowCancel'
             },{
                 xtype: 'datefield',
-                name: 'genDt',
+                name: 'genDt2',
                 reference: 'genDt2',
-                fieldLabel: 'Дата',
+                fieldLabel: 'Период с',
+                labelWidth: 60,
+                width: 185,
+                allowBlank: true,
+                format: 'd.m.Y'
+            },{
+                xtype: 'datefield',
+                name: 'genDt3',
+                reference: 'genDt3',
+                fieldLabel: 'по',
+                labelWidth: 15,
+                width: 140,
                 allowBlank: true,
                 format: 'd.m.Y'
             },
@@ -169,14 +183,14 @@ Ext.define('BillWebApp.view.main.Panel2', {
             // Управление
             xtype: 'panel',
             width: 1000,
-            minHeight: 20,
+            minHeight: 20/*,
             tbar: [{
                 text: 'Подписать все',
                 handler: 'onGridPayordFlowSignAll'
             }, {
                 text: 'Снять подпись',
                 handler: 'onGridPayordFlowUnSignAll'
-            }]
+            }]*/
         }
     ]
 

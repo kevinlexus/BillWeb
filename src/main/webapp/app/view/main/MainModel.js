@@ -16,6 +16,9 @@ Ext.define('BillWebApp.view.main.MainModel', {
     },
 
     stores: {
+        orgstore: {
+            type: 'orgstore'
+        },
         periodstore1: {
             type: 'periodstore1',
             proxy : {
@@ -88,9 +91,6 @@ Ext.define('BillWebApp.view.main.MainModel', {
         },
         servstore: {
             type: 'servstore'
-        },
-        orgstore: {
-            type: 'orgstore'
         },
         orgcuruserstore: {
             type: 'orgcuruserstore'

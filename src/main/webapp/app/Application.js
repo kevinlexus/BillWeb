@@ -10,12 +10,17 @@ Ext.define('BillWebApp.Application', {
 
     views: ['main.Main'],
 
-    stores: {
-    },
-    
     launch: function () {
         // TODO - Launch the application
         console.log('Launch');
+
+        var aaa = this.getView('main.Main');
+        console.log('test='+aaa);
+        aaa.items.add({
+            title: 'Редактирование',
+            iconCls: 'fa-edit',
+            xtype: 'panelEdit'
+        })
     },
 
     onAppUpdate: function () {

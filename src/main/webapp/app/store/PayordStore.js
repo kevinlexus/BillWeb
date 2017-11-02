@@ -5,6 +5,7 @@ Ext.define('BillWebApp.store.PayordStore', {
     extend: 'Ext.data.Store',
     alias  : 'store.payordstore',
     model: 'BillWebApp.model.Payord',
+    storeId: 'PayordStore',
     autoLoad: true,
     autoSync: false,
     proxy: { // прокси должна находиться в модели. иначе ничего не будет работать при type: 'ajax' - сомнительно! перенес обратно в store

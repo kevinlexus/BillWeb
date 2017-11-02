@@ -4,22 +4,96 @@
  * Sencha Cmd when upgrading.
  */
 
+function addPaneledit() {
+    var mainView =BillWebApp.getApplication().getMainView();
+    mainView.add(
+    [
+    {
+        title: 'Редактирование',
+        iconCls: 'fa-edit',
+        reference: 'panelEdit',
+        xtype: 'panelEdit'
+    },{
+        title: 'Платежки',
+            iconCls: 'fa-inbox',
+            items: [{
+            xtype: 'panel1'
+        }]
+    },
+    {
+        title: 'Настройки платежек',
+            iconCls: 'fa-cog',
+        items: [{
+        xtype: 'panel5'
+        }]
+    },
+    {
+        title: 'Формирование',
+            iconCls: 'fa-cog',
+            items: [{
+            xtype: 'panel4'
+        }]
+    },
+    {
+    title: 'Параметры',
+        iconCls: 'fa-cog',
+        items: [{
+        xtype: 'panelPar'
+        }]
+    }
+    ]
+    );
+    mainView.doLayout;
+}
+
 Ext.application({
     name: 'BillWebApp',
 
     extend: 'BillWebApp.Application',
-
     requires: [
-        'BillWebApp.view.main.Main'
+        'BillWebApp.view.main.Main',
+        'BillWebApp.view.main.PanelGauge'
+
     ],
     launch: function () {
-        // TODO - Launch the application
-        console.log('Launch2');
-//        var store = Ext.getStore('OrgStore');
-//        console.log('Launch2='+store);
-//        store.on('load', function() {
-            BillWebApp.getApplication().setMainView('main.Main');
-//        });
+        console.log('Launch the application');
+        BillWebApp.getApplication().setMainView('main.Main');
+
+
+        var orgStore = Ext.getStore('OrgStore');
+        var payordGprStore = Ext.getStore('PayordGrpStore');
+        var window = Ext.create('Ext.window.Window', {
+            //title: 'Сообщение',
+            height: 100,
+            width: 300,
+            layout: 'fit',
+            items: {
+                xtype: 'panelgauge'
+            }
+        }).show();
+
+        if (!orgStore.isLoaded()) {
+            orgStore.on('load', function() {
+                if (!payordGprStore.isLoaded()) {
+
+                    payordGprStore.on('load', function() {
+                        addPaneledit();
+                    });
+
+                } else {
+                    addPaneledit();
+                    window.close();
+                    //msg.close();
+                }
+            });
+        } else {
+            addPaneledit();
+            window.close();
+            //msg.close();
+        }
+
+        console.log('doLayout!');
+
     },
     // The name of the initial view to create. With the classic toolkit this class
     // will gain a "viewport" plugin if it does not extend Ext.Viewport. With the

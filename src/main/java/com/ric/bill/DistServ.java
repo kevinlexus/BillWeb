@@ -162,7 +162,7 @@ public class DistServ {
 			long startTime;
 			long endTime;
 			long totalTime;
-			for (House o: houseMng.findAll2(houseId, areaId, tempLskId, config.getCurDt1())) {
+			for (House o: houseMng.findAll2(houseId, areaId, tempLskId, config.getCurDt1(), config.getCurDt2())) {
 				log.info("ДОМ:"+o.getId());
 				//dist.clearCache();
 				//распределить объемы

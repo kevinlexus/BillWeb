@@ -23,8 +23,8 @@
   <logger name="com.ric" level="INFO"/>
   <logger name="org.apache.xml.security.Init" level="INFO"/> <!-- не работает почему то -->
   <logger name="org.ehcache" level="TRACE"/>
-  <logger name="org.hibernate.stat" level="DEBUG"/>--> 
-  <logger name="org.thymeleaf" level="ERROR"/>--> 
+  <logger name="org.hibernate.stat" level="DEBUG"/>
+  <logger name="org.thymeleaf" level="ERROR"/>
   
   <!--<logger name="org.springframework.security" level="TRACE"/>-->
 

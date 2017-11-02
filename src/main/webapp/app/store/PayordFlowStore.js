@@ -29,7 +29,8 @@ Ext.define('BillWebApp.store.PayordFlowStore', {
         },
         extraParams : {
             tp : '2',
-            dt: null
+            dt1: null,
+            dt2: null
         }
     }
 

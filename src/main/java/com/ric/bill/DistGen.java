@@ -129,7 +129,7 @@ public class DistGen {
 	 */
 	public DistGen() {
 		super();
-		lstCheck = new ArrayList<Check>();
+		lstCheck = new ArrayList<Check>(1000);
 	}
 	
 	/**
@@ -428,11 +428,24 @@ public class DistGen {
 					SumNodeVol sumVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), ml, tp, genDt, genDt);
 					// Вариант распределения
 					Double var =parMng.getDbl(rqn, lnkLODN, "METODN", genDt, chng);
+					if (var == null) {
+						// если пусто - распределить по среднему
+						var = 1D;
+					}
 					if (var == 2D) {
 						// распределить по счетчику
 						if (lnkODNVol.getArea()==0d) {
 							vl = 0d;
+							//log.info("Взять 0 объем");
 						} else {
+							if (lnkODNVol.getVol() == null || lnkODNVol.getVol().equals(0D)) {
+								// если нулевой объем (еще не ввели) - получить объем предыдущего периода
+								Date backDt1 = Utl.getDateByPeriod(calc.getReqConfig().getPeriodBack());
+								Date backDt2 = Utl.getLastDate(backDt1);
+								lnkODNVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), lnkLODN, tp, backDt1, backDt2);
+								//log.info("Взять старый объем={}", lnkODNVol.getVol());
+							}
+							
 							vl = lnkODNVol.getVol() * sumVol.getArea() / lnkODNVol.getArea();
 						}
 						//log.info("*************метод 1 счетчик существует, объем={}", vl);

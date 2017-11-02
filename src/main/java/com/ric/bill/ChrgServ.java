@@ -255,18 +255,18 @@ public class ChrgServ {
 	 */
 	public Result chrgLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
     	this.calc=calc;
-		//log.info("Lsk="+calc.getKart().getLsk()+", FLsk="+calc.getKart().getFlsk());
+		log.info("Начисление по лс="+calc.getKart().getLsk());
 		Result res = new Result();
 		res.setErr(0);
 
-		prepChrg = new ArrayList<Chrg>(0); 
-		prepChrgMainServ = new ArrayList<ChrgMainServRec>(0);
+		prepChrg = new ArrayList<Chrg>(100); 
+		prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
 		// создать очередь
 		queBatch = new HashMap<Serv, Integer>(0);
 		
 		//для виртуальной услуги	
-		mapServ = new HashMap<Serv, BigDecimal>();  
-		mapVrt = new HashMap<Serv, BigDecimal>();  
+		mapServ = new HashMap<Serv, BigDecimal>(100);  
+		mapVrt = new HashMap<Serv, BigDecimal>(100);  
 
 		//найти все услуги, действительные в лиц.счете
 		//и создать потоки по кол-ву услуг
@@ -405,7 +405,6 @@ public class ChrgServ {
 
 		Utl.logger(false, 30, -1, -1); //###
 
-		long endTime2=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
 
 		MultiKeyMap mapDebLogBefore = new MultiKeyMap(); // логгинг

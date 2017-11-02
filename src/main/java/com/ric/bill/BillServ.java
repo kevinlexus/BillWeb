@@ -99,7 +99,7 @@ public class BillServ {
 	 *            - выполнять ли начисление
 	 * @return
 	 */
-	@Async(value = "BWEEEEE: chrgAll")
+	@Async
 	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
 			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
 			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
@@ -132,6 +132,7 @@ public class BillServ {
 			if (reqConfig.getIsDist()) {
 				Calc calc = new Calc(reqConfig);
 					distServ.distAll(calc, houseId, areaId, tempLskId);
+					distServ = null; // TODO ??
 				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {

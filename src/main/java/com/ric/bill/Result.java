@@ -57,6 +57,7 @@ public class Result {
 		public void setErrMsg(String errMsg) {
 			this.errMsg = errMsg;
 		}
+
 	}
 
 	// код ошибки
@@ -64,6 +65,8 @@ public class Result {
 	// Список ошибок по услуге
     private List<Err> lstErr;
     static ApplicationContext ctx = null;
+	// обрабатываемый лс
+	int lsk;
     
 	// Конструктор
 	public Result() {
@@ -87,8 +90,13 @@ public class Result {
 		this.lstErr = lstErr;
 	}
 
-	@Autowired
-	  private AutowireCapableBeanFactory autowireBeanFactory;
+	public int getLsk() {
+		return lsk;
+	}
+
+	public void setLsk(int lsk) {
+		this.lsk = lsk;
+	}
 	
 	/**
 	 * Добавить новое значение ошибки, не дублируя

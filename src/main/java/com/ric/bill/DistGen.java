@@ -219,6 +219,7 @@ public class DistGen {
 								if (Utl.between(genDt, e.getDt1(), e.getDt2())) {
 									vl=vl+Utl.nvl(v.getVol1(), 0d) * Utl.nvl(e.getPrc(), 0d) * Utl.getPartDays(v.getDt1(), v.getDt2());
 								}
+
 							}
 						}
 					}
@@ -485,7 +486,7 @@ public class DistGen {
 		nv.addPartArea(partArea);
 		nv.addPartPers(partPers);
 		nv.addVol(vl);
-
+		
 		// найти все направления, с необходимым типом, указывающие в точку из других узлов, получить их объемы
 		for (MeterLogGraph g : ml.getInside()) {
 			//по соотв.периоду

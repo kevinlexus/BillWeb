@@ -255,9 +255,10 @@ public class ChrgServ {
 	 */
 	public Result chrgLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
     	this.calc=calc;
-		log.info("Начисление по лс="+calc.getKart().getLsk());
+		log.info("RQN={}, Начисление по лс={}", calc.getReqConfig().getRqn(), calc.getKart().getLsk());
 		Result res = new Result();
 		res.setErr(0);
+		res.setLsk(calc.getKart().getLsk());
 
 		prepChrg = new ArrayList<Chrg>(100); 
 		prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
@@ -297,6 +298,8 @@ public class ChrgServ {
 
 			// РАСЧЕТ услуг в потоке
 			for (Serv serv : servWork) {
+  				    log.trace("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(), calc.getKart().getLsk(), serv.getId());
+
  					chrgThr.setUp(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
 			    	try {
 						chrgThr.run1();
@@ -304,6 +307,7 @@ public class ChrgServ {
 						e.printStackTrace();
 						throw new ErrorWhileChrg ("ОШИБКА! Была попытка получить параметр по пустому объекту хранения");
 					}
+  				    log.trace("RQN={}, Начисление по лс={}, услуге={} закончено!", calc.getReqConfig().getRqn(), calc.getKart().getLsk(), serv.getId());
 			    	// добавить некритические ошибки выполнения 
 					res.getLstErr().addAll(res.getLstErr());
 			}
@@ -313,7 +317,7 @@ public class ChrgServ {
 
 		// Если была ошибка в потоке - приостановить выполнение, выйти
 		if (errThread) {
-			log.info("ChrgServ.chrgLsk: Error in thread, exiting!", 2);
+			log.error("ChrgServ.chrgLsk: Error in thread, exiting!", 2);
 			res.setErr(1);
 			return res;
 		}

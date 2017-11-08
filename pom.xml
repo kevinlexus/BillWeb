@@ -151,7 +151,7 @@
 		<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-ehcache</artifactId>
-            <exclusions>
+             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache-core</artifactId>
@@ -159,17 +159,16 @@
             </exclusions>
         </dependency>
 
-		<dependency>
+ 		<dependency>
 	      <groupId>org.ehcache</groupId>
 	      <artifactId>ehcache</artifactId>
 	      </dependency>
-
-		<dependency>
+<!-- 		<dependency>
 		    <groupId>net.sf.ehcache</groupId>
 		    <artifactId>ehcache-terracotta</artifactId>
 		    <version>2.1.1</version>
 		</dependency>
-
+ -->
 		<dependency>
 	      <groupId>javax.cache</groupId>
 	      <artifactId>cache-api</artifactId>
@@ -220,7 +219,7 @@
 		<dependency>
 			<groupId>com.oracle</groupId>
 			<artifactId>oracle</artifactId>
-			<version>10.2.0.2.0</version>
+			<version>12.2.0.1</version>
 		</dependency>
 
         <dependency>

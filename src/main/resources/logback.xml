@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+  <timestamp key="myTimestamp" datePattern="yyyy-MM-dd"/>
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-            <file>${user.home}/BillWeb.log</file>
+            <file>${user.home}/BillWeb${myTimestamp}.log</file>
             <append>true</append>
             <encoder>
                 <pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -22,7 +23,7 @@
   <logger name="org.hibernate.engine.loading.internal.CollectionLoadContext" level="ERROR"/>
   <logger name="com.ric" level="INFO"/>
   <logger name="org.apache.xml.security.Init" level="INFO"/> <!-- не работает почему то -->
-  <logger name="org.ehcache" level="TRACE"/>
+  <logger name="org.ehcache" level="INFO"/>
   <logger name="org.hibernate.stat" level="DEBUG"/>
   <logger name="org.thymeleaf" level="ERROR"/>
   

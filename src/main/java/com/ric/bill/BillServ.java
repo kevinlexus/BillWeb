@@ -28,6 +28,8 @@ import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
 import com.ric.bill.model.ar.Kart;
+import com.ric.bill.model.mt.MLogs;
+import com.ric.bill.model.mt.MeterLog;
 
 /**
  * Главный сервис биллинга
@@ -98,6 +100,8 @@ public class BillServ {
 	 * @param isChrg
 	 *            - выполнять ли начисление
 	 * @return
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
 	@Async
 	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
@@ -109,11 +113,13 @@ public class BillServ {
 			"ParMngImpl.getStr1", "ParMngImpl.getStr2", "TarifMngImpl.getProp", "TarifDAOImpl.getPropByCD", "VsecDAOImpl.getPrivByUserRoleAct", "LstMngImpl.getByCD",
 			"ServMngImpl.getUpper", "ServMngImpl.getUpperTree", "MeterLogMngImpl.delNodeVol",
 			"rrr1" }, allEntries = true)
-	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId, Integer tempLskId) {
+	public Future<Result> chrgAll(RequestConfig reqConfig, Integer houseId, Integer areaId, Integer tempLskId) throws InterruptedException, ExecutionException {
 		// Logger.getLogger("org.hibernate.SQL").setLevel(Level.DEBUG);
 		// Logger.getLogger("org.hibernate.type").setLevel(Level.TRACE);
 		Result res = new Result();
 		res.setErr(0);
+		AsyncResult<Result> futM = new AsyncResult<Result>(res);
+		
 		// кол-во потоков
 		int cntThreads = 20;
 		// кол-во обраб.лиц.сч.
@@ -132,14 +138,13 @@ public class BillServ {
 			if (reqConfig.getIsDist()) {
 				Calc calc = new Calc(reqConfig);
 					distServ.distAll(calc, houseId, areaId, tempLskId);
-					distServ = null; // TODO ??
 				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {
 			log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
 			res.setErr(1);
 		}
-
+		
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
 		if (res.getErr() ==0) {
 			long startTime3 = System.currentTimeMillis();
@@ -164,8 +169,6 @@ public class BillServ {
 	
 				for (Kart kart : kartWork) {
 	
-	//				log.info("BillServ.chrgAll: Prepare thread for lsk="
-	//						+ kart.getLsk());
 					Future<Result> fut = null;
 					ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
 	
@@ -178,34 +181,35 @@ public class BillServ {
 						log.error("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
 						res.setErr(1);
 					}
-					if (kart.getLsk() == 1511) {
-						log.info("area.id={}", calc.getArea().getId());
-					}
-					
+
 					try {
 						fut = chrgServThr.chrgAndSaveLsk(calc);
 					} catch (ErrorWhileChrg | ExecutionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
+						log.info("====================== НЕ ОБРАБОТАННАЯ ОШИБКА!!!!!!!!!!!!!!!");
 					}
 					frl.add(fut);
-					log.trace("BillServ.chrgAll: Begins thread for lsk="
-							+ kart.getLsk());
+					log.info("Начат поток для лс={}", kart.getLsk());
 				}
 	
 				// проверить окончание всех потоков
 				int flag2 = 0;
 				while (flag2 == 0) {
-					log.trace("BillServ.chrgAll: ========================================== Waiting for threads-2");
+					log.info("========================================== Ожидание выполнения потоков ===========");
 					flag2 = 1;
 					for (Future<Result> fut : frl) {
+						log.info("========= 1");
+						
 						if (!fut.isDone()) {
+							// не завершен поток
+							log.info("========= Поток НЕ завершен! лс={}", fut.get().getLsk());
 							flag2 = 0;
 						} else {
 							try {
-								log.trace("ChrgServ: Done Result.err:="
-										+ fut.get().getErr());
+								log.info("Поток по лс={} завершен с результатом: Result.err:={}", fut.get().getLsk(), fut.get().getErr());
 								if (fut.get().getErr() == 1) {
+								  log.error("Ошибка!");
 								}
 							} catch (InterruptedException | ExecutionException e1) {
 								// TODO Auto-generated catch block
@@ -221,27 +225,28 @@ public class BillServ {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-	
+					log.info("========= 2");
+
 				}
 	
 				endTime2 = System.currentTimeMillis();
 				totalTime2 = endTime2 - startTime2;
-				log.info("Time for chrg One Lsk:" + totalTime2 / cntThreads, 2);
+				log.info("Промежуточное время выполнения одного лс:" + totalTime2 / cntThreads, 2);
 	
 			}
 			endTime = System.currentTimeMillis();
 			totalTime = endTime - startTime;
 			totalTime3 = endTime - startTime3;
-			log.info("Ver=2.0", 2);
-			log.info("Counted lsk:" + cntLsk, 2);
-			log.info("Time for all process:" + totalTime, 2);
+			log.info("Рассчитано лицевых в данной areaId={}, cnt={}", areaId, cntLsk);
+			log.info("Общее время выполнения в данной areaId={}", areaId, totalTime);
 			if (cntLsk > 0) {
-				log.info("Time of charging per one Lsk: " + totalTime3 / cntLsk + " ms.", 2);
+				log.info("Итоговое время выполнения одного в данной areaId={}, cnt={}, мс.", areaId, totalTime3 / cntLsk);
 			}
 		}
-		return new AsyncResult<Result>(res);
+		return futM;
 	}
 
+	
 	/**
 	 * выполнить начисление по лиц.счету
 	 * 
@@ -266,12 +271,12 @@ public class BillServ {
 			"rrr1" }, allEntries = true)
 	public Future<Result> chrgLsk(RequestConfig reqConfig, Kart kart,
 			Integer lsk) {
-		long beginTime = System.currentTimeMillis();
+		Result res = new Result();
+		Future<Result> fut = new AsyncResult<Result>(res);
+		
 		ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
 		DistServ distServ = ctx.getBean(DistServ.class);
 
-		Result res = new Result();
-		Future<Result> fut = new AsyncResult<Result>(res);
 		// признак распределения по дому (в случае перерасчета по Отоплению)
 		boolean isDistHouse = false;
 
@@ -289,8 +294,6 @@ public class BillServ {
 		// установить дом и счет
 		calc.setHouse(kart.getKw().getHouse());
 		calc.setKart(kart);
-
-		beginTime = System.currentTimeMillis();
 
 		// установить признак распределения объема по дому, если перерасчет
 		if (reqConfig.getOperTp().equals(1)) {
@@ -318,9 +321,6 @@ public class BillServ {
 			return fut;
 		}
 
-		long endTime2 = System.currentTimeMillis() - beginTime;
-		beginTime = System.currentTimeMillis();
-
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО 1 ЛС
 		try {
 			fut = chrgServThr.chrgAndSaveLsk(calc);
@@ -330,9 +330,21 @@ public class BillServ {
 			return fut;
 		}
 
-		long endTime3 = System.currentTimeMillis() - beginTime;
-		//log.info("TIMING: найти дом, л.с.={}, распр.объем={}, начислить={}", endTime1, endTime2,
-				//endTime3);
+		return fut;
+	}
+
+	/**
+	 * ТЕСТ-вызов не удалять!
+	 * @param id
+	 * @return
+	 */
+	@Async
+	public Future<Result> chrgTest(Integer id) {
+		Result res = new Result();
+		Future<Result> fut = new AsyncResult<Result>(res);
+		DistServ distServ = ctx.getBean(DistServ.class);
+		distServ.distTest(id);
+		log.info("======chrgTest");
 
 		return fut;
 	}

@@ -38,47 +38,75 @@ public class ChrgServThr {
 	private ApplicationContext ctx;
     @PersistenceContext
     private EntityManager em;
+	@Autowired
+	private Config config;
 	
 	@Async
 	public Future<Result> chrgAndSaveLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
-		ChrgServ chrgServ = ctx.getBean(ChrgServ.class);
-		//загрузить все Lazy параметры, чтобы не было concurrensy issue в потоках например, на getDbl()
-		//ну или использовать EAGER в дочерних коллекциях, что более затратно
-		calc.getKart().getDw().size();
-		calc.getKart().getTarifklsk().size();
-		for (TarifKlsk k : calc.getKart().getTarifklsk()) {
-			k.getTarprop().size();
-		}
-		calc.getKart().getReg().size();
-		calc.getKart().getRegState().size();
-
-		calc.getKart().getMlog().size();
-
-		calc.getHouse().getTarifklsk().size();
-		for (TarifKlsk k : calc.getHouse().getTarifklsk()) {
-			k.getTarprop().size();
-		}
-
-		calc.getArea().getTarifklsk().size();
-		for (TarifKlsk k : calc.getArea().getTarifklsk()) {
-			k.getTarprop().size();
-		}
-		
-		if (calc.getReqConfig().getChng() != null) {
-			calc.getReqConfig().getChng().getChngLsk().size();
-			for (ChngLsk a : calc.getReqConfig().getChng().getChngLsk()) {
-				a.getChngVal().size();
+		Integer lsk = calc.getKart().getLsk();
+		Integer houseId = calc.getKart().getKw().getHouse().getId();
+		// блокировка лиц.счета
+		int waitTick = 0;
+		while (!config.lock.setLockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId)) {
+			waitTick++;
+			if (waitTick > 60) {
+				log.error(
+						"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!");
+				log.error(
+						"********НЕ ВОЗМОЖНО РАЗБЛОКИРОВАТЬ к lsk={} В ТЕЧЕНИИ 60 сек!{}", lsk);
+				throw new ErrorWhileChrg("Ошибка при блокировке лс lsk="+lsk);
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				throw new ErrorWhileChrg("Ошибка при блокировке лс lsk="+lsk);
 			}
 		}
-		
-		//Выполнить начисление
-		Result res = chrgServ.chrgLsk(calc);
-		//Сохранить результат
-		if (res.getErr()==0) {
-			chrgServ.save(calc.getKart().getLsk()); 
+
+		try {
+			ChrgServ chrgServ = ctx.getBean(ChrgServ.class);
+			//загрузить все Lazy параметры, чтобы не было concurrensy issue в потоках например, на getDbl()
+			//ну или использовать EAGER в дочерних коллекциях, что более затратно
+			calc.getKart().getDw().size();
+			calc.getKart().getTarifklsk().size();
+			for (TarifKlsk k : calc.getKart().getTarifklsk()) {
+				k.getTarprop().size();
+			}
+			calc.getKart().getReg().size();
+			calc.getKart().getRegState().size();
+	
+			calc.getKart().getMlog().size();
+	
+			calc.getHouse().getTarifklsk().size();
+			for (TarifKlsk k : calc.getHouse().getTarifklsk()) {
+				k.getTarprop().size();
+			}
+	
+			calc.getArea().getTarifklsk().size();
+			for (TarifKlsk k : calc.getArea().getTarifklsk()) {
+				k.getTarprop().size();
+			}
+			
+			if (calc.getReqConfig().getChng() != null) {
+				calc.getReqConfig().getChng().getChngLsk().size();
+				for (ChngLsk a : calc.getReqConfig().getChng().getChngLsk()) {
+					a.getChngVal().size();
+				}
+			}
+			
+			//Выполнить начисление
+			Result res = chrgServ.chrgLsk(calc);
+			//Сохранить результат
+			if (res.getErr()==0) {
+				chrgServ.save(lsk); 
+			}
+			return new AsyncResult<Result>(res);
+			
+		} finally {
+			// разблокировать лс
+			config.lock.unlockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId);
 		}
-		
-		return new AsyncResult<Result>(res);
 	}
 	
 }

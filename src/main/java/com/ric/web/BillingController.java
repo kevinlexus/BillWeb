@@ -34,6 +34,7 @@ import com.ric.bill.BillServ;
 import com.ric.bill.Config;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Result;
+import com.ric.bill.TestBean;
 import com.ric.bill.Utl;
 import com.ric.bill.dao.AreaDAO;
 import com.ric.bill.dto.AddrTpDTO;
@@ -87,8 +88,6 @@ public class BillingController {
 	private OrgMng orgMng;
 	@Autowired
 	private ServMng servMng;
-	@Autowired
-	private TarifMng tarMng;
 	@Autowired
 	private PayordMng payordMng;
 	@Autowired
@@ -186,10 +185,11 @@ public class BillingController {
 	@RequestMapping("/payord/getPayordFlowByTpDt")
 	@ResponseBody
 	public List<PayordFlowDTO> getPayordFlowByTpDt(
-			@RequestParam(value = "tp") Integer tp,
-			@RequestParam(value = "dt1") String dt1,
-			@RequestParam(value = "dt2") String dt2) {
-		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt1={}, dt2={}", tp, dt1, dt2);
+			@RequestParam(value = "tp", required = true) Integer tp,
+			@RequestParam(value = "dt1", required = true) String dt1,
+			@RequestParam(value = "dt2", required = true) String dt2,
+			@RequestParam(value = "uk", required = false, defaultValue = "-1") Integer uk) {
+		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt1={}, dt2={}, uk={}", tp, dt1, dt2, uk);
 		Date genDt1=null, genDt2 = null;
 		if (dt1 != null && dt1.length()!=0) {
 			genDt1 = Utl.getDateFromStr(dt1);
@@ -197,7 +197,7 @@ public class BillingController {
 		if (dt2 != null && dt2.length()!=0) {
 			genDt2 = Utl.getDateFromStr(dt2);
 		}
-		return dtoBuilder.getPayordFlowDTOLst(payordMng.getPayordFlowByTpDt(tp, genDt1, genDt2));
+		return dtoBuilder.getPayordFlowDTOLst(payordMng.getPayordFlowByTpDt(tp, genDt1, genDt2, uk));
 	}
 
 	// Сохранить движение по платежкам
@@ -423,7 +423,7 @@ public class BillingController {
 	
 	/**
 	 * Получить список типов адресов
-	 * @param tp - 0 - весь список, 1 - ограниченный основными типами
+	 * @param tp - 0 - весь список, 1 - ограниченный основными типами, 2 - только Дом
 	 * @return
 	 */
 	@RequestMapping("/base/getAddrTp")
@@ -494,9 +494,9 @@ public class BillingController {
 	 */
 	@RequestMapping("/base/getOrgAll")
 	@ResponseBody
-	public List<KoDTO> getOrgAll() {
-		log.info("GOT /base/getOrgAll");
-		return dtoBuilder.getOrgDTOLst(orgMng.getOrgAll());
+	public List<KoDTO> getOrgAll(@RequestParam(value = "tp", defaultValue = "0") int tp) {
+		log.info("GOT /base/getOrgAll, tp={}", tp);
+		return dtoBuilder.getOrgDTOLst(orgMng.getOrgAll(tp));
 	}
 
 	/**

@@ -199,8 +199,11 @@ public class CacheService {
 		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
-	      
-	      
+	      cacheManager.createCache("VsecDAOImpl.getUserByCd", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+	      	      
 	    }
 
 	  }

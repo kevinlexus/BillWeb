@@ -45,10 +45,19 @@ Ext.define('BillWebApp.view.main.Panel1', {
                         valueField: 'id',
                         reference: 'period1',
                         maxWidth: 300,
+                        queryMode: 'local',
+                        selectOnFocus: true,
+                        listeners: {
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
+                            }
+                        },
                         bind: {
                             store: '{periodstore1}',
                             value: '{periodId1}'
                         }
+
                     },
                     {
                         xtype: 'combobox',
@@ -57,6 +66,14 @@ Ext.define('BillWebApp.view.main.Panel1', {
                         valueField: 'id',
                         reference: 'period2',
                         maxWidth: 300,
+                        queryMode: 'local',
+                        selectOnFocus: true,
+                        listeners: {
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
+                            }
+                        },
                         bind: {
                             store: '{periodstore2}',
                             value: '{periodId2}'
@@ -93,6 +110,14 @@ listeners: {
                         fieldLabel: 'Платежные поручения',
                         displayField: 'name',
                         valueField: 'id',
+                        queryMode: 'local',
+                        selectOnFocus: true,
+                        listeners: {
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
+                            }
+                        },
                         bind: {
                             store: '{payordgrpstore}',
                             value: '{payordgrpId1}'
@@ -100,24 +125,25 @@ listeners: {
                     },
                     {
                         xtype: 'combobox',
-                        reference: 'states',
-                        publishes: 'value',
-                        fieldLabel: 'УК',
+                        fieldLabel: 'Ук',
                         displayField: 'name',
                         valueField: 'id',
-                        store: {type: 'orgcuruserstore'},
+                        reference: 'states',  //????????? что это?
+                        matchFieldWidth: false,
+
+                        queryMode: 'local',
+                        selectOnFocus: true,
                         listeners: {
-                            beforequery: function(queryEvent, eOpts) {
-                                queryEvent.combo.store.proxy.extraParams = {
-                                    roleCd : 'MainReports.ArmBuhg',
-                                    actCd : 'Загрузить в контрол'
-                                }
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
                             }
                         },
+
                         bind: {
-                            //store: combostore,
-                            value: '{orgId}'
-                        }
+                            store: '{ukstore}',
+                            value: '{id}'
+                        },
                     }, {
                         xtype: 'checkboxfield',
                         name: 'checkbox1',

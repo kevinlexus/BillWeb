@@ -46,6 +46,9 @@ function addPaneledit() {
     mainView.doLayout;
 }
 
+// статус добавления панели
+var addPanel = 0;
+
 Ext.application({
     name: 'BillWebApp',
 
@@ -74,16 +77,19 @@ Ext.application({
 
         if (!orgStore.isLoaded()) {
             orgStore.on('load', function() {
-                if (!payordGprStore.isLoaded()) {
+                if (addPanel == 0) {
+                    addPanel = 1;
+                    if (!payordGprStore.isLoaded()) {
 
-                    payordGprStore.on('load', function() {
+                        payordGprStore.on('load', function () {
+                            addPaneledit();
+                        });
+
+                    } else {
                         addPaneledit();
-                    });
-
-                } else {
-                    addPaneledit();
-                    window.close();
-                    //msg.close();
+                        window.close();
+                        //msg.close();
+                    }
                 }
             });
         } else {

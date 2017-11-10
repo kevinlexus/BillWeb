@@ -1,5 +1,8 @@
 Ext.define('BillWebApp.view.main.AskObjPanel', {
 
+    viewModel: {
+        type: 'main'
+    },
 
     extend: 'Ext.form.Panel',
     xtype: 'form-hboxlayout',
@@ -29,7 +32,11 @@ Ext.define('BillWebApp.view.main.AskObjPanel', {
             listeners: {
                 click: 'onAskObjButtonSelPress'
             }
-        }]
+        }/*,
+        {
+            fieldLabel: 'Last Name',
+            bind: '{formTp}'
+        }*/]
     }],
 
     items: [{
@@ -104,38 +111,3 @@ Ext.define('BillWebApp.view.main.AskObjPanel', {
     }]
 });
 
-/*
-
- Ext.define('BillWebApp.view.main.AskObjPanel', {
-
- extend: 'Ext.form.Panel',
- xtype: 'form-hboxlayout',
- alias: 'widget.askobjpanel',
- layout: 'form',
- plain: true,
- reference: 'askObjPanel',
- //controller: 'main',
-
- items: [{
- xtype: 'fieldset',
- defaultType: 'textfield',
- layout: 'anchor',
- items: [{
- xtype: 'fieldcontainer',
- layout: 'hbox',
- align: 'stretch',
- combineErrors: true,
-
- items: [{
- flex: 2,
- xtype: 'button',
- text: 'Button3',
- listeners: {
- click: 'onPressButton3'
- }
- }]
- }]
- }]
-
- });
- */

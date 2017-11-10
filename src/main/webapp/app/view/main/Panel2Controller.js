@@ -116,11 +116,12 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
         var store = this.getViewModel().getStore('payordflowstore');
         var genDt2 = this.lookupReference('genDt2');
         var genDt3 = this.lookupReference('genDt3');
-
+        var uk = this.lookupReference('fltUk');
         store.load({
             params : {
                 dt1: Ext.Date.format(genDt2.getValue(), 'd.m.Y'),
                 dt2: Ext.Date.format(genDt3.getValue(), 'd.m.Y'),
+                uk: uk.value
             }
         });
     },

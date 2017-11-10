@@ -27,7 +27,7 @@ Ext.define('BillWebApp.view.main.AskObjPanelController', {
         var row = askObjGrid.getSelectionModel().getSelection()[0];
 //        console.log('Ask:Name='+ row.get('id')+' '+row.get('name'));
         // вызвать событие в контроллере панели Panel3 // TODO Разобраться как это вызывается!
-        this.fireEvent('something', this, row.get('id'), row.get('name'));
+        this.fireEvent('setVal', this, row.get('id'), row.get('name'));
         askObjPanel.destroy();
     }
 });

@@ -38,7 +38,31 @@ Ext.define('BillWebApp.view.main.Panel2', {
             }, {
                 text: 'Отменить',
                 handler: 'onGridPayordFlowCancel'
-            },{
+            }, {
+                xtype: 'combobox',
+                fieldLabel: 'Ук',
+                displayField: 'name',
+                valueField: 'id',
+                reference: 'fltUk',
+                matchFieldWidth: false,
+                labelWidth: 60,
+                width: 185,
+
+                queryMode: 'local',
+                selectOnFocus: true,
+                listeners: {
+                    beforequery: function (record) {
+                        record.query = new RegExp(record.query, 'i');
+                        record.forceAll = true;
+                    }
+                },
+
+                bind: {
+                    store: '{ukstore}',
+                    value: '{id}'
+                },
+            },
+                {
                 xtype: 'datefield',
                 name: 'genDt2',
                 reference: 'genDt2',

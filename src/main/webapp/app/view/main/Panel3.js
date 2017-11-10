@@ -153,6 +153,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                     displayField: 'name',
                     valueField: 'id',
                     triggerAction: 'all',
+                    matchFieldWidth: false,
                     validator: function(value) {
                         if (value != '') {
                             return true;
@@ -253,6 +254,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         typeAhead: true,
                         forceSelection: true,
                         displayField: 'name',
+                        matchFieldWidth: false,
                         valueField: 'id',
                         triggerAction: 'all',
                         validator: function(value) {
@@ -282,6 +284,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         typeAhead: true,
                         forceSelection: true,
                         displayField: 'name',
+                        matchFieldWidth: false,
                         valueField: 'id',
                         triggerAction: 'all',
                         listConfig:{
@@ -304,6 +307,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         typeAhead: true,
                         forceSelection: true,
                         displayField: 'name',
+                        matchFieldWidth: false,
                         valueField: 'id',
                         triggerAction: 'all',
                         allowBlank: false,
@@ -332,9 +336,26 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         forceSelection: true,
                         triggerAction: 'all',
                         allowBlank: true,
-                        listeners: {
-                            expand: 'onGridPayordCmpItemSel'
-                        }
+                        listeners: {expand: {fn: 'onGridPayordCmpItemSel',  formTp: 1}}
+                    }
+                },
+                {
+                    header: 'koExtFk',
+                    dataIndex: 'koExtFk',
+                    width: 0// 0 - чтобы не было видно поле, а поле нужно, иначе не отработает сохранение в store (жесть)
+                },
+                {
+                    header: 'Доп.Объект',
+                    dataIndex: 'koExtName',
+                    width: 150,
+                    queryMode: 'local',
+                    editor: {
+                        xtype: 'combo',
+                        typeAhead: true,
+                        forceSelection: true,
+                        triggerAction: 'all',
+                        allowBlank: true,
+                        listeners: {expand: {fn: 'onGridPayordCmpItemSel',  formTp: 2}}
                     }
                 },
                 {

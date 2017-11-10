@@ -12,7 +12,7 @@ Ext.define('BillWebApp.view.main.Panel3Controller', {
     listen : {
         controller : {
             '*' : {
-                something : 'onSetPayordCmpKlskFk'
+                setVal : 'onSetPayordCmpKlskFk'
             }
         }
     },
@@ -26,8 +26,16 @@ Ext.define('BillWebApp.view.main.Panel3Controller', {
         var row = payordCmpGrid.getSelectionModel().getSelection()[0];
         var rec = store.findRecord('id', row.get('id'));
 
-        rec.set('koFk', id);
-        rec.set('koName', name);
+        tp = this.getViewModel().data.formTp;
+        if (tp==1) {
+            // вызвано для установки объекта, например Город, УК
+            rec.set('koFk', id);
+            rec.set('koName', name);
+        } else if (tp==2) {
+            // вызвано для установки доп.объекта, например Дом
+            rec.set('koExtFk', id);
+            rec.set('koExtName', name);
+        }
 
         var panel3 = this.getView();
         panel3.focus();
@@ -327,8 +335,10 @@ Ext.define('BillWebApp.view.main.Panel3Controller', {
     },
 
     // Открыть панель выбора объекта
-    onGridPayordCmpItemSel: function() {
-
+    onGridPayordCmpItemSel: function(field, opts) {
+        //console.log('options.tp='+opts.formTp);
+        var data = this.getViewModel().data;
+        data.formTp=opts.formTp;
         askObjPanel = new Ext.form.Panel({
             modal: true,
             title: 'Поиск объекта',
@@ -337,22 +347,11 @@ Ext.define('BillWebApp.view.main.Panel3Controller', {
             resizable : true,
             layout: 'fit',
 
-            //viewModel: { //- надо или нет?
-            //    type: 'main'
-            //},
-            //controller: 'main',
-
             items: [
                 { xtype: 'askobjpanel' }
             ]
         });
         askObjPanel.show();
-
-        /*var ppp = this.lookupReference('payordGrpGrid'); // убрать
-        console.log('Grid='+ppp);
-        var vm = this.getViewModel();
-        console.log('View.id='+vm.id);
-        console.log('View.type='+vm.type);*/
 
     }
 });

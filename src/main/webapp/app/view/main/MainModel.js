@@ -12,12 +12,35 @@ Ext.define('BillWebApp.view.main.MainModel', {
         periodId1: '',
         periodId2: '',
         orgId: '',
-        tp: 'PAYORD_PERIODTP'
+        tp: 'PAYORD_PERIODTP',
+
+        // вариант списка типов для формы AskObjPanel
+        formTp: 1
+    },
+
+    // формулы, для того, чтобы можно было менять data переменные
+    formulas: {
+        formTp: {
+            set: function (value) {
+                formTp=value;
+            },
+            get: function (get) {
+                return this.formTp;
+            },
+        }
     },
 
     stores: {
         orgstore: {
             type: 'orgstore'
+        },
+        ukstore: {
+            type: 'orgstore',
+            proxy : {
+                extraParams: {
+                    tp: '1'
+                }
+            }
         },
         periodstore1: {
             type: 'periodstore1',
@@ -82,7 +105,7 @@ Ext.define('BillWebApp.view.main.MainModel', {
             type: 'addrtpstore',
             proxy : {
                 extraParams : {
-                    tp : 1
+                    tp : '{formTp}' // байндить с data-переменной, которая может меняться
                 }
             }
         },

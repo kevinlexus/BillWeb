@@ -1,6 +1,16 @@
 /**
  * Created by lev on 09.03.2017.
  */
+/*var rrr = Ext.create('Ext.window.Window', {
+    title: 'LOAD!',
+    height: 100,
+    width: 300,
+    layout: 'fit',
+    items: {
+        xtype: 'panelgauge'
+    }
+});*/
+
 Ext.define('BillWebApp.store.OrgStore', {
     extend: 'Ext.data.Store',
     alias  : 'store.orgstore',
@@ -21,10 +31,6 @@ Ext.define('BillWebApp.store.OrgStore', {
         },
         reader: {
             type: 'json'
-        }
-    }, listeners: {
-        load: function() {
-            console.log("OrgStore loaded!");
         }
     },
     filter: function(filters, value) {

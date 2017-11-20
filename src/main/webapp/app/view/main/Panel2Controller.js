@@ -1,3 +1,4 @@
+
 /**
  * This class is the controller for the main view for the application. It is specified as
  * the "controller" of the Main view class.
@@ -34,13 +35,24 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
 
     // Сохранить отредактированное платежное поручение
     onGridPayordFlowUpd: function() {
-        console.log('test');
         var store = this.getViewModel().getStore('payordflowstore');
         store.sync({
             failure: function (batch, options) {
                 alert("Ошибка сохранения платежки, возможно не все поля заполнены!");
             }
         });
+    },
+    // Печать платежных поручений
+    onGridPayordPrint: function() {
+        console.log('onGridPayordPrint');
+        var genDt2 = this.lookupReference('genDt2');
+        var genDt3 = this.lookupReference('genDt3');
+        var uk = this.lookupReference('fltUk').getValue();
+        var str='';
+        if (uk!=null) {
+            str = '&uk='+uk;
+        }
+        window.open('/rep/payordPayment?repCd=RptPayInfo4'+str+'&dt1='+Ext.Date.format(genDt2.getValue(), 'd.m.Y')+'&dt2='+Ext.Date.format(genDt3.getValue(), 'd.m.Y'), '_blank');
     },
     // Добавить движение по платежке (платежное поручение)
     onGridPayordFlowAdd: function() {
@@ -98,6 +110,8 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
         if (index != -1){
             var rs = store.getAt(index);
             return rs.get('name');
+        } else {
+            console.log('Возможно не загружен PayordStore');
         }
     },
     // выбор УК

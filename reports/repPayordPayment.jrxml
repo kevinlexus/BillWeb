@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.4.3.final using JasperReports Library version 6.4.3  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="repPayordPayment" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="0d6c7770-f10d-4dc4-befe-aac83bc180d0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="RKCDB Data Adapter"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="442"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="544"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<parameter name="period" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Период"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="uk" class="java.lang.Integer"/>
+	<parameter name="dt1" class="java.util.Date">
+		<defaultValueExpression><![CDATA[DATE(2017,11,20)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="dt2" class="java.util.Date">
+		<defaultValueExpression><![CDATA[DATE(2017,11,20)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="repCd" class="java.lang.String">
+		<defaultValueExpression><![CDATA["RptPayInfo4"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="plsql">
+		<![CDATA[{call $P{ORACLE_REF_CURSOR}:=fn.p_chrg_rep.rep($P{repCd}, $P{dt1}, $P{dt2}, null, null, null, $P{uk})}]]>
+	</queryString>
+	<field name="ID_PAYORD" class="java.math.BigDecimal"/>
+	<field name="NAME_PAYORD" class="java.lang.String"/>
+	<field name="ID_ORG" class="java.math.BigDecimal"/>
+	<field name="NAME_ORG" class="java.lang.String"/>
+	<field name="INSAL" class="java.math.BigDecimal"/>
+	<field name="COLLCT" class="java.math.BigDecimal"/>
+	<field name="FAKT" class="java.math.BigDecimal"/>
+	<field name="SEND" class="java.math.BigDecimal"/>
+	<field name="CORR_COL" class="java.math.BigDecimal"/>
+	<field name="CORR_SEND" class="java.math.BigDecimal"/>
+	<field name="CORR_RETAIN" class="java.math.BigDecimal"/>
+	<field name="OUTSAL" class="java.math.BigDecimal"/>
+	<variable name="INSAL1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{INSAL}]]></variableExpression>
+	</variable>
+	<variable name="COLLCT1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{COLLCT}]]></variableExpression>
+	</variable>
+	<variable name="FAKT1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{FAKT}]]></variableExpression>
+	</variable>
+	<variable name="SEND1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEND}]]></variableExpression>
+	</variable>
+	<variable name="CORR_COL1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_COL}]]></variableExpression>
+	</variable>
+	<variable name="CORR_SEND1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_SEND}]]></variableExpression>
+	</variable>
+	<variable name="CORR_RETAIN1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_RETAIN}]]></variableExpression>
+	</variable>
+	<variable name="OUTSAL1" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{OUTSAL}]]></variableExpression>
+	</variable>
+	<variable name="INSAL2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{INSAL}]]></variableExpression>
+	</variable>
+	<variable name="INSAL3" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{INSAL}]]></variableExpression>
+	</variable>
+	<variable name="COLLCT2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{COLLCT}]]></variableExpression>
+	</variable>
+	<variable name="FAKT2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{FAKT}]]></variableExpression>
+	</variable>
+	<variable name="SEND2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEND}]]></variableExpression>
+	</variable>
+	<variable name="CORR_COL2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_COL}]]></variableExpression>
+	</variable>
+	<variable name="CORR_SEND2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_SEND}]]></variableExpression>
+	</variable>
+	<variable name="CORR_RETAIN2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{CORR_RETAIN}]]></variableExpression>
+	</variable>
+	<variable name="OUTSAL2" class="java.math.BigDecimal" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{OUTSAL}]]></variableExpression>
+	</variable>
+	<group name="Group1">
+		<groupExpression><![CDATA[$F{ID_PAYORD}]]></groupExpression>
+		<groupFooter>
+			<band height="15">
+				<textField>
+					<reportElement x="110" y="0" width="70" height="15" uuid="89008bae-c6ac-4a25-9e33-e668e96212ec">
+						<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					</reportElement>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{INSAL1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="180" y="0" width="70" height="15" uuid="391e7bc7-fcb8-4696-8477-c794c28b19a2"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{COLLCT1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="250" y="0" width="70" height="15" uuid="03929532-862f-419b-a6dd-cee6f8b417f4"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SEND1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="320" y="0" width="60" height="15" uuid="565979e9-6884-4593-821e-16c139318b55"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{CORR_COL1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="380" y="0" width="60" height="15" uuid="b80962e5-69f7-4b9e-bbaf-714e4a46f8c0"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{CORR_SEND1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="440" y="0" width="60" height="15" uuid="8b2b8a3a-6fe8-41b0-9dfd-3b76294b9e79"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{CORR_RETAIN1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="500" y="0" width="60" height="15" uuid="4411dc43-2817-471e-b85c-5d0b1b09d274"/>
+					<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{OUTSAL1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="110" height="15" uuid="595865b7-bd6d-46cb-b147-c3ea28edc770">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<box>
+						<pen lineWidth="0.25"/>
+					</box>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font fontName="Arial" size="9" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Итого:]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="37" splitType="Stretch">
+			<textField>
+				<reportElement x="17" y="0" width="520" height="36" uuid="916a1a23-3a67-40d4-bcec-72bded357dff"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["1.0.10 Информация по платежам МП РИЦ, за период c "+new SimpleDateFormat("dd.MM.yyyy").format($P{dt1})+" по "+new SimpleDateFormat("dd.MM.yyyy").format($P{dt2})]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="50">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+			<staticText>
+				<reportElement x="110" y="20" width="70" height="30" uuid="c7dbef06-151c-4bbc-bd98-5ad74e0d0ce6"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Вх.сальдо]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="320" y="20" width="60" height="30" uuid="2b803a18-8396-41eb-93de-82af3fd47ed5"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Корр.сборов]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="20" width="60" height="30" uuid="fca16ed4-3c63-42bd-acc4-b5a2a92e3941"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Корр.перечисл.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="20" width="60" height="30" uuid="8365bfe5-04bd-451d-a2f5-06bed8cb2693"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Удержано]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="20" width="60" height="30" uuid="5dcd3221-b6a4-4b17-a5ba-ebf01db3fadb"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Исх.сальдо]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="20" width="110" height="30" uuid="e2fb0405-3941-48b3-a39e-0ede87d23218"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<text><![CDATA[Организация, назначение платежа]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="180" y="20" width="70" height="30" uuid="5a49b831-9088-4ac7-a49a-1b9c24f46c77"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Собрано, нал по "+new SimpleDateFormat("dd.MM.yyyy").format($P{dt2})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="250" y="20" width="70" height="30" uuid="642a9471-28ba-4bb9-b85a-937403895c71"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Перечислено по "+new SimpleDateFormat("dd.MM.yyyy").format($P{dt2})]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="30">
+			<textField>
+				<reportElement x="30" y="0" width="530" height="15" uuid="e4050e30-a189-4a72-a21c-6acb0303a830"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAME_PAYORD}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="30" y="15" width="80" height="15" uuid="6365d1f7-2f04-42da-8593-27da349bb2ea"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAME_ORG}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="15" width="70" height="15" uuid="7f014e2c-a243-4158-aa5c-13cc41304577"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INSAL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="180" y="15" width="70" height="15" uuid="aa5dcbac-079d-493f-a261-f81cf932e3e1"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COLLCT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="250" y="15" width="70" height="15" uuid="2c262d1a-8258-4852-b7e3-b66e95ec28b5"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SEND}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="320" y="15" width="60" height="15" uuid="79c0879d-c527-4362-9a64-d3bf4ec06b35"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CORR_COL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="380" y="15" width="60" height="15" uuid="2307592c-6764-4d88-a3c7-b6e58c683dbf"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CORR_SEND}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="440" y="15" width="60" height="15" uuid="98eb99de-35a5-4f20-9f14-49d22d8e7dc7"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CORR_RETAIN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="500" y="15" width="60" height="15" uuid="b42bc05f-6038-4f23-94aa-dc8181265959"/>
+				<box topPadding="0" leftPadding="0" bottomPadding="0" rightPadding="0">
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OUTSAL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="30" height="15" uuid="9aac6e9d-c21c-4138-8d33-ca28ff1bdeb4"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ID_PAYORD}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="15" width="30" height="15" uuid="8de280d7-0c35-46cc-ac2e-1b9f5d8652f2"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ID_ORG}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="75">
+			<textField>
+				<reportElement x="460" y="37" width="100" height="12" uuid="6d310958-c4b7-4bd3-890a-8f6c4f184db0"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Страница "+$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd.MM.yyyy kk:mm">
+				<reportElement x="70" y="36" width="90" height="14" uuid="7e660bfe-8e97-4b2b-b667-8927cc46913c"/>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[NOW( )]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="36" width="70" height="14" uuid="979736e1-e045-48b9-9591-d37cd602dab2"/>
+				<textElement>
+					<font fontName="DejaVu Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Дата печати: "]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="19">
+			<textField>
+				<reportElement x="180" y="0" width="70" height="14" uuid="5aa21a8f-28ab-4092-925c-1517a3112923"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{COLLCT2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="380" y="0" width="60" height="14" uuid="5887aa0b-b200-4669-8e09-5826eb7053c2"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CORR_SEND2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="320" y="0" width="60" height="14" uuid="ce4153dc-3082-49df-a4b6-131ab7b6f40a"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CORR_COL2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="250" y="0" width="70" height="14" uuid="2e76a534-c485-46c6-a0c3-9e073c0f05ab"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SEND2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="0" width="70" height="14" uuid="71f7a2e8-83f7-499b-a4be-a8cb502ff402"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{INSAL3}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="440" y="0" width="60" height="14" uuid="ec0d5eb9-ab82-41ba-bf27-38c50c725cce"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CORR_RETAIN2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="500" y="0" width="60" height="14" uuid="a3ac1ad2-21ec-48ea-966f-2e554adc8eb5"/>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{OUTSAL2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="110" height="14" uuid="adb2ee4f-bfbb-40f0-8874-02defce6f8f4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<pen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Всего на "+new SimpleDateFormat("dd.MM.yyyy").format($P{dt2})+":"]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

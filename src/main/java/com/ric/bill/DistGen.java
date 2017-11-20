@@ -243,9 +243,9 @@ public class DistGen {
 			} else if (mLogTp.equals("ЛНрм")){
 				// по нормативу, только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
 				// и если не существует физического счетчика
-/*				if (ml.getServ().getId() == 71) {
-					log.info("ttttt dt={}", genDt);
-				}*/
+				if (calc.getKart() == null) {
+					  log.error("Нет лиц.счета, привязанного к счетчику MeterLog.id={}", ml.getId());	
+				}
 				
 				if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt) && !metMng.checkExsKartMet(rqn, kart, ml.getServ(), genDt)) {
 					vl = kartMng.getStandartVol(rqn, calc, ml.getServ(), null, genDt, 1).partVol; // здесь tp=1, для определения объема
@@ -255,6 +255,9 @@ public class DistGen {
 		} else if (tp==1 && !isSwitchOff && (mLogTp.equals("ЛНрм") || mLogTp.equals("ЛИПУ") || mLogTp.equals("Лсчетчик"))) {
 			//по связи по площади и кол.прож. (только по Лнрм, ЛИПУ) в доле 1 дня
 			//только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
+			if (calc.getKart() == null) {
+			  log.error("Нет лиц.счета, привязанного к счетчику MeterLog.id={}", ml.getId());	
+			}
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
 				//площадь
 				if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры") ) {

@@ -71,7 +71,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         allowBlank: true
                     }
                 },
-                { text: 'Наименование',  dataIndex: 'name', width: 200, align: "left",
+                { text: 'Наименование',  dataIndex: 'name', width: 300, align: "left",
                     editor: {
                         allowBlank: false
                     }
@@ -278,22 +278,29 @@ Ext.define('BillWebApp.view.main.Panel3', {
                     header: 'Услуга',
                     dataIndex: 'servFk',
                     width: 150,
-                    queryMode: 'local',
                     editor: {
                         xtype: 'combo',
-                        typeAhead: true,
                         forceSelection: true,
                         displayField: 'name',
                         matchFieldWidth: false,
                         valueField: 'id',
-                        triggerAction: 'all',
+                        selectOnFocus: true,
+                        allowBlank: true,
+                        queryMode: 'local',
+                        lastQuery: '',
+                        typeAhead: true,
                         listConfig:{
                             minWidth:500
                         },
                         bind: {
                             store: '{servstore}'
                         },
-                        allowBlank: true
+                        listeners: {
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
+                            }
+                        }
                     },
                     renderer: 'onGridPayordCmpServRender'
                 },
@@ -301,21 +308,28 @@ Ext.define('BillWebApp.view.main.Panel3', {
                     header: 'Организация',
                     dataIndex: 'orgFk',
                     width: 150,
-                    queryMode: 'local',
                     editor: {
                         xtype: 'combo',
-                        typeAhead: true,
                         forceSelection: true,
                         displayField: 'name',
                         matchFieldWidth: false,
                         valueField: 'id',
-                        triggerAction: 'all',
-                        allowBlank: false,
+                        selectOnFocus: true,
+                        allowBlank: true,
+                        queryMode: 'local',
+                        lastQuery: '',
+                        typeAhead: true,
                         listConfig:{
                             minWidth:500
                         },
                         bind: {
                             store: '{orgstore}'
+                        },
+                        listeners: {
+                            beforequery: function (record) {
+                                record.query = new RegExp(record.query, 'i');
+                                record.forceAll = true;
+                            }
                         }
                     },
                     renderer: 'onGridPayordCmpOrgRender'
@@ -335,6 +349,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         typeAhead: true,
                         forceSelection: true,
                         triggerAction: 'all',
+                        selectOnFocus: true,
                         allowBlank: true,
                         listeners: {expand: {fn: 'onGridPayordCmpItemSel',  formTp: 1}}
                     }

@@ -1,5 +1,8 @@
 package com.ric.web;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.ric.bill.BillServ;
@@ -164,6 +168,30 @@ public class BillingController {
 	}
 
 	/**
+	 * Получить отчет по оплате
+	 * @param modelMap - служеб. Spring
+	 * @param modelAndView - служеб. Spring
+	 * @return - служеб. Spring 
+	 */
+	@RequestMapping(value = "/rep/payordPayment", method = RequestMethod.GET, produces = "application/pdf;charset=UTF-8")
+	public ModelAndView repPayordPayment(ModelMap modelMap, ModelAndView modelAndView,
+				@RequestParam(value = "dt1") String genDt1,
+				@RequestParam(value = "dt2") String genDt2, 
+				@RequestParam(value = "uk", required = false) Integer uk, 
+				@RequestParam(value = "repCd") String repCd 
+				) {
+		log.info("GOT /rep/payordPayment with repCd={}, dt1={}, dt2={}, uk={}", repCd, genDt1, genDt2, uk);
+			modelMap.put("datasource", dataSource);
+			modelMap.put("format", "pdf");
+			modelMap.put("dt1", Utl.getDateFromStr(genDt1));
+			modelMap.put("dt2", Utl.getDateFromStr(genDt2));
+			modelMap.put("uk", uk);
+			modelMap.put("repCd", repCd);
+			modelAndView = new ModelAndView("repPayordPayment", modelMap);
+			return modelAndView;
+	}
+
+	/**
  	 * Получить периоды для элементов интерфейса
  	 * 
  	 * @param repCd - CD отчета
@@ -188,7 +216,7 @@ public class BillingController {
 			@RequestParam(value = "tp", required = true) Integer tp,
 			@RequestParam(value = "dt1", required = true) String dt1,
 			@RequestParam(value = "dt2", required = true) String dt2,
-			@RequestParam(value = "uk", required = false, defaultValue = "-1") Integer uk) {
+			@RequestParam(value = "uk", required = false) Integer uk) {
 		log.info("GOT /payord/getPayordFlowByTpDt with tp={}, dt1={}, dt2={}, uk={}", tp, dt1, dt2, uk);
 		Date genDt1=null, genDt2 = null;
 		if (dt1 != null && dt1.length()!=0) {
@@ -709,6 +737,45 @@ public class BillingController {
 		}
 
 		return "OK";
+	}
+	
+	
+	@RequestMapping(value = "/uploadFile", method = RequestMethod.POST)
+	@ResponseBody
+	public String uploadFile(@RequestParam("file") MultipartFile file) {// имена параметров (тут - "file") - из формы JSP.
+ 
+		String name = null;
+ 
+		if (!file.isEmpty()) {
+			try {
+				byte[] bytes = file.getBytes();
+ 
+				name = file.getOriginalFilename();
+ 
+				String rootPath = "C:\\temp\\";
+				File dir = new File(rootPath + File.separator + "loadFiles");
+ 
+				if (!dir.exists()) {
+					dir.mkdirs();
+				}
+ 
+				File uploadedFile = new File(dir.getAbsolutePath() + File.separator + name);
+ 
+				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(uploadedFile));
+				stream.write(bytes);
+				stream.flush();
+				stream.close();
+ 
+				log.info("uploaded: " + uploadedFile.getAbsolutePath());
+ 
+				return "You successfully uploaded file=" + name;
+ 
+			} catch (Exception e) {
+				return "You failed to upload " + name + " => " + e.getMessage();
+			}
+		} else {
+			return "You failed to upload " + name + " because the file was empty.";
+		}
 	}
 	
 	@RequestMapping("/chrgall")

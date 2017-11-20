@@ -1,6 +1,11 @@
 /**
  * This class is the view model for the Main view of the application.
  */
+var isLoadOrgStore=false;
+var isLoadUkStore=false;
+var isLoadPayordStore=false;
+var isAddedPanels=false;
+
 Ext.define('BillWebApp.view.main.MainModel', {
     extend: 'Ext.app.ViewModel',
 
@@ -32,13 +37,27 @@ Ext.define('BillWebApp.view.main.MainModel', {
 
     stores: {
         orgstore: {
-            type: 'orgstore'
+            type: 'orgstore',
+            listeners: {
+                load: function() {
+                    isLoadOrgStore=true;
+                    console.log('OrgStore Loaded')
+                    addPaneledit();
+                }
+            }
         },
         ukstore: {
             type: 'orgstore',
             proxy : {
                 extraParams: {
                     tp: '1'
+                }
+            },
+            listeners: {
+                load: function() {
+                    isLoadUkStore=true;
+                    console.log('UkStore Loaded')
+                    addPaneledit();
                 }
             }
         },
@@ -65,6 +84,13 @@ Ext.define('BillWebApp.view.main.MainModel', {
             proxy : {
                 extraParams : {
                     payordGrpId : 0 // по умолчанию - все платежки
+                }
+            },
+            listeners: {
+                load: function() {
+                    isLoadPayordStore=true;
+                    console.log('PayordStore Loaded')
+                    addPaneledit();
                 }
             }
         },
@@ -121,3 +147,50 @@ Ext.define('BillWebApp.view.main.MainModel', {
     }
 
 });
+
+function addPaneledit() {
+    if (isAddedPanels!=true && isLoadOrgStore==true && isLoadUkStore==true
+        && isLoadPayordStore==true) {
+        isAddedPanels=true;
+        var mainView = BillWebApp.getApplication().getMainView();
+        mainView.add(
+            [
+                {
+                    title: 'Редактирование',
+                    iconCls: 'fa-edit',
+                    reference: 'panelEdit',
+                    xtype: 'panelEdit'
+                }, {
+                    title: 'Платежки',
+                    iconCls: 'fa-inbox',
+                    items: [{
+                        xtype: 'panel1'
+                    }]
+                },
+                {
+                    title: 'Формирование',
+                    iconCls: 'fa-cog',
+                    items: [{
+                        xtype: 'panel4'
+                    }]
+                },
+                {
+                    title: 'Настройки платежек',
+                    iconCls: 'fa-cog',
+                    items: [{
+                        xtype: 'panel5'
+                    }]
+                },
+
+                {
+                    title: 'Параметры',
+                    iconCls: 'fa-cog',
+                    items: [{
+                        xtype: 'panelPar'
+                    }]
+                }
+            ]
+        );
+        mainView.doLayout;
+    }
+}

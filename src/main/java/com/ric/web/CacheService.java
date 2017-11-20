@@ -203,6 +203,14 @@ public class CacheService {
 		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("OrgDAOImpl.getOrgAll", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
+	      cacheManager.createCache("PayordMngImpl.calcFlow", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));
 	      	      
 	    }
 

@@ -9,6 +9,13 @@ function addPaneledit() {
     mainView.add(
     [
     {
+            title: 'Формирование',
+            iconCls: 'fa-cog',
+            items: [{
+                xtype: 'panel4'
+            }]
+    },
+    {
         title: 'Редактирование',
         iconCls: 'fa-edit',
         reference: 'panelEdit',
@@ -27,13 +34,7 @@ function addPaneledit() {
         xtype: 'panel5'
         }]
     },
-    {
-        title: 'Формирование',
-            iconCls: 'fa-cog',
-            items: [{
-            xtype: 'panel4'
-        }]
-    },
+
     {
     title: 'Параметры',
         iconCls: 'fa-cog',
@@ -62,9 +63,14 @@ Ext.application({
         console.log('Launch the application');
         BillWebApp.getApplication().setMainView('main.Main');
 
+/*        var md = BillWebApp.getApplication().getMainView();
+        console.log('Check1='+md);
+        var ss = md.config;
+        console.log('Check2='+ss);*/
 
-        var orgStore = Ext.getStore('OrgStore');
+        /*        var orgStore = Ext.getStore('OrgStore');
         var payordGprStore = Ext.getStore('PayordGrpStore');
+
         var window = Ext.create('Ext.window.Window', {
             //title: 'Сообщение',
             height: 100,
@@ -73,30 +79,39 @@ Ext.application({
             items: {
                 xtype: 'panelgauge'
             }
-        }).show();
+        }).show();*/
 
-        if (!orgStore.isLoaded()) {
+      /*  if (!orgStore.isLoaded()) {
+            console.log('Check1');
             orgStore.on('load', function() {
+                console.log('Check3');
+
                 if (addPanel == 0) {
                     addPanel = 1;
                     if (!payordGprStore.isLoaded()) {
+                        console.log('Check4');
 
                         payordGprStore.on('load', function () {
                             addPaneledit();
                         });
 
                     } else {
+                        console.log('Check5');
+
                         addPaneledit();
                         window.close();
                         //msg.close();
                     }
                 }
             });
+            orgStore.load();
         } else {
+            console.log('Check2');
+
             addPaneledit();
             window.close();
             //msg.close();
-        }
+        }*/
 
         console.log('doLayout!');
 

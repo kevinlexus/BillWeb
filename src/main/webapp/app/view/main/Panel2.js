@@ -30,7 +30,7 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 store: '{payordflowstore}'
             },
             tbar: [{
-                text: 'Добавить поручение',
+                text: 'Добавить',
                 handler: 'onGridPayordFlowAdd'
             }, {
                 text: 'Сохранить',
@@ -45,7 +45,7 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 valueField: 'id',
                 reference: 'fltUk',
                 matchFieldWidth: false,
-                labelWidth: 60,
+                labelWidth: 15,
                 width: 185,
 
                 queryMode: 'local',
@@ -56,7 +56,6 @@ Ext.define('BillWebApp.view.main.Panel2', {
                         record.forceAll = true;
                     }
                 },
-
                 bind: {
                     store: '{ukstore}',
                     value: '{id}'
@@ -70,7 +69,8 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 labelWidth: 60,
                 width: 185,
                 allowBlank: true,
-                format: 'd.m.Y'
+                format: 'd.m.Y',
+                value: new Date()
             },{
                 xtype: 'datefield',
                 name: 'genDt3',
@@ -79,11 +79,15 @@ Ext.define('BillWebApp.view.main.Panel2', {
                 labelWidth: 15,
                 width: 140,
                 allowBlank: true,
-                format: 'd.m.Y'
+                format: 'd.m.Y',
+                value: new Date()
             },
             {
                 text: 'Обновить',
                 handler: 'onGridPayordFlowRefresh'
+            },{
+                text: 'Печать',
+                handler: 'onGridPayordPrint'
             }],
             requires: [
                 'Ext.selection.CellModel',
@@ -202,20 +206,23 @@ Ext.define('BillWebApp.view.main.Panel2', {
                     items: ['@del']
                 }
             ]
-        },
+        }/*,
         {
             // Управление
             xtype: 'panel',
-            width: 1000,
-            minHeight: 20/*,
+            //width: 1000,
+            //minHeight: 20,
             tbar: [{
+                text: 'Печать',
+                handler: 'onGridPayordPrint'
+            }{
                 text: 'Подписать все',
                 handler: 'onGridPayordFlowSignAll'
             }, {
                 text: 'Снять подпись',
                 handler: 'onGridPayordFlowUnSignAll'
-            }]*/
-        }
+            }]
+        }*/
     ]
 
 });

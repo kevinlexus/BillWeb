@@ -78,7 +78,7 @@ Ext.define('BillWebApp.view.main.Panel1', {
                             store: '{periodstore2}',
                             value: '{periodId2}'
                         }
-                    }, {
+                    }/*, {
                         xtype: 'checkboxfield',
                         name: 'checkbox1',
                         reference: 'checkbox1',
@@ -86,13 +86,7 @@ Ext.define('BillWebApp.view.main.Panel1', {
                         listeners: {
                             change: 'onChangePeriodType'
                         }
-
-/*
-listeners: {
-    checkchange: 'checkTest'
-}*/
-
-                    }
+                    }*/
                 ]
             },
             {

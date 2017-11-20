@@ -16,14 +16,15 @@ Ext.define('BillWebApp.view.main.Panel4', {
         fieldLabel: 'Дата формирования',
         margin: '0 5 0 0',
         allowBlank: false,
-        format: 'd.m.Y'
+        format: 'd.m.Y',
+        value: new Date()
         },
         {
             xtype: 'radiofield',
             name: 'radio1',
             value: 'isDay',
             fieldLabel: '',
-            boxLabel: 'На дату'
+            boxLabel: 'На дату (уже сформированные платежки будут удалены)'
         },
         {
             xtype: 'radiofield',
@@ -40,7 +41,7 @@ Ext.define('BillWebApp.view.main.Panel4', {
             fieldLabel: '',
             labelSeparator: '',
             hideEmptyLabel: false,
-            boxLabel: 'Итоговое формирование'
+            boxLabel: 'Итоговое формирование (Строго после формирования и подписания итоговой платежки!)'
         }
     ],
 

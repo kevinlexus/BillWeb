@@ -135,7 +135,7 @@ public class ChrgThr {
 		//Объект, временно хранящий записи начисления
 		chStore = new ChrgStore(); 
 		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		if (serv.getId()==32) {
+		if (serv.getId()==20) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 		

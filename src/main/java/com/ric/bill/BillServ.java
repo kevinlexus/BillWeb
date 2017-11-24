@@ -149,7 +149,7 @@ public class BillServ {
 		if (res.getErr() ==0) {
 			long startTime3 = System.currentTimeMillis();
 			// загрузить все необходимые Лиц.счета
-			kartThr = kartMng.findAll(houseId, areaId, tempLskId, config.getCurDt1(), config.getCurDt2());
+			kartThr = kartMng.findAll(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2());
 			cntLsk = kartThr.size();
 			while (true) {
 				log.trace("BillServ.chrgAll: Loading karts for threads");

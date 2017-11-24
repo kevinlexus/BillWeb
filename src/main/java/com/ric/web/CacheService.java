@@ -211,7 +211,10 @@ public class CacheService {
 		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 60))) 
 		  	        .setStoreByValue(false)
 		  	        .setStatisticsEnabled(false));
-	      	      
+/*	 Пока отключил     cacheManager.createCache("Config.getCalendarCurrentPeriod", new MutableConfiguration<>()  
+		  	        .setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, 10))) 
+		  	        .setStoreByValue(false)
+		  	        .setStatisticsEnabled(false));*/
 	    }
 
 	  }

@@ -162,7 +162,7 @@ public class DistServ {
 		long startTime;
 		long endTime;
 		long totalTime;
-		for (House o : houseMng.findAll2(houseId, areaId, tempLskId, config.getCurDt1(), config.getCurDt2())) {
+		for (House o : houseMng.findAll2(houseId, areaId, tempLskId, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2())) {
 			log.info("RQN={}, Распределение объемов по House.id={}", calc.getReqConfig().getRqn(), o.getId());
 			// распределить объемы
 			startTime = System.currentTimeMillis();

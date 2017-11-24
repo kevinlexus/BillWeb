@@ -55,9 +55,10 @@
      *      ]
      */
     "requires": [
-        "font-awesome"
+        "font-awesome",
+	"ext-locale"
     ],
-
+    "locale": "ru",	
     /**
      * Fashion build configuration properties.
      */

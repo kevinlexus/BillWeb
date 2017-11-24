@@ -13,6 +13,7 @@ Ext.define('BillWebApp.view.main.Panel4', {
         xtype: 'datefield',
         name: 'genDt',
         reference: 'genDt',
+        startDay : 1,
         fieldLabel: 'Дата формирования',
         margin: '0 5 0 0',
         allowBlank: false,

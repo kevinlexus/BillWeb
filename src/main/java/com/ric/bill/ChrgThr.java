@@ -789,23 +789,6 @@ public class ChrgThr {
 							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);			
 				Utl.logger(false, 20, kart.getLsk(), serv.getId()); //###
 			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
-				// ОТЛАДКА
-				if (chStore==null) {
-					log.error("ВНИМАНИЕ NULL-1 lsk={}", kart.getLsk());
-				}
-				if (vol==null) {
-					log.error("ВНИМАНИЕ NULL-2 lsk={}", kart.getLsk());
-				}
-				if (stPrice==null) {
-					log.error("ВНИМАНИЕ NULL-3 lsk={}", kart.getLsk());
-				}
-				if (cntPers==null) {
-					log.error("ВНИМАНИЕ NULL-4 lsk={}", kart.getLsk());
-				}
-				if (sqr==null) {
-					log.error("ВНИМАНИЕ NULL-5 lsk={}", kart.getLsk());
-				}
-				
 				//тип расчета, например:Коммерческий найм, где цена = сумме
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, cntPers.cntFact, 
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn);

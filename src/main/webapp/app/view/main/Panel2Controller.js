@@ -45,14 +45,15 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
     // Печать платежных поручений
     onGridPayordPrint: function() {
         console.log('onGridPayordPrint');
-        var genDt2 = this.lookupReference('genDt2');
+        //var genDt2 = this.lookupReference('genDt2');
+        // начальный период такой же как заключительный, иначе бессмыслица
         var genDt3 = this.lookupReference('genDt3');
         var uk = this.lookupReference('fltUk').getValue();
         var str='';
         if (uk!=null) {
             str = '&uk='+uk;
         }
-        window.open('/rep/payordPayment?repCd=RptPayInfo4'+str+'&dt1='+Ext.Date.format(genDt2.getValue(), 'd.m.Y')+'&dt2='+Ext.Date.format(genDt3.getValue(), 'd.m.Y'), '_blank');
+        window.open('/rep/payordPayment?repCd=RptPayInfo4'+str+'&dt1='+Ext.Date.format(genDt3.getValue(), 'd.m.Y')+'&dt2='+Ext.Date.format(genDt3.getValue(), 'd.m.Y'), '_blank');
     },
     // Добавить движение по платежке (платежное поручение)
     onGridPayordFlowAdd: function() {

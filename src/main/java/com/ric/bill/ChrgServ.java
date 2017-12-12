@@ -363,9 +363,9 @@ public class ChrgServ {
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void save (Integer lsk) throws ErrorWhileChrg {
-		Utl.logger(false, 28, -1, -1); //###
+		//Utl.logger(false, 28, -1, -1); //###
 
-		long beginTime = System.currentTimeMillis();
+		//long beginTime = System.currentTimeMillis();
 
 		Integer status;
 		if (calc.getReqConfig().getOperTp().equals(1)) {
@@ -377,25 +377,25 @@ public class ChrgServ {
 		}
 		
 		Session session = em.unwrap(Session.class);
-		Filter filter = session.enableFilter("FILTER_CHRG1");
+		//Filter filter = session.enableFilter("FILTER_CHRG1");
 		
 		session.enableFilter("FILTER_CHRG1").setParameter("PERIOD", calc.getReqConfig().getPeriod())
 		   .setParameter("STATUS", 1);
-		
-		//коллекция для сумм по укрупнённым услугам, для нового начисления 
-	    MultiKeyMap mapDeb = new MultiKeyMap();
-
 		Kart kart = em.find(Kart.class, lsk); //здесь так, иначе записи не прикрепятся к объекту не из этой сессии!
 		
+		//коллекция для сумм по укрупнённым услугам, для нового начисления 
+	    /*MultiKeyMap mapDeb = new MultiKeyMap();
+
 		long endTime1=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
 		
 		Utl.logger(false, 29, -1, -1); //###
+		*/
 		
 		//ДЕЛЬТА
 		//ПОДГОТОВИТЬСЯ для сохранения дельты
 		//сгруппировать до укрупнённых услуг текущий расчет по debt
-		for (Chrg chrg : prepChrg) { 
+		/*for (Chrg chrg : prepChrg) { 
 			Serv servMain = null;
 			try {
 				servMain = servMng.getUpper(chrg.getServ(), "serv_tree_kassa");
@@ -436,6 +436,7 @@ public class ChrgServ {
 
 		long endTime3=System.currentTimeMillis()-beginTime;
 		beginTime = System.currentTimeMillis();
+		*/
 		
 		//перенести предыдущий расчет начисления в статус "архив" (1->0)
 		Query query = null;
@@ -460,14 +461,13 @@ public class ChrgServ {
 		query.setParameter("lsk", kart.getLsk());
 		query.setParameter("period", calc.getReqConfig().getPeriod());
 		query.executeUpdate();
-		Utl.logger(false, 32, -1, -1); //###
+		//Utl.logger(false, 32, -1, -1); //###
 		
-		long endTime4=System.currentTimeMillis()-beginTime;
-		beginTime = System.currentTimeMillis();
+		//beginTime = System.currentTimeMillis();
 		
 		//ДЕЛЬТА
 		//НАЙТИ и передать дельту в функцию долгов (выполнить только в начислении)
-		if (calc.getReqConfig().getOperTp().equals(0)) {
+		/*if (calc.getReqConfig().getOperTp().equals(0)) {
 			Set<Control> ctrlSet = new HashSet();
 			MapIterator it = mapDeb.mapIterator();
 			MultiKey mk;
@@ -550,11 +550,10 @@ public class ChrgServ {
 				
 			}
 			
-		}
-		Utl.logger(false, 33, -1, -1); //###
+		}*/
+		//Utl.logger(false, 33, -1, -1); //###
 
-		long endTime5=System.currentTimeMillis()-beginTime;
-		beginTime = System.currentTimeMillis();
+		//beginTime = System.currentTimeMillis();
 
 		//Сохранить новое начисление (переписать из prepChrg)
 		for (Chrg chrg : prepChrg) {
@@ -573,7 +572,7 @@ public class ChrgServ {
 	    mapVrt=null;
 	    servThr=null;
 		
-		long endTime6=System.currentTimeMillis()-beginTime;
+		//long endTime6=System.currentTimeMillis()-beginTime;
 	}
 	
 

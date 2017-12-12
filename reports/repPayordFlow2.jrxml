@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.3.1.final using JasperReports Library version 6.3.1  -->
-<!-- 2017-05-01T12:48:58 -->
+<!-- Created with Jaspersoft Studio version 6.4.3.final using JasperReports Library version 6.4.3  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="repPayordFlow1" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="0d6c7770-f10d-4dc4-befe-aac83bc180d0">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="RKCDB Data Adapter"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
@@ -298,13 +297,13 @@
 	<detail>
 		<band height="10" splitType="Stretch">
 			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
-			<textField isBlankWhenNull="true">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement x="0" y="0" width="100" height="10" uuid="2ca881ba-c5cf-4440-ba1e-b02f28be8aec"/>
 				<box>
 					<pen lineWidth="0.25"/>
 				</box>
 				<textElement>
-					<font fontName="Times New Roman" size="8"/>
+					<font fontName="Times New Roman" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{UK_NAME}]]></textFieldExpression>
 			</textField>

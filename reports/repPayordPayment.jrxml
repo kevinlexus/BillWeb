@@ -287,13 +287,13 @@
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NAME_PAYORD}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isStretchWithOverflow="true">
 				<reportElement x="30" y="15" width="80" height="15" uuid="6365d1f7-2f04-42da-8593-27da349bb2ea"/>
 				<box>
 					<pen lineWidth="0.25"/>
 				</box>
 				<textElement verticalAlignment="Middle">
-					<font fontName="Arial" size="9"/>
+					<font fontName="Arial" size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NAME_ORG}]]></textFieldExpression>
 			</textField>

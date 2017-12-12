@@ -32,6 +32,15 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
         if (context.column.widget)
             return false;
     },
+    // выбор периодичности компонента
+    onGridPayordPeriodRender: function (value, metaData, record, rowIndex, colIndex, store, view) {
+        var store = this.getViewModel().getStore('lststore');
+        var index = store.findExact('id', value);
+        if (index != -1){
+            var rs = store.getAt(index);
+            return rs.get('name');
+        }
+    },
 
     // Сохранить отредактированное платежное поручение
     onGridPayordFlowUpd: function() {
@@ -106,7 +115,7 @@ Ext.define('BillWebApp.view.main.Panel2Controller', {
 
     // выбор платежки
     onGridPayordFlowPayordRender: function (value, metaData, record, rowIndex, colIndex, store, view) {
-        var store = this.getViewModel().getStore('payordstore');
+        var store = this.getViewModel().getStore('payordstore2');
         var index = store.findExact('id', value);
         if (index != -1){
             var rs = store.getAt(index);

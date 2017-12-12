@@ -9,15 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.concurrent.Future;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
 
 import com.ric.bill.excp.EmptyOrg;
@@ -43,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
  * @author lev
  *
  */
-
 
 @Component
 @Scope("prototype") //собственный бин для каждого потока по услуге
@@ -110,7 +106,6 @@ public class ChrgThr {
 		this.prepChrgMainServ = prepChrgMainServ;
 	}
 
-	//@Async
 	public Result run1() throws EmptyStorable {
 		Kart kart = calc.getKart();
 		// перерасчет
@@ -170,7 +165,7 @@ public class ChrgThr {
 					continue;
 				}*/
 					try {
-					  // Расчет начисления по одной услуге и дню
+					  // Расчет начисления по каждой услуге и дню
 					  genChrg(calc, serv, tpOwn, genDt);
 					} catch (EmptyStorable e) {
 						e.printStackTrace();
@@ -188,7 +183,7 @@ public class ChrgThr {
 		}
 		Utl.logger(false, 25, -1, -1); //###
 
-		// ДОБАВИТЬ сгруппированные по основной услуге суммы начислений
+		// Получить сгруппированные по основной услуге суммы начислений
 		chrgMainServAppend(chStore.getStoreMainServ());
 		
 		Utl.logger(false, 26, -1, -1); //###
@@ -470,7 +465,6 @@ public class ChrgThr {
 			
 			  // получить организацию
 			  org = kartMng.getOrg(rqn, calc, serv.getServOrg(), genDt);
-			  //log.trace(""sss);
 	  		  if (serv.getCheckOrg()) {
 				  if (org == null) {
 				    throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
@@ -711,9 +705,9 @@ public class ChrgThr {
 					throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
 				}
 				
-	//			if (serv.getId() == 35) {
-					//log.info("check");
-				//}
+				if (serv.getId() == 89) {
+//					log.info("check");
+				}
 				// получить наличие физ.счетчика в данном периоде
 				exsMet = metMng.checkExsKartMet(rqn, kart, serv.getServMet(), genDt);
 				
@@ -723,7 +717,9 @@ public class ChrgThr {
 					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
 				} else {
 					// обычное начисление
-					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), genDt, genDt);
+					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(), 
+							calc.getReqConfig().getChng(),
+							kart, serv.getServMet(), genDt, genDt);
 					vol = tmpNodeVol.getVol();
 					// сохранить номер ввода
 					entry = tmpNodeVol.getEntry();
@@ -741,7 +737,9 @@ public class ChrgThr {
 					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
 				} else {
 					// получить объем по услуге за период
-					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getStatusVol(), kart, serv.getServMet(), 
+					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(), 
+							calc.getReqConfig().getChng(),
+							kart, serv.getServMet(), 
 							calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
 					vol = tmpNodeVol.getVol();
 				}

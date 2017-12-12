@@ -137,7 +137,7 @@ Ext.define('BillWebApp.view.main.Panel2', {
                             }
                         },
                         bind: {
-                            store: '{payordstore}'
+                            store: '{payordstore2}'
                         },
                         listConfig:{
                             minWidth:500

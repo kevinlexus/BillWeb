@@ -70,10 +70,6 @@ public class DistServ {
 	private EntityManager em;
 
 	private Calc calc;
-	// статус записи объёма зависит от типа операции (0 - начисление, 1 -
-	// перерасчет)
-	private Integer statusVol;
-
 	/**
 	 * Установить фильтры для сессии -убрал пока
 	 * 
@@ -110,8 +106,7 @@ public class DistServ {
 	/**
 	 * Удалить объем по вводу, определённой услуге
 	 * 
-	 * @param serv
-	 *            - услуга
+	 * @param serv - услуга
 	 * @throws CyclicMeter
 	 */
 	private void delHouseServVolTp(int rqn, Serv serv, int tp) throws CyclicMeter {
@@ -130,8 +125,9 @@ public class DistServ {
 
 		// удалить объемы по всем вводам по дому и по услуге
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, calc.getHouse(), serv, "Ввод")) {
-			metMng.delNodeVol(rqn, ml, tp, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(),
-					getStatusVol());
+			metMng.delNodeVol(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(),
+					calc.getReqConfig().getChng(), ml, tp, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2()
+							);
 		}
 
 	}
@@ -150,15 +146,6 @@ public class DistServ {
 	public void distAll(Calc calc, Integer houseId, Integer areaId, Integer tempLskId) throws ErrorWhileDist {
 		this.calc = calc;
 		int rqn = calc.getReqConfig().getRqn();
-		// статус записи зависит от типа операции (0 - начисление, 1 - перерасчет)
-		switch (calc.getReqConfig().getOperTp()) {
-		case 0:
-			setStatusVol(0);
-			break;
-		case 1:
-			setStatusVol(1);
-			break;
-		}
 		long startTime;
 		long endTime;
 		long totalTime;
@@ -206,16 +193,6 @@ public class DistServ {
 		try {
 			this.calc = calc;
 			int rqn = calc.getReqConfig().getRqn();
-			// статус записи объема зависит от типа операции (0 - начисление, 1 -
-			// перерасчет)
-			switch (calc.getReqConfig().getOperTp()) {
-			case 0:
-				setStatusVol(0);
-				break;
-			case 1:
-				setStatusVol(1);
-				break;
-			}
 
 			Kart kart = em.find(Kart.class, calc.getKart().getLsk());
 			// почистить коллекцию обработанных счетчиков
@@ -308,8 +285,9 @@ public class DistServ {
 		for (c.setTime(dt1); !c.getTime().after(dt2); c.add(Calendar.DATE, 1)) {
 			// calc.setGenDt(c.getTime());
 			for (MLogs ml : metMng.getAllMetLogByServTp(rqn, kart, serv, null)) {
-				metMng.delNodeVol(rqn, ml, calc.getCalcTp(), calc.getReqConfig().getCurDt1(),
-						calc.getReqConfig().getCurDt2(), getStatusVol());
+				metMng.delNodeVol(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(),
+						calc.getReqConfig().getChng(), ml, calc.getCalcTp(), calc.getReqConfig().getCurDt1(),
+						calc.getReqConfig().getCurDt2());
 			}
 
 		}
@@ -369,7 +347,7 @@ public class DistServ {
 		}
 
 		try {
-			log.info("RQN={}, Очистка объемов по House.id={}, house.klsk={}", calc.getHouse().getId(),
+			log.info("RQN={}, Очистка объемов по House.id={}, house.klsk={}", rqn, calc.getHouse().getId(),
 					calc.getHouse().getKlskId());
 			// почистить коллекцию обработанных счетчиков
 			distGen.clearLstChecks();
@@ -501,14 +479,6 @@ public class DistServ {
 
 	}
 
-	public Integer getStatusVol() {
-		return statusVol;
-	}
-
-	public void setStatusVol(Integer statusVol) {
-		this.statusVol = statusVol;
-	}
-
 	/**
 	 * ТЕСТ-вызов не удалять!
 	 * 
@@ -539,7 +509,7 @@ public class DistServ {
 		Date dd1 = Utl.getDateFromStr("01.10.2017");
 		Date dd2 = Utl.getDateFromStr("31.10.2017");
 		Lst volTp = lstMng.getByCD("Лимит ОДН");
-		Vol vol = new Vol((MeterLog) mLog, volTp, Double.valueOf(id), null, dd1, dd2, 0, 0);
+		Vol vol = new Vol((MeterLog) mLog, volTp, Double.valueOf(id), null, dd1, dd2, null, null);
 		mLog.getVol().add(vol);
 		mLog.getVol().stream()
 				.filter(t -> t.getDt1().getTime() >= dd1.getTime() && t.getDt1().getTime() <= dd2.getTime())

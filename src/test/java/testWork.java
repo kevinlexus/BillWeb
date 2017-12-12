@@ -84,7 +84,7 @@ public class testWork {
 		}
 		
 		try {
-			pm.genPayord(dt, false, true);
+			pm.genPayord(dt, false, true, null, null);
 		} catch (WrongDate e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

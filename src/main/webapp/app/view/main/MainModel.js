@@ -85,12 +85,19 @@ Ext.define('BillWebApp.view.main.MainModel', {
                 extraParams : {
                     payordGrpId : 0 // по умолчанию - все платежки
                 }
+            }
+        },
+        payordstore2: {
+            type: 'payordstore',
+            proxy : {
+                extraParams : {
+                    payordGrpId : 0 // все платежки
+                }
             },
             listeners: {
                 load: function() {
                     isLoadPayordStore=true;
-                    console.log('PayordStore Loaded')
-                    addPaneledit();
+                    console.log('PayordStore2 Loaded')
                 }
             }
         },

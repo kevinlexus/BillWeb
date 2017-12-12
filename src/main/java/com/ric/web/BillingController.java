@@ -584,7 +584,9 @@ public class BillingController {
 	public String genPayord(
 			@RequestParam(value = "genDt", required = false) String genDt,
 			@RequestParam(value = "isFinal") Boolean isFinal,
-			@RequestParam(value = "isEndMonth") Boolean isEndMonth
+			@RequestParam(value = "isEndMonth") Boolean isEndMonth,
+			@RequestParam(value = "payordId", defaultValue = "-1") Integer payordId,
+			@RequestParam(value = "payordCmpId", defaultValue = "-1") Integer payordCmpId
 			) {
 		
 		log.info("GOT /genPayord with: genDt={}, isFinal={}, isEndMonth={}", genDt, isFinal, isEndMonth);
@@ -593,7 +595,8 @@ public class BillingController {
 			dt = Utl.getDateFromStr(genDt);
 		}
 		try {
-			payordMng.genPayord(dt, isFinal, isEndMonth);
+			payordMng.genPayord(dt, isFinal, isEndMonth, (payordId == -1 ? null: payordId), 
+					(payordCmpId == -1 ? null: payordCmpId));
 		} catch (WrongDate | ParseException | EmptyStorable | WrongExpression e) {
 			e.printStackTrace();
 			// TODO сделать возврат ошибки!
@@ -800,14 +803,15 @@ public class BillingController {
 			config.setIsRestrictChrgLsk(false);
 		}
 		
-		if (!checkDate(genDt1, genDt2)) {
-			log.info("Заданы некорректные даты dt1={}, dt2={}!", genDt1, genDt2);
-			return "ERROR IN DATES";
-		}
-
 		// получить уникальный номер запроса
 		int rqn = config.incNextReqNum();
 		log.info("RQN={}, user={}", rqn, user);
+
+		if (!checkDate(genDt1, genDt2)) {
+			log.info("Заданы некорректные даты RQN={}, dt1={}, dt2={}!", rqn, genDt1, genDt2);
+			return "ERROR IN DATES";
+		}
+
 
 		Future<Result> fut = null;
 
@@ -821,6 +825,7 @@ public class BillingController {
 		}
 		if (!reqConfig.setUp(dist, "0", null, rqn, dt1, dt2)) {
 			// ошибка конфигурации
+			log.info("Ошибка конфигурации: RQN={}", rqn);
 			return "ERROR";
 		}
 
@@ -833,6 +838,7 @@ public class BillingController {
 				fut = billServ.chrgAll(reqConfig, houseId, area.getId(), null);
 			} catch (InterruptedException | ExecutionException e1) {
 				e1.printStackTrace();
+				log.info("Ошибка во время начисления и распределения объемов: RQN={}", rqn);
 				return "ERROR";
 			}
 
@@ -880,6 +886,7 @@ public class BillingController {
 			} catch (InterruptedException | ExecutionException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
+				log.info("Ошибка во время начисления и распределения объемов: RQN={}", rqn);
 				return "ERROR";
 			}
 

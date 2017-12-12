@@ -7,7 +7,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
     },
     //flex: 1,
     width: 1010,
-    //minHeight: 900,
+    minHeight: 900,
     bodyPadding: 10,
     reference: 'panel3',
     controller: 'panel3controller',
@@ -136,7 +136,7 @@ Ext.define('BillWebApp.view.main.Panel3', {
         columns: [
             { text: 'Id',  dataIndex: 'id', width: 50
             },
-            { text: 'Наименование',  dataIndex: 'name', width: 150, align: "left",
+            { text: 'Наименование',  dataIndex: 'name', width: 200, align: "left",
                 editor: {
                     allowBlank: false
                 }
@@ -152,19 +152,12 @@ Ext.define('BillWebApp.view.main.Panel3', {
                     forceSelection: true,
                     displayField: 'name',
                     valueField: 'id',
+                    selectOnFocus: true,
                     triggerAction: 'all',
                     matchFieldWidth: false,
-                    validator: function(value) {
-                        if (value != '') {
-                            return true;
-                        } else {
-                            return 'Необходимо заполнить поле!';
-                        }
-                    },
                     bind: {
                         store: '{lststore}'
-                    },
-                    allowBlank: false
+                    }
                 },
                   renderer: 'onGridPayordPeriodRender'
             },
@@ -333,6 +326,32 @@ Ext.define('BillWebApp.view.main.Panel3', {
                         }
                     },
                     renderer: 'onGridPayordCmpOrgRender'
+                },
+                {
+                    text: 'Периодичность',
+                    dataIndex: 'periodTpFk',
+                    width: 130, align: "left",
+                    queryMode: 'local',
+                    editor: {
+                        xtype: 'combo',
+                        typeAhead: true,
+                        forceSelection: true,
+                        displayField: 'name',
+                        valueField: 'id',
+                        selectOnFocus: true,
+                        allowBlank: true,
+                        matchFieldWidth: false,
+                        bind: {
+                            store: '{lststore}'
+                        }
+                    },
+                    renderer: 'onGridPayordPeriodRender'
+                },
+
+                { text: 'Дни формир.',  dataIndex: 'selDays', width: 80, align: "left",
+                    editor: {
+                        allowBlank: true
+                    }
                 },
                 {
                     header: 'koFk',

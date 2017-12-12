@@ -22,5 +22,8 @@ Ext.define('BillWebApp.model.PayordCmp', {
         { name: 'koExtFk', type: 'int'},
         { name: 'koExtName', type: 'string', persist: false }, // Имя доп. объекта (только для отображения)
         { name: 'mark', type: 'string', defaultValue: 'A' },
-        { name: 'summa', type: 'float', persist: false }]
+        { name: 'summa', type: 'float', persist: false },
+        { name: 'selDays', type: 'string' },
+        { name: 'periodTpFk', type: 'int', convert: null}
+    ]
 });

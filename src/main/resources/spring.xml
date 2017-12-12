@@ -13,7 +13,7 @@
 	<cache:annotation-driven />
 	
     <bean id="dataSource" class="oracle.jdbc.pool.OracleDataSource" destroy-method="close">
-        <property name="URL" value="jdbc:oracle:thin:@192.168.100.187:1521:RKCDB" /> 
+        <property name="URL" value="jdbc:oracle:thin:@192.168.100.188:1521:RKCDB" /> 
         <property name="user" value="gen"/>
         <property name="password" value="buzzlighter"/>
         <property name="connectionCachingEnabled" value="true"/>

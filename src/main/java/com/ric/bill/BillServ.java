@@ -43,15 +43,7 @@ import com.ric.bill.model.mt.MeterLog;
 public class BillServ {
 
 	@Autowired
-	private HouseMng houseMng;
-	@Autowired
-	private Config config;
-	@Autowired
 	private KartMng kartMng;
-	@Autowired
-	private ObjMng objMng; // TODO убрать!
-	@Autowired
-	private ParMng parMng;// TODO убрать!
 	@Autowired
 	private ApplicationContext ctx;
 	@PersistenceContext
@@ -199,7 +191,7 @@ public class BillServ {
 					log.info("========================================== Ожидание выполнения потоков ===========");
 					flag2 = 1;
 					for (Future<Result> fut : frl) {
-						log.info("========= 1");
+						//log.info("========= 1");
 						
 						if (!fut.isDone()) {
 							// не завершен поток
@@ -295,9 +287,11 @@ public class BillServ {
 		calc.setHouse(kart.getKw().getHouse());
 		calc.setKart(kart);
 
-		// установить признак распределения объема по дому, если перерасчет
-		if (reqConfig.getOperTp().equals(1)) {
-			List<String> lstServCd = reqConfig.getChng().getChngLsk().stream().filter(t -> t.getKart().getLsk().equals(lsk))
+		// установить признак распределения объема по дому, если перерасчет по Отоплению
+		if (reqConfig.getOperTp().equals(1) && !reqConfig.getChng().getTp().getCd().equals("Изменение расценки (тарифа)") // если не пересчет расценки
+				) { // кроме изменения расценки
+			List<String> lstServCd = reqConfig.getChng().getChngLsk().stream()
+					.filter(t -> t.getKart().getLsk().equals(lsk))
 					.filter(t -> t.getServ() != null)
 					.map(t-> t.getServ().getCd()).collect(Collectors.toList());
 			if (lstServCd.contains("Отопление") || lstServCd.contains("Отопление(объем), соц.н.") || 
@@ -310,6 +304,8 @@ public class BillServ {
 			if (isDistHouse == true) {
 				// задано распределить по дому, для перерасчета (например по отоплению, когда поменялась площадь и надо пересчитать гКал)
 				distServ.distAll(calc, calc.getHouse().getId(), null, null);
+				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах
+				calc.setKart(kart);
 			} else if (reqConfig.getIsDist()) {
 				distServ.distKartVol(calc);
 				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах

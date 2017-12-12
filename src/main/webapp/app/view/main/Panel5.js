@@ -6,7 +6,7 @@ Ext.define('BillWebApp.view.main.Panel5', {
         type: 'vbox'
     },
     scrollable: true,
-    maxHeight: 950,
+    maxHeight: 900,
 //    bodyPadding: 10,
     reference: 'panel5',
     frame: false,

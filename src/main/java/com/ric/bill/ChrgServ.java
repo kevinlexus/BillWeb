@@ -59,21 +59,7 @@ import com.ric.bill.model.tr.Serv;
 public class ChrgServ {
 
 	@Autowired
-	private ParMng parMng;
-	@Autowired
-	private Config config;
-	@Autowired
-	private ServMng servMng;
-	@Autowired
-	private TarifMng tarMng;
-	@Autowired
-	private HouseMng houseMng;
-	@Autowired
 	private KartMng kartMng;
-	@Autowired
-	private MeterLogMng metMng;
-	@Autowired
-	private LstMng lstMng;
 	
 	@Autowired
 	private ApplicationContext ctx;
@@ -84,7 +70,6 @@ public class ChrgServ {
 
     //вспомогательные коллекции
     private List<Chrg> prepChrg;
-    private List<ChrgMainServRec> prepChrgMainServ;
     
     private HashMap<Serv, BigDecimal> mapServ;
     private HashMap<Serv, BigDecimal> mapVrt;
@@ -261,7 +246,6 @@ public class ChrgServ {
 		res.setLsk(calc.getKart().getLsk());
 
 		prepChrg = new ArrayList<Chrg>(100); 
-		prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
 		// создать очередь
 		queBatch = new HashMap<Serv, Integer>(0);
 		
@@ -296,11 +280,11 @@ public class ChrgServ {
 				break;
 			}
 
-			// РАСЧЕТ услуг в потоке
+			// РАСЧЕТ услуг по циклу
 			for (Serv serv : servWork) {
   				    log.trace("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(), calc.getKart().getLsk(), serv.getId());
 
- 					chrgThr.setUp(calc, serv, mapServ, mapVrt, prepChrg, prepChrgMainServ);
+ 					chrgThr.setUp(calc, serv, mapServ, mapVrt, prepChrg);
 			    	try {
 						chrgThr.run1();
 					} catch (EmptyStorable e) {
@@ -563,11 +547,10 @@ public class ChrgServ {
 
 			kart.getChrg().add(chrg2); 
 		}
-		Utl.logger(false, 34, -1, -1); //###
+		//Utl.logger(false, 34, -1, -1); //###
 
 		// Почистить коллекции
 	    prepChrg=null;
-	    prepChrgMainServ=null;
 	    mapServ=null;
 	    mapVrt=null;
 	    servThr=null;

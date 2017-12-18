@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.view.jasperreports.JasperReportsMultiFormatView;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResol
 
 @Configuration
 @ComponentScan({"com.ric.st", "com.ric.bill.dao", "com.ric.bill.mm", "com.ric.bill", "com.ric.st.builder"}) // это нужно чтобы работали Unit-тесты! (по сути можно закомментить)
+@EnableJpaRepositories(basePackages="com.ric.bill.dao")
 @ImportResource("spring.xml")
 @EnableCaching
 @EnableAsync

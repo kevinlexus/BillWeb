@@ -68,7 +68,7 @@ public class ChrgThr {
 
 	// основная услуга
     private Serv serv;
-	//временное хранилище записей
+	// хранилище записей начисления
 	private ChrgStore chStore;
 
 	private String thrName;

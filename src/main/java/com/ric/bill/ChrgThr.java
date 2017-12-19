@@ -52,8 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ChrgThr {
 	
 	@Autowired
-	private LstMng lstMng;
-	@Autowired
 	private ParMng parMng;
 	@Autowired
 	private TarifMng tarMng;
@@ -73,25 +71,14 @@ public class ChrgThr {
 
 	private String thrName;
 	
-    //вспомогательные коллекции
-    private List<Chrg> prepChrg;
-    // для расчета услуг типа ГВС(одн) п.344 РФ
-    private List<ChrgMainServRec> prepChrgMainServ;
+    // для расчета услуг типа ГВС(инд) п.344 РФ
+    //private List<ChrgMainServRec> prepChrgMainServ;
     
-    private HashMap<Serv, BigDecimal> mapServ;
-    private HashMap<Serv, BigDecimal> mapVrt;
-
     private Calc calc;
     
     // Результат исполнения
     Result res;
     
-    //конструктор
-	public ChrgThr() {
-		super();
-		this.prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
-	}
-	
 	/**
 	 * 
 	 * @param calc 	   - объект calc
@@ -101,14 +88,15 @@ public class ChrgThr {
 	 * @param prepChrg - коллекция для сгруппированных записей начисления
 	 */
 	public void setUp(Calc calc, Serv serv,  
-			HashMap<Serv, BigDecimal> mapServ, 
-			HashMap<Serv, BigDecimal> mapVrt, 
-			List<Chrg> prepChrg) {
+			ChrgStore chStore) {
 		this.calc = calc;
 		this.serv = serv;
-		this.mapServ = mapServ;
-		this.mapVrt = mapVrt;
-		this.prepChrg = prepChrg;
+//		this.mapServ = mapServ;
+//		this.mapVrt = mapVrt;
+//		this.prepChrg = prepChrg;
+		//Объект, временно хранящий записи начисления
+		this.chStore = chStore; 
+		//this.prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
 	}
 
 	public Result run1() throws EmptyStorable {
@@ -129,11 +117,6 @@ public class ChrgThr {
 		// номер текущего запроса
 		int rqn = calc.getReqConfig().getRqn();
 		
-		//типы записей начисления
-		Lst chrgTpRnd = lstMng.getByCD("Начислено свернуто, округлено");
-		
-		//Объект, временно хранящий записи начисления
-		chStore = new ChrgStore(); 
 		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		if (serv.getId()==20) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
@@ -188,16 +171,10 @@ public class ChrgThr {
 		}
 		// Сохранить сгруппированные по основной услуге суммы начислений
 		// для последующего использования в таких услугах как ГВС(одн) п.344 РФ
-		chrgMainServAppend(chStore.getStoreMainServ());
-		
-/*		chStore.getStoreRecDet().stream().filter(f-> f.getPers() != null).forEach(f-> {
-			log.info("persId={}, price={}, pricePriv={}, discount={}, vol={}, dt1={}, dt2={}", f.getPers().getId(), f.getPrice(), 
-					f.getPricePriv(), f.getDiscount(), f.getVol(), f.getDt1(), f.getDt2());
-		});*/
-		
+		//prepChrgMainServ.addAll(chStore.getStoreMainServ());
 		
 		// ОКОНЧАТЕЛЬНО рассчитать данные (умножить расценку на объем, округлить)
-		for (ChrgRecDet rec : chStore.getStoreRecDet()) {
+		for (ChrgRecDet rec : chStore.getStoreChrgRecDet()) {
 			//log.info("услуга={}", rec.getServ().getCd());
 			BigDecimal vol, area;
 			vol = rec.getVol();
@@ -218,9 +195,7 @@ public class ChrgThr {
 
 			BigDecimal sumPriv = BigDecimal.ZERO; 
 			if (rec.getDiscount() != null) {
-//				log.info("discount={}", rec.getDiscount());
 				BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
-//				log.info("cf={}", cf);
 				// сумма льготы (объем * (1-дисконт) = сумма льг.)
 				sumPriv = vol.multiply(cf);
 				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
@@ -230,30 +205,18 @@ public class ChrgThr {
 			
 			// записать, для будущего округления по виртуальной услуге
 			if (rec.getServ().getServVrt() != null) {
-				putMapServVal(rec.getServ().getServVrt(), sumFull);
+				chStore.putMapServVal(rec.getServ().getServVrt(), sumFull);
 			}
 			// записать, сумму по виртуальной услуге
 			if (rec.getServ().getVrt()) {
-					putMapVrtVal(rec.getServ(), sumFull);
+				chStore.putMapVrtVal(rec.getServ(), sumFull);
 			}
 
 			if (!rec.getServ().getVrt()) {
+				// Если сумма <> 0 или по услуге принудительно сохранить объемы при нулевой сумме 	
 				if (sumFull.compareTo(BigDecimal.ZERO) != 0 || 
-						sumAmnt.compareTo(BigDecimal.ZERO) != 0 || sumPriv.compareTo(BigDecimal.ZERO) != 0 ||
-						Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {  
-					/*sum - сумма
-					vol - объем
-					price - расценка
-					pricePriv - расценка по льготе (null по нельготной услуге)
-					stdt - норматив
-					cntFact - кол-во прожив по факту (без собственников)
-					serv - услуга
-					org - организация
-					met - наличие счетчика
-					entry - номер ввода
-					dt1 - дата начала
-					dt2 - дата окончания
-					cntOwn - кол-во собственников*/
+					sumAmnt.compareTo(BigDecimal.ZERO) != 0 || sumPriv.compareTo(BigDecimal.ZERO) != 0 ||
+						Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 					log.info("контроль: serv={}, org={}, pers={}, priv={}, cntFact={}, cntOwn={}, entry={}, met={}, price={}, pricePriv={}, stdt={}, sumAmnt={}, "
 							+ "sumFull={}, sumPriv={}, vol={}, dt1={}, dt2={}", 
 							rec.getServ().getCd(), rec.getOrg().getId(), rec.getPers()!=null?rec.getPers().getId(): null, rec.getPriv()!=null?rec.getPriv().getId(): null,  
@@ -262,53 +225,20 @@ public class ChrgThr {
 
 					if (Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
 						// Убрать расценку и объем по данному типу услуг
-						chStore.groupStoreChrgRec(sumFull, sumPriv, sumAmnt, null, rec.getServ(), rec.getOrg(), 
+						chStore.addGroupRec(sumFull, sumPriv, sumAmnt, null, rec.getServ(), rec.getOrg(), 
 								rec.getDt1(), rec.getDt2(), rec.getStdt(), rec.getCntFact(), rec.getCntOwn(), rec.getArea(), 
 								rec.getMet(), rec.getEntry(), null);
 					} else {
-						chStore.groupStoreChrgRec(sumFull, sumPriv, sumAmnt, rec.getPrice(), rec.getServ(), rec.getOrg(), 
+						chStore.addGroupRec(sumFull, sumPriv, sumAmnt, rec.getPrice(), rec.getServ(), rec.getOrg(), 
 								rec.getDt1(), rec.getDt2(), rec.getStdt(), rec.getCntFact(), rec.getCntOwn(), rec.getArea(), 
 								rec.getMet(), rec.getEntry(), vol);
 					}
-					// Если сумма <> 0 или по услуге принудительно сохранить объемы при нулевой сумме 	
-					
-/*
-					Chrg chrg = new Chrg();
-					try {
-						if (Utl.nvl(parMng.getDbl(rqn, rec.getServ(), "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
-							// Убрать расценку и объем по данному типу услуг
-							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
-									null, null, rec.getStdt(), rec.getCntFact(), area, chrgTpRnd, 
-									chng, rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
-						} else {
-							chrg = new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), sum, sum, 
-									vol, rec.getPrice(), rec.getStdt(), rec.getCntFact(), area, chrgTpRnd, 
-									chng, rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn());
-						}
-					} catch (EmptyStorable e) {
-						throw new RuntimeException();
-					}
-					
-					chrgAppend(chrg);*/
 				}
 			}
 		} 
 
-		chStore.getStoreChrgRec().stream().forEach(f-> {
-			log.info("запись: serv={}, org={}, cntFact={}, cntOwn={}, entry={}, met={}, price={}, stdt={}, sumAmnt={}, "
-					+ "sumFull={}, sumPriv={}, vol={}, dt1={}, dt2={}", 
-					f.getServ().getCd(), f.getOrg().getId(), f.getCntFact(), f.getCntOwn(), f.getEntry(), f.getMet(), f.getPrice(),
-					f.getStdt(), f.getSumAmnt(), f.getSumFull(), f.getSumPriv(), f.getVol(), f.getDt1(), f.getDt2()); 
-		});
-		
-		// Почистить коллекции
-		chStore = null;
-	    prepChrg = null;
-	    mapServ = null;
-	    mapVrt = null;
-
-		
-		//Future ar = new AsyncResult<Result>(res);
+		// загрузить для сохранения 
+		chStore.loadPrepChrg();
 		return res;
 	}
 
@@ -821,10 +751,17 @@ public class ChrgThr {
 			 if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
 				
 				Optional<ChrgMainServRec> rec;
-				rec = prepChrgMainServ.parallelStream()
+				rec = chStore.getStoreMainServ().parallelStream()
 						.filter(t -> t.getMainServ().equals(serv.getServDep()) && t.getDt().equals(genDt) ).findAny();
+
+				//log.info("CHECK1 serv.cd={}, size={}", serv.getCd(), chStore.getStoreMainServ().size());
+/*				chStore.getStoreMainServ().stream().forEach( t-> {
+					log.info("CHECK2 serv.id={}, summ={}", t.getMainServ().getId(), t.getSum());
+				});*/
+				
 				if (rec.isPresent()) {
 					// взять сумму в качестве объема, повыш.коэфф в качестве цены (потом занулить объем и цену в методе их умножения)
+					//log.info("CHECK2");
 					chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, null, null, 
 							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, null);
 				}
@@ -870,9 +807,9 @@ public class ChrgThr {
 					// есть проживающие
 					if (absVol.compareTo(partVol) < 0) {
 						// получить новую соцнорму, если объем меньше текущей соцнормы
-						tmpVold = absVol.divide(cnt);  
+						tmpVold = absVol.divide(cnt, RoundingMode.HALF_UP);  
 					} else {
-						tmpVold = partVol.divide(cnt);
+						tmpVold = partVol.divide(cnt, RoundingMode.HALF_UP);
 					}
 					
 					//log.info("соцнорма на одного человека: заданная={}, по факту={}", partVol.divide(cnt), tmpVold);
@@ -1091,62 +1028,10 @@ public class ChrgThr {
 	}
 	
 	/**
-	 * сохранить запись о сумме, предназаначенной для коррекции 
-	 * @param serv - услуга
-	 * @param sum - сумма
-	 */
-	private void putMapServVal(Serv serv, BigDecimal sum) {
-		BigDecimal tmpSum;
-		//HaspMap считает разными услуги, если они одинаковые, но пришли из разных потоков, пришлось искать for - ом - <-- Проверить это TODO!  
-		synchronized (mapServ) {
-		for (Map.Entry<Serv, BigDecimal> entry : mapServ.entrySet()) {
-	    	if (entry.getKey().equals(serv)) { 
-	    		tmpSum = Utl.nvl(entry.getValue(), BigDecimal.ZERO);
-	    		tmpSum = tmpSum.add(sum);
-	    	    mapServ.put(entry.getKey(), tmpSum);
-	    		return;
-	    	}
-	    }
-	    mapServ.put(serv, sum);
-		}
-	}
-	
-	/**
-	 * сохранить запись о сумме, предназаначенной для коррекции 
-	 * @param serv - услуга
-	 * @param sum - сумма
-	 */
-	private void putMapVrtVal(Serv serv, BigDecimal sum) {
-		BigDecimal tmpSum;
-		synchronized (mapVrt) {
-	    for (Map.Entry<Serv, BigDecimal> entry : mapVrt.entrySet()) {
-	    	if (entry.getKey().equals(serv)) {
-	    		tmpSum = Utl.nvl(entry.getValue(), BigDecimal.ZERO);
-	    		tmpSum = tmpSum.add(sum);
-	    		mapVrt.put(entry.getKey(), tmpSum);
-	    		return;
-	    	}
-	    }
-	    mapVrt.put(serv, sum);
-		}
-	}
-
-	/**
-	 * добавить строку начисления 
-	 * @param chrg - строка начисления
-	 */
-	private void chrgAppend(Chrg chrg) {
-		//synchronized (prepChrg) {
-		  prepChrg.add(chrg);
-		//}
-	}
-
-	/**
 	 * добавить из потока все строки сумм начислений по основной услуге
 	 * @param list
 	 */
-	private void chrgMainServAppend(List<ChrgMainServRec> lst) {
-		prepChrgMainServ.addAll(lst);
-	}
+//	private void chrgMainServAppend(List<ChrgMainServRec> lst) {
+//	}
 
 }

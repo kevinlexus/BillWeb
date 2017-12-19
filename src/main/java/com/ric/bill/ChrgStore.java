@@ -3,11 +3,17 @@ package com.ric.bill;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.ric.bill.dto.ChrgRec;
 import com.ric.bill.dto.ChrgRecDet;
+import com.ric.bill.model.ar.Kart;
+import com.ric.bill.model.bs.Lst;
 import com.ric.bill.model.bs.Org;
+import com.ric.bill.model.fn.Chng;
+import com.ric.bill.model.fn.Chrg;
 import com.ric.bill.model.fn.Privilege;
 import com.ric.bill.model.ps.Pers;
 import com.ric.bill.model.tr.Serv;
@@ -15,7 +21,7 @@ import com.ric.bill.model.tr.Serv;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Хранилище записей начисления
+ * Хранилище вспомогательных коллекций начисления
  * @author lev
  *
  */
@@ -23,24 +29,68 @@ import lombok.extern.slf4j.Slf4j;
 public class ChrgStore {
 
 	// хранилище для группированного, детализированного до льгот по проживающим начисления
-	private List<ChrgRecDet> storeRecDet;
+	private List<ChrgRecDet> storeChrgRecDet;
 	// сгруппированные до главной услуги записи начисления
 	// нужна для услуг считающих своё начисление от начисления других услуг
 	private List<ChrgMainServRec> storeMainServ;
-    // для подготовки начисления для записи в таблицу
+    // итоговое начисление по одной услуге
     private List<ChrgRec> storeChrgRec;
+    // итоговое начисление, для записи в таблицу
+    private List<ChrgRec> prepChrg;
+
+    // вспомогательные коллекции для расчета дочерних услуг
+    private HashMap<Serv, BigDecimal> mapServ;
+    private HashMap<Serv, BigDecimal> mapVrt;
+
+    // результат всего начисления, для сохранения
+    //private List<Chrg> prepChrg;
 
     //конструктор
 	public ChrgStore () {
 		super();
-		//setStoreRec(new ArrayList<ChrgRec>(0));
-		setStoreRecDet(new ArrayList<ChrgRecDet>(100));
-		setStoreMainServ(new ArrayList<ChrgMainServRec>(100)); 
-		setStoreChrgRec(new ArrayList<ChrgRec>(100));
+		//для виртуальной услуги	
+		this.mapServ = new HashMap<Serv, BigDecimal>(100);
+		this.mapVrt = new HashMap<Serv, BigDecimal>(100);
+		this.storeMainServ = new ArrayList<ChrgMainServRec>(100); 
+		this.prepChrg = new ArrayList<ChrgRec>(100);
+	}
+
+	// очистить вспомогательные коллекции
+	public void init() {
+		this.storeChrgRecDet = new ArrayList<ChrgRecDet>(100);
+		this.storeChrgRec = new ArrayList<ChrgRec>(100);
+	}
+	
+	public List<ChrgRecDet> getStoreChrgRecDet() {
+		return storeChrgRecDet;
+	}
+
+	public List<ChrgMainServRec> getStoreMainServ() {
+		return storeMainServ;
+	}
+
+	public List<ChrgRec> getStoreChrgRec() {
+		return this.storeChrgRec;
+	}
+
+    public HashMap<Serv, BigDecimal> getMapServ() {
+		return mapServ;
+	}
+
+	public HashMap<Serv, BigDecimal> getMapVrt() {
+		return mapVrt;
+	}
+	
+	public List<ChrgRec> getPrepChrg() {
+		return prepChrg;
+	}
+
+	public void setPrepChrg(List<ChrgRec> prepChrg) {
+		this.prepChrg = prepChrg;
 	}
 
 	/**
-	 * добавить строку начисления с учётом группировки записей 
+	 * Добавить строку начисления с учётом группировки записей 
 	 * @param vol - объем
 	 * @param price - расценка
 	 * @param pricePriv - расценка по льготе (null если нельготная услуга)
@@ -57,52 +107,52 @@ public class ChrgStore {
      * @param priv - привилегия (заполняется не по всем услугам)
      *  если по нельготной услуге, то передавать null
 	 */
-	public void addChrg (BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact, BigDecimal area, 
+	public void addChrg(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact, BigDecimal area, 
 						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt, Integer cntOwn, Pers pers, Privilege priv) {
 		Integer met = 0;
 		if (exsMet) {
 			met = 1;
 		}
 		
-		// СГРУППИРОВАТЬ по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
-		groupMainStore(vol, price, serv, dt, getStoreMainServ());
-		// сгруппировать детализированное хранилище 
-		groupStore(vol, price, pricePriv, discount, stdt, cntFact, area, serv, org, entry, dt, cntOwn, pers, priv, met, getStoreRecDet());
-		
+		// добавить с группировкой по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
+		addGroupMainStore(vol, price, serv, dt);
+		// добавить с группировкой в детализированное хранилище 
+		addGroupRecDet(vol, price, pricePriv, discount, stdt, cntFact, area, serv, org, entry, dt, cntOwn, pers, priv, met);
 	}
-
+	
 	/**
-	 * Сгруппировать хранилище по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
+	 * Добавить с группировкой в хранилище по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
 	 * @param vol - объем
 	 * @param price - цена
 	 * @param serv - услуга
 	 * @param dt - дата
-	 * @param store - хранилище
+	 * @param storeMainServ - хранилище
 	 */
-	private void groupMainStore(BigDecimal vol, BigDecimal price, Serv serv, Date dt, List<ChrgMainServRec> store) {
+	private void addGroupMainStore(BigDecimal vol, BigDecimal price, Serv serv, Date dt) {
+		//log.info("3 CHECK SAVE serv.id={}, vol={} size={}", serv.getId(), vol, storeMainServ.size());
 		// зависимые от суммы начисления -  поправить использование TODO!
 		Serv mainServ = serv.getServChrg();
 		// умножить расценку на объем, получить сумму)
 		BigDecimal sum = vol.multiply(price);
 		if (sum.compareTo(BigDecimal.ZERO) != 0) {
-			if (store.size() == 0) {
+			if (storeMainServ.size() == 0) {
 				//завести новую строку 
-				store.add(new ChrgMainServRec(sum, mainServ, dt));
+				storeMainServ.add(new ChrgMainServRec(sum, mainServ, dt));
 			} else {
 				ChrgMainServRec lastRec = null;
 				//получить последний добавленный элемент по данной дате
-				for (ChrgMainServRec rec : store) {
-					if (rec.getDt().equals(dt)) {
+				for (ChrgMainServRec rec : storeMainServ) {
+					if (rec.getMainServ().equals(mainServ) && rec.getDt().equals(dt)) {
 						lastRec = rec;
 					}
 				}
 				if (lastRec == null) {
 					//последний элемент не найден, - создать
-					store.add(new ChrgMainServRec(sum, mainServ, dt));
+					storeMainServ.add(new ChrgMainServRec(sum, mainServ, dt));
 				} else {
 					//последний элемент найден, добавить в него сумму начисления
 					//сравнить по дате
-					if (lastRec.getDt().equals(dt)) {
+					if (lastRec.getMainServ().equals(mainServ) && lastRec.getDt().equals(dt)) {
 							//добавить данные в последнюю строку
 							if (lastRec.getSum() != null) {
 								lastRec.setSum(lastRec.getSum().add(sum));
@@ -111,49 +161,16 @@ public class ChrgStore {
 							}
 						} else {
 							//завести новую строку, если отличается датой
-							store.add(new ChrgMainServRec(sum, mainServ, dt));
+							storeMainServ.add(new ChrgMainServRec(sum, mainServ, dt));
 						}
 				}
 			}
 		}
+		//log.info("4 CHECK SAVE serv.id={}, vol={} size={}", serv.getId(), vol, storeMainServ.size());
 	}
-
-
 	
-	public List<ChrgRecDet> getStoreRecDet() {
-		return storeRecDet;
-	}
-
-	private void setStoreRecDet(List<ChrgRecDet> storeRecDet) {
-		this.storeRecDet = storeRecDet;
-	}
-
-/*	public List<ChrgRec> getStoreRec() {
-		return storeRec;
-	}
-
-	private void setStoreRec(List<ChrgRec> storeRec) {
-		this.storeRec = storeRec;
-	}
-*/
-	public List<ChrgMainServRec> getStoreMainServ() {
-		return storeMainServ;
-	}
-
-	private void setStoreMainServ(List<ChrgMainServRec> storeMainServ) {
-		this.storeMainServ = storeMainServ;
-	}
-
-	private void setStoreChrgRec(ArrayList<ChrgRec> store) {
-		this.storeChrgRec = store;
-	}
-
-	public List<ChrgRec> getStoreChrgRec() {
-		return this.storeChrgRec;
-	}
-
 	/**
-	 * Сгруппировать хранилище предварительно по услуге, льготе и проживающему (если есть льгота)
+	 * Добавить с группировкой в хранилище по услуге, льготе и проживающему (если есть льгота)
 	 * @param vol - объем
 	 * @param price - расценка
 	 * @param pricePriv - расценка по льготе (null если нельготная услуга)
@@ -170,9 +187,10 @@ public class ChrgStore {
      * @param priv - привилегия (заполняется не по всем услугам)
 	 * @param store - хранилище
 	 */
-	private void groupStore(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact,
+	private void addGroupRecDet(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact,
 			BigDecimal area, Serv serv, Org org, Integer entry, Date dt, Integer cntOwn, Pers pers, Privilege priv,
-			Integer met, List<ChrgRecDet> store) {
+			Integer met) {
+		List<ChrgRecDet> store = getStoreChrgRecDet();
 		if (store.size() == 0) {
 			// завести новую строку
 			store.add(new ChrgRecDet(vol, price, pricePriv, discount, stdt, cntFact, area, 
@@ -229,7 +247,7 @@ public class ChrgStore {
 	}
 	
 	/**
-	 * Сгруппировать хранилище, для записи в таблицу
+	 * Добавить с группировкой в хранилище недетализированных записей
 	 * @param sumFull
 	 * @param sumPriv
 	 * @param sumAmnt
@@ -246,7 +264,7 @@ public class ChrgStore {
 	 * @param entry
 	 * @param vol
 	 */
-	public void groupStoreChrgRec(BigDecimal sumFull, BigDecimal sumPriv, BigDecimal sumAmnt, BigDecimal price, 
+	public void addGroupRec(BigDecimal sumFull, BigDecimal sumPriv, BigDecimal sumAmnt, BigDecimal price, 
 			Serv serv, Org org, Date dt1, Date dt2, BigDecimal stdt, Integer cntFact, Integer cntOwn, BigDecimal area,
 			Integer met, Integer entry, BigDecimal vol) {
 		// СГРУППИРОВАТЬ
@@ -324,4 +342,61 @@ public class ChrgStore {
 		}
 		
 	}
+
+	/**
+	 * сохранить запись о сумме, предназаначенной для коррекции 
+	 * @param serv - услуга
+	 * @param sum - сумма
+	 */
+	public void putMapServVal(Serv serv, BigDecimal sum) {
+		BigDecimal tmpSum;
+		//HaspMap считает разными услуги, если они одинаковые, но пришли из разных потоков, пришлось искать for - ом - <-- Проверить это TODO!  
+		for (Map.Entry<Serv, BigDecimal> entry : getMapServ().entrySet()) {
+	    	if (entry.getKey().equals(serv)) { 
+	    		tmpSum = Utl.nvl(entry.getValue(), BigDecimal.ZERO);
+	    		tmpSum = tmpSum.add(sum);
+	    	    getMapServ().put(entry.getKey(), tmpSum);
+	    		return;
+	    	}
+	    }
+		getMapServ().put(serv, sum);
+	}
+	
+	/**
+	 * сохранить запись о сумме, предназаначенной для коррекции 
+	 * @param serv - услуга
+	 * @param sum - сумма
+	 */
+	public void putMapVrtVal(Serv serv, BigDecimal sum) {
+		BigDecimal tmpSum;
+	    for (Map.Entry<Serv, BigDecimal> entry : getMapVrt().entrySet()) {
+	    	if (entry.getKey().equals(serv)) {
+	    		tmpSum = Utl.nvl(entry.getValue(), BigDecimal.ZERO);
+	    		tmpSum = tmpSum.add(sum);
+	    		getMapVrt().put(entry.getKey(), tmpSum);
+	    		return;
+	    	}
+	    }
+	    getMapVrt().put(serv, sum);
+	}
+
+	/**
+	 * 
+	 */
+	public void loadPrepChrg() {
+		prepChrg.addAll(storeChrgRec);
+	}
+	
+	/**
+	 * Сохранить в prepChrg
+	 */
+	
+/*	public void loadPrepChrg(Kart kart, Calc calc, Lst chrgTpRnd, Chng chng) {
+		storeChrgRec.stream().forEach(rec-> {
+			prepChrg.add(new Chrg(kart, rec.getServ(), rec.getOrg(), 1, calc.getReqConfig().getPeriod(), 
+					rec.getSumFull(), rec.getSumPriv(), rec.getSumAmnt(), 
+					rec.getVol(), rec.getPrice(), rec.getStdt(), rec.getCntFact(), rec.getArea(), chrgTpRnd, 
+					chng, rec.getMet(), rec.getEntry(), rec.getDt1(), rec.getDt2(), rec.getCntOwn()));
+		});
+	}*/
 }

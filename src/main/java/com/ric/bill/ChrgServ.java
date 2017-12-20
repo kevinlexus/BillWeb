@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ric.bill.dto.ChrgRec;
+import com.ric.bill.dto.PrivRec;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.mm.HouseMng;
@@ -50,6 +51,8 @@ import com.ric.bill.model.bs.Lst;
 import com.ric.bill.model.bs.Org;
 import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.fn.Chrg;
+import com.ric.bill.model.fn.PersPrivilege;
+import com.ric.bill.model.fn.PrivilegeChrg;
 import com.ric.bill.model.tr.Serv;
 
 /**
@@ -300,33 +303,48 @@ public class ChrgServ {
 		   .setParameter("STATUS", 1);
 		Kart kart = em.find(Kart.class, lsk); //здесь так, иначе записи не прикрепятся к объекту не из этой сессии!
 		
-		Query query = null;
+		Query query1 = null, query2 = null;
 		//перенести предыдущий расчет начисления в статус "архив" (1->0)
 		if (calc.getReqConfig().getOperTp().equals(0)) {
 			// начисление
-			query = em.createNativeQuery("update fn.chrg t set t.status=0 where t.lsk=:lsk "
+			query1 = em.createNativeQuery("update fn.chrg t set t.status=0 where t.lsk=:lsk "
 					+ "and t.status=1 "
-					//+ "and t.dt1 between :dt1 and :dt2 " -нет смысла, есть period
-					//+ "and t.dt2 between :dt1 and :dt2 "
+					+ "and t.period=:period"
+					);
+			// возмещение по льготе
+			query2 = em.createNativeQuery("update fn.privilege_chrg t set t.status=0 where t.lsk=:lsk "
+					+ "and t.status=1 "
 					+ "and t.period=:period"
 					);
 		} else if (calc.getReqConfig().getOperTp().equals(1)) {
-			// перерасчет
-			query = em.createNativeQuery("delete from fn.chrg t where t.lsk=:lsk "
+			// Перерасчет
+			// начисление
+			query1 = em.createNativeQuery("delete from fn.chrg t where t.lsk=:lsk "
 					+ "and t.status=3 "
 					+ "and t.period=:period "
-					+ "and t.fk_chng=:chngId "
+					+ "and t.fk_chng=:chngId"
 					);
-			query.setParameter("chngId", calc.getReqConfig().getChng().getId());
+			query1.setParameter("chngId", calc.getReqConfig().getChng().getId());
+			// возмещение по льготе
+			query2 = em.createNativeQuery("update fn.privilege_chrg t set t.status=0 where t.lsk=:lsk "
+					+ "and t.status=3 "
+					+ "and t.period=:period "
+					+ "and t.fk_chng=:chngId"
+					);
+			query2.setParameter("chngId", calc.getReqConfig().getChng().getId());
 		}
-		query.setParameter("lsk", kart.getLsk());
-		query.setParameter("period", calc.getReqConfig().getPeriod());
-		query.executeUpdate();
+		query1.setParameter("lsk", kart.getLsk());
+		query1.setParameter("period", calc.getReqConfig().getPeriod());
+		query1.executeUpdate();
 
-		//типы записей начисления
+		query2.setParameter("lsk", kart.getLsk());
+		query2.setParameter("period", calc.getReqConfig().getPeriod());
+		query2.executeUpdate();
+
+		// типы записей начисления
 		Lst chrgTp = lstMng.getByCD("Начислено свернуто, округлено");
 
-		//Сохранить новое начисление (переписать из prepChrg)
+		// сохранить новое начисление (переписать из prepChrg)
 		for (ChrgRec chrg : chStore.getPrepChrg()) {
 			
 			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(), 
@@ -337,11 +355,13 @@ public class ChrgServ {
 			kart.getChrg().add(chrg2); 
 		}
 
-		// Почистить коллекции
-	    //prepChrg=null;
-	    //mapServ=null;
-	    //mapVrt=null;
-	    servThr=null;
+		// сохранить возмещение по льготе (переписать из prepPriv)
+		for (PrivRec t : chStore.getPrepPriv()) {
+			PrivilegeChrg priv = new PrivilegeChrg(kart, t.getServ(), t.getOrg(), status, t.getPersPriv(), calc.getReqConfig().getPeriod(), t.getSumma().doubleValue(),
+					t.getVol().doubleValue(), calc.getReqConfig().getChng(), t.getDt1(), t.getDt2());
+					
+			kart.getPrivilegeChrg().add(priv); 
+		}
 	}
 	
 

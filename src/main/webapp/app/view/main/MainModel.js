@@ -98,6 +98,7 @@ Ext.define('BillWebApp.view.main.MainModel', {
                 load: function() {
                     isLoadPayordStore=true;
                     console.log('PayordStore2 Loaded')
+                    addPaneledit();
                 }
             }
         },
@@ -196,6 +197,7 @@ function addPaneledit() {
                 }
             ]
         );
+        console.log('Панели добавлены!');
         mainView.doLayout;
     }
 }

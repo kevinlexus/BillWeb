@@ -113,7 +113,7 @@ Ext.application({
             //msg.close();
         }*/
 
-        console.log('doLayout!');
+        //console.log('doLayout!');
 
     },
     // The name of the initial view to create. With the classic toolkit this class

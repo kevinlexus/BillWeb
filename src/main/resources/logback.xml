@@ -26,7 +26,11 @@
   <logger name="org.ehcache" level="INFO"/>
   <logger name="org.hibernate.stat" level="DEBUG"/>
   <logger name="org.thymeleaf" level="ERROR"/>
-  
+
+<!--   <logger name="org.apache.catalina.core" level="DEBUG"/>
+  <logger name="org.apache.catalina.session.level" level="DEBUG"/>
+  <logger name="java.util.logging.ConsoleHandler.level" level="DEBUG"/>
+ -->  
   <!--<logger name="org.springframework.security" level="TRACE"/>-->
 
   <!-- Setting the root level of logging to INFO - Здесь менять уровни логгинга в Spring Boot-->

@@ -1,28 +1,19 @@
 Ext.define('BillWebApp.view.main.Panel1', {
-    extend: 'Ext.tab.Panel',
+    extend: 'Ext.form.Panel',
     xtype: 'panel1',
-
     title: 'Печать платежек',
-    width: 700,
-    height: 400,
-    minWidth: 700,
-    minHeight: 600,
-    layout: 'fit',
-    plain: true,
+    frame: true,
+    resizable: true,
+    width: 610,
+    minWidth: 610,
+    minHeight: 300,
 
+    defaults: {
+        layout: 'form',
+        xtype: 'container',
+        style: 'width: 100%'
+    },
     controller: 'panel1controller', // Обязательно указывать контроллер, иначе не будет привязан нужный store!!!
-
-    items: [{
-        xtype: 'form',
-
-        defaultType: 'textfield',
-        layout: {
-            type: 'vbox',
-            align: 'stretch'
-        },
-
-        bodyPadding: 5,
-        border: false,
 
         items: [
             {
@@ -148,8 +139,8 @@ Ext.define('BillWebApp.view.main.Panel1', {
                         boxLabel: 'Группировать'
                     }
                 ]
-            }]
-    }],
+            }
+        ],
 
     buttons: [{
         text: 'Сверка',

@@ -7,7 +7,7 @@ Ext.define('BillWebApp.view.main.Panel5', {
     },
     scrollable: true,
     maxHeight: 900,
-//    bodyPadding: 10,
+    bodyPadding: 10,
     reference: 'panel5',
     frame: false,
     items: [{

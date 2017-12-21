@@ -5,7 +5,7 @@ Ext.define('BillWebApp.view.main.PanelParController', {
     // Формирование платежки
     onLogoutClick: function () {
         console.log('Выход!');
-        window.location.assign('/login?logout');
+        window.location.assign('/logout');
     }
 
 

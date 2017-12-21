@@ -19,6 +19,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	DataSource dataSource;
+	@Autowired
+	CustomLogoutSuccessHandler customLogoutSuccessHandler;
 	
 	@Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -31,9 +33,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .permitAll()
                 .and()
-            .logout()
+            .logout().logoutSuccessHandler(customLogoutSuccessHandler)
                 .permitAll();
-
         // Внимание! отключил csrf TODO Включить позже защиту обратно!
         http
     	.csrf().disable();

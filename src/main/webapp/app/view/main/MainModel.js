@@ -184,9 +184,7 @@ function addPaneledit() {
                 {
                     title: 'Настройки платежек',
                     iconCls: 'fa-cog',
-                    items: [{
-                        xtype: 'panel5'
-                    }]
+                    xtype: 'panel5'
                 },
 
                 {

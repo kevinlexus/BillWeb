@@ -1,19 +1,24 @@
 Ext.define('BillWebApp.view.main.PanelPar', {
-    extend: 'Ext.panel.Panel',
+    extend: 'Ext.form.Panel',
     xtype: 'panelPar',
     title: 'Параметры',
-    layout: 'form',
-    width: 500,
+    frame: true,
+    resizable: true,
+    width: 610,
+    minWidth: 610,
     minHeight: 300,
-    bodyPadding: 10,
+
+    defaults: {
+        layout: 'form',
+        xtype: 'container',
+        style: 'width: 50%'
+    },
     reference: 'panelPar',
     controller: 'panelParController',
-    frame: true,
-
+    items: [],
     buttons: [{
-        text   : 'Выход из приложения',
+        text: 'Выход из приложения',
         handler: 'onLogoutClick'
     }]
-
 });
 

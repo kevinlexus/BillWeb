@@ -196,6 +196,10 @@ public class DistGen {
 		if (tp==0) {
 			// по расчетной связи
 			// только там, где существует услуга в данном дне (по услуге, содержащей Поставщика) (для ЛИПУ)
+			if (!isSwitchOff && mLogTp.equals("ЛИПУ") && calc.getKart() == null) {
+				// TODO - обработать как Checked exception!
+				log.error("ОШИБКА!!! Должен присутствовать лицевой счет в счетчике: MeterLog.id={}", ml.getId());
+			}
 			if (!isSwitchOff && mLogTp.equals("ЛИПУ") && kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt) || 
 			   mLogTp.equals("ЛОДПУ") || mLogTp.equals("ЛГрупп")) {
 				// посчитать объемы, по физическим счетчикам, прикрепленным к узлу

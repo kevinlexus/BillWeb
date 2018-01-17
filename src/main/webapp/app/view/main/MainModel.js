@@ -98,6 +98,7 @@ Ext.define('BillWebApp.view.main.MainModel', {
                 load: function() {
                     isLoadPayordStore=true;
                     console.log('PayordStore2 Loaded')
+                    addPaneledit();
                 }
             }
         },
@@ -184,9 +185,7 @@ function addPaneledit() {
                 {
                     title: 'Настройки платежек',
                     iconCls: 'fa-cog',
-                    items: [{
-                        xtype: 'panel5'
-                    }]
+                    xtype: 'panel5'
                 },
 
                 {
@@ -198,6 +197,7 @@ function addPaneledit() {
                 }
             ]
         );
+        console.log('Панели добавлены!');
         mainView.doLayout;
     }
 }

@@ -358,15 +358,16 @@ public class ChrgStore {
 	 * @param org - организация
 	 * @param persPriv - льгота проживающего
 	 * @param vol - объем
+	 * @param price - расценка с учётом льготы
 	 * @param dt1 - дата начала
 	 * @param dt2 - дата окончания
 	 */
-	public void addGroupPrivRec(BigDecimal summa, Serv serv, Org org, PersPrivilege persPriv, BigDecimal vol, Date dt1, Date dt2) {
+	public void addGroupPrivRec(BigDecimal summa, Serv serv, Org org, PersPrivilege persPriv, BigDecimal vol, BigDecimal price, Date dt1, Date dt2) {
 		// СГРУППИРОВАТЬ
 		if (storePrivRec.size() == 0) {
 			// завести новую строку
 			//(Serv serv, Org org, BigDecimal summa, BigDecimal vol, PersPrivilege persPriv, Date dt1, Date dt2)
-			storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, dt1, dt2));
+			storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, price, dt1, dt2));
 			//log.info("init1={}", vol);
 		} else {
 			PrivRec lastRec = null;
@@ -378,13 +379,14 @@ public class ChrgStore {
 			}
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
-				storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, dt1, dt2));
+				storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, price, dt1, dt2));
 				//log.info("init2={}", vol);
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
 				if (Utl.cmp(lastRec.getOrg(), org) &&
-						Utl.cmp(lastRec.getPersPriv(), persPriv)
+						Utl.cmp(lastRec.getPersPriv(), persPriv) &&
+							Utl.cmp(lastRec.getPrice(), price)
 					) {
 						//добавить данные в последнюю строку, прибавить объем и площадь, проживающих и суммы
 						if (lastRec.getVol() != null) {
@@ -403,7 +405,7 @@ public class ChrgStore {
 						lastRec.setDt2(dt2);
 					} else {
 						//завести новую строку, если отличается расценкой или организацией и т.п.
-						storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, dt1, dt2));
+						storePrivRec.add(new PrivRec(serv, org, summa, vol, persPriv, price, dt1, dt2));
 					}
 			}
 		}

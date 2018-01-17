@@ -358,7 +358,7 @@ public class ChrgServ {
 		// сохранить возмещение по льготе (переписать из prepPriv)
 		for (PrivRec t : chStore.getPrepPriv()) {
 			PrivilegeChrg priv = new PrivilegeChrg(kart, t.getServ(), t.getOrg(), status, t.getPersPriv(), calc.getReqConfig().getPeriod(), t.getSumma().doubleValue(),
-					t.getVol().doubleValue(), calc.getReqConfig().getChng(), t.getDt1(), t.getDt2());
+					t.getVol().doubleValue(), calc.getReqConfig().getChng(), t.getPrice().doubleValue(), t.getDt1(), t.getDt2());
 					
 			kart.getPrivilegeChrg().add(priv); 
 		}

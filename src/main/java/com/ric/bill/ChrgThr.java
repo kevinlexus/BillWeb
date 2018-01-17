@@ -196,9 +196,9 @@ public class ChrgThr {
 
 			BigDecimal sumPriv = BigDecimal.ZERO; 
 			if (rec.getDiscount() != null) {
-				BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
-				// сумма льготы (объем * (1-дисконт) = сумма льг.)
-				sumPriv = vol.multiply(cf);
+				//BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
+				// сумма льготы (объем * цена по льготе)
+				sumPriv = vol.multiply(rec.getPricePriv());
 				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
 			}
 			// Сумма итога
@@ -240,7 +240,7 @@ public class ChrgThr {
 			
 			// сохранить возмещение по льготе
 			if (sumPriv.compareTo(BigDecimal.ZERO) != 0) {
-				chStore.addGroupPrivRec(sumPriv, rec.getServ(), rec.getOrg(), rec.getPersPriv(), vol, rec.getDt1(), rec.getDt2());
+				chStore.addGroupPrivRec(sumPriv, rec.getServ(), rec.getOrg(), rec.getPersPriv(), vol, rec.getPricePriv(), rec.getDt1(), rec.getDt2());
 			}
 		} 
 
@@ -827,8 +827,8 @@ public class ChrgThr {
 						if (persPriv!=null) {
 							privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
 						}
-//						log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
-								//privServ!=null?privServ.getDiscount(): null);
+						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
+						//		privServ!=null?privServ.getDiscount(): null);
 						if (absVol.compareTo(tmpVold) > 0) {
 							tmpInsVol = tmpVold.multiply(BigDecimal.valueOf(Math.signum(vol))); // умножить на знак
 							absVol = absVol.subtract(tmpVold);  
@@ -839,8 +839,14 @@ public class ChrgThr {
 						
 						//log.info("объем={}", tmpInsVol);
 						if (tmpInsVol.compareTo(BigDecimal.ZERO) !=0) {
+							BigDecimal privPrice = null;
+							if (privServ!=null && privServ.getDiscount()!=null) {
+								privPrice = BigDecimal.valueOf(stPrice * privServ.getDiscount());
+								privPrice = privPrice.setScale(2, BigDecimal.ROUND_HALF_UP);		
+							}
+									
 							chStore.addChrg(tmpInsVol, BigDecimal.valueOf(stPrice), 
-									privServ!=null ? BigDecimal.valueOf(stPrice * privServ.getDiscount()) : null, 
+									privServ!=null ? privPrice : null, 
 									privServ!=null ? BigDecimal.valueOf(privServ.getDiscount()) : null, 
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
 									entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);

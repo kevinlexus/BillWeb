@@ -277,6 +277,7 @@ public class BillServ {
 		if (lsk != null) {
 			kart = em.find(Kart.class, lsk);
 			if (kart == null) {
+				log.error("УКАЗАННЫЙ ЛИЦЕВОЙ СЧЕТ={} НЕ НАЙДЕН!", lsk);
 				res.setErr(1);
 				return fut;
 			}

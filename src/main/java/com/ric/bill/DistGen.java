@@ -169,9 +169,9 @@ public class DistGen {
 		//присвоить лиц.счет, чтобы использовать calc в подсчете например нормативов
 		calc.setKart(kart); 
 
-		if (!ml.getTp().getCd().equals("ЛИПУ") && !ml.getTp().getCd().equals("ЛНрм")) {
-			log.trace("Счетчик:id="+ml.getId()+" тип="+ml.getTp().getCd()+" ввод:"+ml.getEntry());
-		}
+		//if (!ml.getTp().getCd().equals("ЛИПУ") && !ml.getTp().getCd().equals("ЛНрм")) {
+			//log.info("Счетчик:id="+ml.getId()+" тип="+ml.getTp().getCd()+" ввод:"+ml.getEntry());
+		//}
 
 		String mLogTp = ml.getTp().getCd(); //тип лог счетчика
 		Serv servChrg = ml.getServ().getServChrg(); //получить основную услугу, для начисления
@@ -282,10 +282,10 @@ public class DistGen {
 				partPers = cntPers.cntVol / calc.getReqConfig().getCntCurDays();
 			}
 		} else if (tp==2 && !isSwitchOff && mLogTp.equals("Лсчетчик")) {
-			//по расчетной связи ОДН (только у лог.счетчиков, при наличии расчетной связи ОДН)
-			//получить дельту ОДН, площадь, кол-во людей, для расчета пропорции в последствии
-			//сохранить счетчик ЛОДН
-			//только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
+			// по расчетной связи ОДН (только у лог.счетчиков, при наличии расчетной связи ОДН)
+			// получить дельту ОДН, площадь, кол-во людей, для расчета пропорции в последствии
+			// сохранить счетчик ЛОДН
+			// только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
 				SumNodeVol lnkODNVol = null;
 				MLogs lnkLODN = null;
@@ -509,13 +509,21 @@ public class DistGen {
 				 || tp==2 && g.getTp().getCd().equals("Расчетная связь ОДН")
 				 || tp==3 && g.getTp().getCd().equals("Расчетная связь пропорц.площади")) {
 						
+					/*log.info("Направление id={}", g.getSrc().getId());
+					if (g.getSrc().getId() == 544463) {
+						log.info("-------------DDDDDD");
+					}*/
 						NodeVol nvChld = distNode(calc, g.getSrc(), tp, genDt);
+						//log.info("Объем до добавления по id={}, vol={}", ml.getId(), nv.getVol());
+						
 						if (nvChld != null){
 							//добавить объемы от дочерних узлов
 							nv.addPartArea(nvChld.getPartArea());
 							nv.addPartPers(nvChld.getPartPers());
 							nv.addVol(nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));
+							//log.info("Объем из дочернего узла по id={}, vol={}", ml.getId(), nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));
 						}
+						//log.info("Объем после добавления по id={}, vol={}", ml.getId(), nv.getVol());
 				}
 			}
 		}
@@ -598,15 +606,17 @@ public class DistGen {
 		Lst volTp=null;
 		//записать объем или площадь или кол-во прож. в текущий узел (лог.счетчик)
 		if ((tp==0||tp==2||tp==3) && nv.getVol() != 0d) {
-			//расчетная связь, расчетная связь ОДН
+			// расчетная связь, расчетная связь ОДН
 			volTp = lstMng.getByCD("Фактический объем");
 
 			Vol vol = new Vol((MeterLog) ml, volTp, nv.getVol(), null, genDt, genDt,
 					calc.getReqConfig().getOperTp(), chng);
+			
+			//log.info("Ml.id={}, Тип={}, Факт объем={}, dt={}", ml.getId(), tp, nv.getVol(), genDt);
 			ml.getVol().add(vol);
 			
 		} if (tp==1 && (nv.getPartArea() != 0d || nv.getPartPers() !=0d) ) {
-			//связь подсчета площади, кол-во проживающих, сохранять, если только в тестовом режиме TODO 
+			// связь подсчета площади, кол-во проживающих, сохранять, если только в тестовом режиме TODO 
 			volTp = lstMng.getByCD("Площадь и проживающие");
 
 			Vol vol = new Vol((MeterLog) ml, volTp, nv.getPartArea(), nv.getPartPers(), genDt, genDt,
@@ -616,7 +626,7 @@ public class DistGen {
 		}
 		
 		
-		//добавить в список рассчитанных узлов
+		// добавить в список рассчитанных узлов
 		addLstCheck(ml.getId(), tp, genDt, nv);
 
 		return nv;

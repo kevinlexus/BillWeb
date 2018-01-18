@@ -91,7 +91,7 @@ public class DistServ {
 	 */
 	private void delHouseVolServ(int rqn) throws CyclicMeter {
 
-		log.info("RQN={}, Удаление объемов по House.id={}  по услуге cd={} ", rqn, calc.getHouse().getId(),
+		log.info("RQN={}, Удаление объемов по House.id={}  по услуге cd={}", rqn, calc.getHouse().getId(),
 				calc.getServ().getCd(), 2);
 
 		delHouseServVolTp(rqn, calc.getServ().getServMet(), 1);
@@ -294,7 +294,7 @@ public class DistServ {
 	}
 
 	/**
-	 * Распределить объем по счетчикам дома
+	 * Распределить объем по счетчикам лицевого
 	 * 
 	 * @param calcTp
 	 *            - тип обработки
@@ -302,8 +302,12 @@ public class DistServ {
 	 */
 	private void distKartServTp(int rqn, Kart kart, Serv serv) throws ErrorWhileDist {
 		// найти все начальные узлы расчета по лиц.счету и по услуге
+		/*for (MLogs ml : metMng.getAllMetLogByServTp(rqn, kart, serv, null)) {
+			 log.info("Услуга: serv.cd={}, Узел id={}", serv.getCd() , ml.getId());
+		}*/
+		
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, kart, serv, null)) {
-			// log.info("Услуга: serv.cd={}, Узел id={}", serv.getCd() , ml.getId());
+			 //log.info("Услуга: serv.cd={}, Узел id={}", serv.getCd() , ml.getId());
 			distGraph(ml);
 		}
 	}

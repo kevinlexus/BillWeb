@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.ric.bill.PriceMng.ComplexPrice;
 import com.ric.bill.dto.ChrgRec;
 import com.ric.bill.dto.VolDet;
 import com.ric.bill.excp.EmptyOrg;
@@ -61,6 +62,8 @@ public class ChrgThr {
 	private KartMng kartMng;
 	@Autowired
 	private MeterLogMng metMng;
+	@Autowired
+	private PriceMng priceMng;
 
 	@PersistenceContext
     private EntityManager em;
@@ -196,9 +199,9 @@ public class ChrgThr {
 
 			BigDecimal sumPriv = BigDecimal.ZERO; 
 			if (rec.getDiscount() != null) {
-				BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
-				// сумма льготы (объем * (1-дисконт) = сумма льг.)
-				sumPriv = vol.multiply(cf);
+				//BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
+				// сумма льготы (объем * цена по льготе)
+				sumPriv = vol.multiply(rec.getPricePriv());
 				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
 			}
 			// Сумма итога
@@ -240,7 +243,7 @@ public class ChrgThr {
 			
 			// сохранить возмещение по льготе
 			if (sumPriv.compareTo(BigDecimal.ZERO) != 0) {
-				chStore.addGroupPrivRec(sumPriv, rec.getServ(), rec.getOrg(), rec.getPersPriv(), vol, rec.getDt1(), rec.getDt2());
+				chStore.addGroupPrivRec(sumPriv, rec.getServ(), rec.getOrg(), rec.getPersPriv(), vol, rec.getPricePriv(), rec.getDt1(), rec.getDt2());
 			}
 		} 
 
@@ -353,35 +356,7 @@ public class ChrgThr {
 			//Utl.logger(false, 4, kart.getLsk(), serv.getId()); //###
 
 			// получить расценку по норме	
-			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-				// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
-				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-				if (stServ.getServPrice()==null) {
-					// если пуста услуга по которой хранится расценка, получить из текущей услуги - по нормативу
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-				} else {
-					// получить расценку от услуги по которой хранится расценка
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-				}
-	
-				// если пуст один из параметров - занулить все, чтобы не было exception
-				if (stPrice == null || stVol == null) {
-					stPrice = 0d;
-					stVol = 0d;
-				} else {
-					// округлить
-					stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
-				}
-			} else {
-				// прочие варианты
-				if (stServ.getServPrice() != null) {
-					// указана услуга, откуда взять расценку
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-				} else {
-					// не указана услуга, откуда взять расценку
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-				}
-			}
+			stPrice = priceMng.getStandartPrice(calc, kart, serv, genDt, rqn, stServ);
 	
 			//Utl.logger(false, 5, kart.getLsk(), serv.getId()); //###
 			
@@ -407,55 +382,13 @@ public class ChrgThr {
 				
 				
 				stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
+
 				// здесь же получить расценки по свыше соц.нормы и без проживающих 
-				if (serv.getServUpst() != null) {
-					if (upStServ.getServPrice() != null) {
-						// указана услуга, откуда взять расценку
-						upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
-					} else {
-						// не указана услуга, откуда взять расценку
-						upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
-					}
-						
-					if (upStPrice == null) {
-						upStPrice = 0d;
-					}
-					
-					if (upStPrice == 0d && isResid) {
-						// Добавить ошибку, что отсутствует расценка
-						res.addErr(rqn, 5, kart, serv);
-					}
-					
-				} else {
-					upStPrice = 0d;
-				}
-	
-				if (serv.getServWokpr() != null) {
-					if (woKprServ.getServPrice() != null) {
-						// указана услуга, откуда взять расценку
-						woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
-					} else {
-						// не указана услуга, откуда взять расценку
-						//log.info("Check={}", woKprServ.getId());
-						woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
-					}
-	
-					if (woKprPrice == null && isResid) {
-						// Добавить ошибку, что отсутствует расценка
-						res.addErr(rqn, 6, kart, serv);
-						// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
-						if (upStPrice == null || upStPrice == 0d) {
-							woKprPrice = stPrice;
-						} else {
-							woKprPrice = upStPrice;
-						}
-					} else if (woKprPrice == 0d && isResid) {
-						// Добавить ошибку, что отсутствует расценка
-						res.addErr(rqn, 6, kart, serv);
-					}
-				} else {
-					woKprPrice = 0d;
-				} 
+				ComplexPrice cp = priceMng.getUpStPrice(calc, serv, upStPrice, genDt, rqn, res, isResid, kart);
+				
+				upStPrice = cp.getUpStPrice();
+				woKprPrice = cp.getWoKprPrice();
+				
 			}
 			//Utl.logger(false, 6, kart.getLsk(), serv.getId()); //###
 				
@@ -827,8 +760,8 @@ public class ChrgThr {
 						if (persPriv!=null) {
 							privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
 						}
-//						log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
-								//privServ!=null?privServ.getDiscount(): null);
+						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
+						//		privServ!=null?privServ.getDiscount(): null);
 						if (absVol.compareTo(tmpVold) > 0) {
 							tmpInsVol = tmpVold.multiply(BigDecimal.valueOf(Math.signum(vol))); // умножить на знак
 							absVol = absVol.subtract(tmpVold);  
@@ -839,8 +772,14 @@ public class ChrgThr {
 						
 						//log.info("объем={}", tmpInsVol);
 						if (tmpInsVol.compareTo(BigDecimal.ZERO) !=0) {
+							BigDecimal privPrice = null;
+							if (privServ!=null && privServ.getDiscount()!=null) {
+								privPrice = BigDecimal.valueOf(stPrice * privServ.getDiscount());
+								privPrice = privPrice.setScale(2, BigDecimal.ROUND_HALF_UP);		
+							}
+									
 							chStore.addChrg(tmpInsVol, BigDecimal.valueOf(stPrice), 
-									privServ!=null ? BigDecimal.valueOf(stPrice * privServ.getDiscount()) : null, 
+									privServ!=null ? privPrice : null, 
 									privServ!=null ? BigDecimal.valueOf(privServ.getDiscount()) : null, 
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
 									entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
@@ -1037,6 +976,7 @@ public class ChrgThr {
 			}
 		}
 	}
+
 	
 	/**
 	 * добавить из потока все строки сумм начислений по основной услуге

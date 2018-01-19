@@ -132,7 +132,7 @@ public class PriceMng {
 			}
 				
 			if (cp.upStPrice == null) {
-				cp.upStPrice = 0d;
+				cp.upStPrice = 0d; 
 			}
 			
 			if (cp.upStPrice == 0d && isResid) {

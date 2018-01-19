@@ -127,7 +127,7 @@ public class PriceMng {
 				// указана услуга, откуда взять расценку
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
 			} else {
-				// не указана услуга, откуда взять расценку
+				// не указана услуга, откуда взять расценку 
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
 			}
 				

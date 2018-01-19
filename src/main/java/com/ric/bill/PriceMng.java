@@ -131,7 +131,7 @@ public class PriceMng {
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
 			}
 				
-			if (cp.upStPrice == null) {
+			if (cp.upStPrice == null) { 
 				cp.upStPrice = 0d; 
 			}
 			

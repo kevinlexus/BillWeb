@@ -101,7 +101,7 @@ public class PriceMng {
 	}
 
 	/**
-	 * Получить расценку по свыше соцнорме и 0 проживающих
+	 * Получить расценку по свыше соцнорме и 0 проживающих prcMng!
 	 * @param calc
 	 * @param serv
 	 * @param stPrice

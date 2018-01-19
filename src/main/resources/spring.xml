@@ -15,7 +15,7 @@
     <bean id="dataSource" class="oracle.jdbc.pool.OracleDataSource" destroy-method="close">
         <property name="URL" value="jdbc:oracle:thin:@192.168.100.188:1521:RKCDB" /> 
         <property name="user" value="gen"/>
-        <property name="password" value="X,m[;@GU%6K{/YP+"/>
+        <property name="password" value="111"/>
         <property name="connectionCachingEnabled" value="true"/>
     </bean>
 

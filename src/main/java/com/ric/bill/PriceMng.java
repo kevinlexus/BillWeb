@@ -40,9 +40,10 @@ public class PriceMng {
 	@Getter@Setter
 	public
 	class ComplexPrice {
+		// расценка свыше соц.нормы
 		private Double upStPrice;
+		// расценка 0 проживающих
 		private Double woKprPrice;
-		
 	}
 	
 	/**
@@ -202,9 +203,18 @@ public class PriceMng {
 			cdProp = "Цена с изолир.стояк.без полот.суш."; 
 		} else if (!isHotPipeInsulated && !isTowelHeatExist) {
 			cdProp = "Цена с неизолир.стояк.без полот.суш."; 
+		} else {
+			// если не найдены параметры, то взять простую цену
+			cdProp = "Цена"; 
 		}
 		
 		stPrice = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
+		if (cdProp != "Цена" && stPrice == null) {
+			// Если заведён параметр изолир.стояк или полотенцесуш. и не заведён соответствующий тип цены
+			// то поискать по обычной цене
+			cdProp = "Цена"; 
+			stPrice = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
+		}
 		return stPrice;
 	}
 

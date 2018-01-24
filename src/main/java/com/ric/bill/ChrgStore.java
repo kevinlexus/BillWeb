@@ -102,7 +102,7 @@ public class ChrgStore {
 	 * @param vol - объем
 	 * @param price - расценка
 	 * @param pricePriv - расценка по льготе (null если нельготная услуга)
-	 * @param discount - дисконт по расценке (null если нельготная услуга)
+	 * @param tp - вариант расчета льготы: 0 - полное нач. - нач.со льготой=льгота (отоп.), 1 - полное нач. - льгота=итог нач.(эл.эн.)
      * @param stdt - норматив
      * @param cntFact - кол-во прожив по факту (без собственников)
 	 * @param serv - услуга
@@ -115,7 +115,7 @@ public class ChrgStore {
      * @param priv - привилегия (заполняется не по всем услугам)
      *  если по нельготной услуге, то передавать null
 	 */
-	public void addChrg(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact, BigDecimal area, 
+	public void addChrg(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, Integer tp, BigDecimal stdt, Integer cntFact, BigDecimal area, 
 						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv) {
 		Integer met = 0;
 		if (exsMet) {
@@ -125,7 +125,7 @@ public class ChrgStore {
 		// добавить с группировкой по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
 		addGroupMainStore(vol, price, serv, dt);
 		// добавить с группировкой в детализированное хранилище 
-		addGroupVolDet(vol, price, pricePriv, discount, stdt, cntFact, area, serv, org, entry, dt, cntOwn, persPriv, met);
+		addGroupVolDet(vol, price, pricePriv, tp, stdt, cntFact, area, serv, org, entry, dt, cntOwn, persPriv, met);
 	}
 	
 	/**
@@ -182,7 +182,7 @@ public class ChrgStore {
 	 * @param vol - объем
 	 * @param price - расценка
 	 * @param pricePriv - расценка по льготе (null если нельготная услуга)
-	 * @param discount - дисконт по расценке (null если нельготная услуга)
+	 * @param tp - вариант расчета льготы: 0 - полное нач. - нач.со льготой=льгота (отоп.), 1 - полное нач. - льгота=итог нач.(эл.эн.)
      * @param stdt - норматив
      * @param cntFact - кол-во прожив по факту (без собственников)
 	 * @param area - площадь
@@ -195,13 +195,13 @@ public class ChrgStore {
      * @param priv - привилегия (заполняется не по всем услугам)
 	 * @param store - хранилище
 	 */
-	private void addGroupVolDet(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, BigDecimal discount, BigDecimal stdt, Integer cntFact,
+	private void addGroupVolDet(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, Integer tp, BigDecimal stdt, Integer cntFact,
 			BigDecimal area, Serv serv, Org org, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv,
 			Integer met) {
 		List<VolDet> store = getStoreVolDet();
 		if (store.size() == 0) {
 			// завести новую строку
-			store.add(new VolDet(vol, price, pricePriv, discount, stdt, cntFact, area, 
+			store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
 						serv, org, met, entry, dt, dt, cntOwn, persPriv));
 		} else {
 			VolDet lastRec = null;
@@ -214,14 +214,14 @@ public class ChrgStore {
 			}
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
-				store.add(new VolDet(vol, price, pricePriv, discount, stdt, cntFact, area, 
+				store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
 						serv, org, met, entry, dt, dt, cntOwn, persPriv));
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
 				if (Utl.cmp(lastRec.getPrice(), price) &&
 					 Utl.cmp(lastRec.getPricePriv(), pricePriv) &&
-					  Utl.cmp(lastRec.getDiscount(), discount) &&
+					  Utl.cmp(lastRec.getTp(), tp) &&
 						Utl.cmp(lastRec.getOrg(), org) &&
 						 	Utl.cmp(lastRec.getStdt(), stdt) &&
 								Utl.cmp(lastRec.getCntFact(), cntFact) &&
@@ -246,7 +246,7 @@ public class ChrgStore {
 						lastRec.setDt2(dt);
 					} else {
 						//завести новую строку, если отличается расценкой или организацией
-						store.add(new VolDet(vol, price, pricePriv, discount, stdt, cntFact, area, 
+						store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
 								serv, org, met, entry, dt, dt, cntOwn, persPriv));
 					}
 			}

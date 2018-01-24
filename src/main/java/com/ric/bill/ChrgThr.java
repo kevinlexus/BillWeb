@@ -197,15 +197,26 @@ public class ChrgThr {
 			// округлить до копеек
 			sumFull = sumFull.setScale(2, BigDecimal.ROUND_HALF_UP);
 
-			BigDecimal sumPriv = BigDecimal.ZERO; 
-			if (rec.getDiscount() != null) {
-				//BigDecimal cf = BigDecimal.valueOf(1).subtract(rec.getDiscount());
-				// сумма льготы (объем * цена по льготе)
+			BigDecimal sumPriv = BigDecimal.ZERO;
+			BigDecimal sumAmnt = BigDecimal.ZERO;
+			if (rec.getTp() !=null && rec.getTp() == 1) {
+				// Вариант расчета: из полной суммы вычесть сумму льготы, получить результат
+				// сумма льготы: объем * цена по льготе (здесь Цена по льготе!!!)
 				sumPriv = vol.multiply(rec.getPricePriv());
 				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
+				// Сумма итога
+				sumAmnt = sumFull.subtract(sumPriv);
+			} else if (rec.getTp() !=null && rec.getTp() == 0) {
+				// Вариант расчета: из полной суммы вычесть сумму начисления со льготой, получить результат
+				// Сумма итога со льготой: объем * цену с учетом льготы (здесь Цена с учётом льготы!!!)
+				sumAmnt = vol.multiply(rec.getPricePriv());
+				sumAmnt = sumAmnt.setScale(2, BigDecimal.ROUND_HALF_UP);
+				// Сумма льготы
+				sumPriv = sumFull.subtract(sumAmnt);
+			} else {
+				// Сумма итога (без льготы)
+				sumAmnt = sumFull;
 			}
-			// Сумма итога
-			BigDecimal sumAmnt = sumFull.subtract(sumPriv);
 			
 			// записать, для будущего округления по виртуальной услуге
 			if (rec.getServ().getServVrt() != null) {
@@ -216,6 +227,15 @@ public class ChrgThr {
 				chStore.putMapVrtVal(rec.getServ(), sumFull);
 			}
 
+			BigDecimal priceD;
+			if (rec.getTp() != null && rec.getTp()==0) {
+				priceD = rec.getPricePriv(); 
+			} else if (rec.getTp() != null && rec.getTp()==1) {
+				priceD = rec.getPrice(); 
+			} else {
+				priceD = rec.getPrice(); 
+			}
+					
 			// сохранить начисление
 			if (!rec.getServ().getVrt()) {
 				// Если сумма <> 0 или по услуге принудительно сохранить объемы при нулевой сумме 	
@@ -234,7 +254,7 @@ public class ChrgThr {
 								rec.getDt1(), rec.getDt2(), rec.getStdt(), rec.getCntFact(), rec.getCntOwn(), rec.getArea(), 
 								rec.getMet(), rec.getEntry(), null);
 					} else {
-						chStore.addGroupChrgRec(sumFull, sumPriv, sumAmnt, rec.getPrice(), rec.getServ(), rec.getOrg(), 
+						chStore.addGroupChrgRec(sumFull, sumPriv, sumAmnt, priceD, rec.getServ(), rec.getOrg(), 
 								rec.getDt1(), rec.getDt2(), rec.getStdt(), rec.getCntFact(), rec.getCntOwn(), rec.getArea(), 
 								rec.getMet(), rec.getEntry(), vol);
 					}
@@ -728,9 +748,8 @@ public class ChrgThr {
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				//Utl.logger(false, 21, kart.getLsk(), serv.getId()); //###
-			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d
-					&& serv.getCd().equals("Электроснабжение")) {
-				// тип расчета, например:текущее содержание, Х.В., Г.В., Канализ
+			} else if (serv.getCd().equals("Электроснабжение")) {
+				// тип расчета, например:Электроснабжение
 				// Вариант подразумевает объём по лог.счётчику, РАСПределённый по дням
 				// или по параметру - базе, жилого фонда, так же распределенного по дням
 				BigDecimal tmpSqr;
@@ -770,7 +789,6 @@ public class ChrgThr {
 							absVol = BigDecimal.ZERO;  
 						}
 						
-						//log.info("объем={}", tmpInsVol);
 						if (tmpInsVol.compareTo(BigDecimal.ZERO) !=0) {
 							BigDecimal privPrice = null;
 							if (privServ!=null && privServ.getDiscount()!=null) {
@@ -780,7 +798,7 @@ public class ChrgThr {
 									
 							chStore.addChrg(tmpInsVol, BigDecimal.valueOf(stPrice), 
 									privServ!=null ? privPrice : null, 
-									privServ!=null ? BigDecimal.valueOf(privServ.getDiscount()) : null, 
+									privServ!=null ? privServ.getTp() : null, 
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
 									entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
 						}
@@ -791,7 +809,6 @@ public class ChrgThr {
 								null, null,
 								BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
 								entry, genDt, cntPers.cntOwn, null);
-						//log.info("свыше соц.нормы={}", absVol);
 					}
 					
 				} else {
@@ -890,14 +907,111 @@ public class ChrgThr {
 				}
 				//Utl.logger(false, 22, kart.getLsk(), serv.getId()); //###
 
-			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-2"), 0d) == 1d) {
+			} if (serv.getCd().equals("Отопление")) {
 				//тип расчета, например:Отопление по Гкал
 				//Вариант подразумевает объём по лог.счётчику, записанный одной строкой, за период
 				//расчет долей соц.нормы и свыше
 				if (sqr > 0d) {
-					if (cntPers.cntEmpt != 0) {	
+					if (cntPers.cntEmpt != 0) {
+						// есть проживающие
+						// площадь лицевого в контексте одного дня
+						BigDecimal tmpArea = BigDecimal.valueOf(sqr);
+						// площадь лицевого для сохранения
+						BigDecimal tmpInsArea = BigDecimal.ZERO;
+						// соцнорма на одного человека в контексте одного дня
+						BigDecimal socNorm = BigDecimal.valueOf(stdt.partVol/cntPers.cnt);
+						log.info("stdt.vol={}, stdt.partVol={}, stdt.cnt={}", stdt.vol, stdt.partVol, cntPers.cnt);
+						// список льгот, увеличений соцнорм
+					    HashMap<PersPrivilege, PrivilegeServ> mapSoc = new HashMap<PersPrivilege, PrivilegeServ>(0);
+					    // Перебрать всех проживающих, найти льготу
+						for (Pers t : cntPers.persLst) {
+							PersPrivilege persPriv = kartMng.getPersPrivilege(t, serv, genDt);
+							PrivilegeServ privServ = null;
+							if (persPriv!=null) {
+								privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
+							}
+							log.info("Проживающий id={}, фамилия={}, имя={}, soc={}", t.getId(), t.getLastname(), t.getFirstname(),
+									privServ!=null?privServ.getExtSoc(): null);
+							if (tmpArea.compareTo(socNorm) > 0) {
+								// найти коэфф соц.нормы данного проживающего к площади лиц.сч.
+								cf = socNorm.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+								tmpInsArea = socNorm;
+								tmpArea = tmpArea.subtract(socNorm);
+							} else {
+								// найти коэфф остатка площади к площади лиц.сч.
+								cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+								tmpInsArea = tmpArea;
+								tmpArea = BigDecimal.ZERO;  
+							}
+							tmpVolD = cf.multiply(BigDecimal.valueOf(vol)); // умножить на объем гКал
+							
+							if (tmpVolD.compareTo(BigDecimal.ZERO) !=0) {
+								BigDecimal privPrice = null;
+								// сохранить льготу
+								if (privServ!=null && privServ.getExtSoc()!=null) {
+									mapSoc.put(persPriv, privServ);
+								}
+								//log.info("soc={}, stPrice={}, privPrice={}", privServ.getExtSoc(), stPrice, privPrice);
+								
+								// сохранить расчёт по соцнорме
+								if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+										Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+									chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), 
+											null, null, null, cntPers.cntFact, tmpInsArea, stServ, org, exsMet, 
+											entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
+								}
+							}
+						}
+
+						
+						// свыше соц.нормы попробовать применить льготу
+						if (mapSoc.size() > 0 && tmpArea.compareTo(BigDecimal.ZERO)!=0) {
+							for (PersPrivilege persPriv: mapSoc.keySet()) {
+								PrivilegeServ privServ = mapSoc.get(persPriv);
+								log.info("soc={}, cnt={}", privServ.getExtSoc(), calc.getReqConfig().getCntCurDays());
+								// соцнорму привести к доли по дню
+								BigDecimal extSoc = BigDecimal.valueOf(privServ.getExtSoc()/calc.getReqConfig().getCntCurDays());
+								
+								if (tmpArea.compareTo(extSoc) > 0) {
+									// найти коэфф площади увеличения соц.нормы данного проживающего к площади лиц.сч.
+									cf = extSoc.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+									tmpInsArea = extSoc;
+									tmpArea = tmpArea.subtract(extSoc);  
+								} else {
+									// найти коэфф остатка площади к площади лиц.сч.
+									cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+									tmpInsArea = tmpArea;
+									tmpArea = BigDecimal.ZERO;  
+								}
+
+								tmpVolD = cf.multiply(BigDecimal.valueOf(vol)); // умножить на объем гКал
+
+								if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+										Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+									// сохранить расчёт по св.соцнормы со льготой
+									chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), 
+											BigDecimal.valueOf(stPrice), privServ.getTp(), null, cntPers.cntFact, tmpInsArea, upStServ, org, exsMet, 
+											entry, genDt, cntPers.cntOwn, persPriv);
+								}
+								
+							}
+						}
+
+						// свыше соцнормы, без льготы
+						// найти коэфф остатка площади к площади лиц.сч.
+						cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+						tmpVolD = cf.multiply(BigDecimal.valueOf(vol)); // умножить на объем
+						if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+								Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), 
+									null, null,
+									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpArea, upStServ, org, exsMet, 
+									entry, genDt, cntPers.cntOwn, null);
+						}
+						
+						// Старый расчет
 						// площадь по норме
-						BigDecimal tmpArea = BigDecimal.ZERO;
+/*						BigDecimal tmpArea = BigDecimal.ZERO;
 						// площадь св.нормы
 						BigDecimal tmpUpArea = BigDecimal.ZERO;
 						
@@ -926,7 +1040,7 @@ public class ChrgThr {
 							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, null, null, cntPers.cntFact, 
 									tmpUpArea, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 						}
-					} else {
+*/					} else {
 						//нет проживающих
 						if (woKprServ != null) {
 							//если есть услуга "без проживающих"

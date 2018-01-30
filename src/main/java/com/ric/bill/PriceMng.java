@@ -81,13 +81,13 @@ public class PriceMng {
 			}
 		} else {
 			
-			if (serv.getCd().equals("Горячая вода")) {
+			//if (serv.getCd().equals("Горячая вода")) { ПОКА РАБОТАЕТ ТОЛЬКО ПО 0 ПРОЖИВАЮЩИХ!
 				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
 				// и изолированного стояка
 				
-				stPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, stServ);
+				//stPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, stServ);
 
-			} else {
+			//} else {
 				// прочие варианты
 				if (stServ.getServPrice() != null) {
 					// указана услуга, откуда взять расценку
@@ -96,7 +96,7 @@ public class PriceMng {
 					// не указана услуга, откуда взять расценку
 					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
 				}
-			}
+			//}
 		}
 		return stPrice;
 	}
@@ -120,11 +120,12 @@ public class PriceMng {
 		Serv upStServ = serv.getServUpst();
 		Serv woKprServ = serv.getServWokpr();
 		if (upStServ != null) {
-			if (serv.getCd().equals("Горячая вода")) {
+			/*if (serv.getCd().equals("Горячая вода")) {  ПОКА РАБОТАЕТ ТОЛЬКО ПО 0 ПРОЖИВАЮЩИХ!
 				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
 				// и изолированного стояка
 				cp.upStPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, serv);
-			} if (upStServ.getServPrice() != null) {
+			}*/
+			if (upStServ.getServPrice() != null) {
 				// указана услуга, откуда взять расценку
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
 			} else {

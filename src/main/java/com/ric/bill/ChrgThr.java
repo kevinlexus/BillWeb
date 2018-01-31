@@ -743,7 +743,7 @@ public class ChrgThr {
 				chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
 							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);			
 				//Utl.logger(false, 20, kart.getLsk(), serv.getId()); //###
-			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				//тип расчета, например:Коммерческий найм, где цена = сумме
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
@@ -907,7 +907,7 @@ public class ChrgThr {
 				}
 				//Utl.logger(false, 22, kart.getLsk(), serv.getId()); //###
 
-			} if (serv.getCd().equals("Отопление")) {
+			} else if (serv.getCd().equals("Отопление")) {
 				//тип расчета, например:Отопление по Гкал
 				//Вариант подразумевает объём по лог.счётчику, записанный одной строкой, за период
 				//расчет долей соц.нормы и свыше
@@ -919,50 +919,55 @@ public class ChrgThr {
 						// площадь лицевого для сохранения
 						BigDecimal tmpInsArea = BigDecimal.ZERO;
 						// соцнорма на одного человека в контексте одного дня
-						BigDecimal socNorm = BigDecimal.valueOf(stdt.partVol/cntPers.cnt);
-						log.info("stdt.vol={}, stdt.partVol={}, stdt.cnt={}", stdt.vol, stdt.partVol, cntPers.cnt);
+						BigDecimal socNorm = null;
+						if (cntPers.cnt != 0) {
+							socNorm = BigDecimal.valueOf(stdt.partVol/cntPers.cnt);
+						}
+						// log.info(" lsk={} partVol={}, cnt={}, dd={}", kart.getLsk(), stdt.partVol, cntPers.cnt, stdt.partVol/cntPers.cnt);
+						//log.info("stdt.vol={}, stdt.partVol={}, stdt.cnt={}", stdt.vol, stdt.partVol, cntPers.cnt);
 						// список льгот, увеличений соцнорм
 					    HashMap<PersPrivilege, PrivilegeServ> mapSoc = new HashMap<PersPrivilege, PrivilegeServ>(0);
 					    // Перебрать всех проживающих, найти льготу
-						for (Pers t : cntPers.persLst) {
-							PersPrivilege persPriv = kartMng.getPersPrivilege(t, serv, genDt);
-							PrivilegeServ privServ = null;
-							if (persPriv!=null) {
-								privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
-							}
-							log.info("Проживающий id={}, фамилия={}, имя={}, soc={}", t.getId(), t.getLastname(), t.getFirstname(),
-									privServ!=null?privServ.getExtSoc(): null);
-							if (tmpArea.compareTo(socNorm) > 0) {
-								// найти коэфф соц.нормы данного проживающего к площади лиц.сч.
-								cf = socNorm.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
-								tmpInsArea = socNorm;
-								tmpArea = tmpArea.subtract(socNorm);
-							} else {
-								// найти коэфф остатка площади к площади лиц.сч.
-								cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
-								tmpInsArea = tmpArea;
-								tmpArea = BigDecimal.ZERO;  
-							}
-							tmpVolD = cf.multiply(BigDecimal.valueOf(vol)); // умножить на объем гКал
-							
-							if (tmpVolD.compareTo(BigDecimal.ZERO) !=0) {
-								BigDecimal privPrice = null;
-								// сохранить льготу
-								if (privServ!=null && privServ.getExtSoc()!=null) {
-									mapSoc.put(persPriv, privServ);
+					    if (cntPers.cnt != 0) {
+							for (Pers t : cntPers.persLst) {
+								PersPrivilege persPriv = kartMng.getPersPrivilege(t, serv, genDt);
+								PrivilegeServ privServ = null;
+								if (persPriv!=null) {
+									privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
 								}
-								//log.info("soc={}, stPrice={}, privPrice={}", privServ.getExtSoc(), stPrice, privPrice);
+								//log.info("Проживающий id={}, фамилия={}, имя={}, soc={}", t.getId(), t.getLastname(), t.getFirstname(),
+										//privServ!=null?privServ.getExtSoc(): null);
+								if (tmpArea.compareTo(socNorm) > 0) {
+									// найти коэфф соц.нормы данного проживающего к площади лиц.сч.
+									cf = socNorm.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+									tmpInsArea = socNorm;
+									tmpArea = tmpArea.subtract(socNorm);
+								} else {
+									// найти коэфф остатка площади к площади лиц.сч.
+									cf = tmpArea.divide(BigDecimal.valueOf(sqr), 15, RoundingMode.HALF_UP);
+									tmpInsArea = tmpArea;
+									tmpArea = BigDecimal.ZERO;  
+								}
+								tmpVolD = cf.multiply(BigDecimal.valueOf(vol)); // умножить на объем гКал
 								
-								// сохранить расчёт по соцнорме
-								if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
-										Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
-									chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), 
-											null, null, null, cntPers.cntFact, tmpInsArea, stServ, org, exsMet, 
-											entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
+								if (tmpVolD.compareTo(BigDecimal.ZERO) !=0) {
+									BigDecimal privPrice = null;
+									// сохранить льготу
+									if (privServ!=null && privServ.getExtSoc()!=null) {
+										mapSoc.put(persPriv, privServ);
+									}
+									//log.info("soc={}, stPrice={}, privPrice={}", privServ.getExtSoc(), stPrice, privPrice);
+									
+									// сохранить расчёт по соцнорме
+									if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
+											Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
+										chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), 
+												null, null, null, cntPers.cntFact, tmpInsArea, stServ, org, exsMet, 
+												entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
+									}
 								}
 							}
-						}
-
+					    }
 						
 						// свыше соц.нормы попробовать применить льготу
 						if (mapSoc.size() > 0 && tmpArea.compareTo(BigDecimal.ZERO)!=0) {
@@ -1064,7 +1069,7 @@ public class ChrgThr {
 				}
 				//Utl.logger(false, 23, kart.getLsk(), serv.getId()); //###
 
-			} if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
+			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				
 				if (cntPers.cntEmpt != 0) {
 					//есть проживающие

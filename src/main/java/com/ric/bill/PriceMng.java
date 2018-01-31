@@ -116,6 +116,7 @@ public class PriceMng { // тестирование изменений на ту
 	 */
 	public ComplexPrice getUpStPrice(Calc calc, Serv serv, Double stPrice, Date genDt, int rqn, Result res, 
 			Boolean isResid, Kart kart) throws EmptyStorable {
+		//log.info("услуга name={}, id={}", serv.getName(), serv.getId());
 		ComplexPrice cp = new ComplexPrice();
 		Serv upStServ = serv.getServUpst();
 		Serv woKprServ = serv.getServWokpr();
@@ -147,11 +148,12 @@ public class PriceMng { // тестирование изменений на ту
 		}
 
 		if (woKprServ != null) {
+			//log.info("услуга woKprServ name={}, id={}", woKprServ.getName(), woKprServ.getId());
 			if (serv.getCd().equals("Горячая вода")) {
 				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
 				// и изолированного стояка
-				cp.woKprPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, serv);
-			} if (woKprServ.getServPrice() != null) {
+				cp.woKprPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, woKprServ);
+			} else if (woKprServ.getServPrice() != null) {
 				// указана услуга, откуда взять расценку
 				cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
 			} else {
@@ -191,6 +193,7 @@ public class PriceMng { // тестирование изменений на ту
 	 * @throws EmptyStorable
 	 */
 	private Double getHotWaterPriceByConditions(Calc calc, Kart kart, Date genDt, int rqn, Serv serv) throws EmptyStorable {
+		//log.info("услуга name={}, id={}", serv.getName(), serv.getId());
 		Double stPrice;
 		Boolean isTowelHeatExist = Utl.nvl(parMng.getBool(rqn, kart, "Наличие полотенцесушителя", genDt), false);
 		Boolean isHotPipeInsulated = Utl.nvl(parMng.getBool(rqn, kart, "Стояк ГВС изолирован", genDt), false);
@@ -210,13 +213,14 @@ public class PriceMng { // тестирование изменений на ту
 		}
 		
 		stPrice = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
+		//log.info("параметр={}, цена={}", cdProp, stPrice);
 		if (cdProp != "Цена" && stPrice == null) {
 			// Если заведён параметр изолир.стояк или полотенцесуш. и не заведён соответствующий тип цены
 			// то поискать по обычной цене
 			cdProp = "Цена"; 
 			stPrice = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
 		}
-		return stPrice;
+		return stPrice;  // тестирование изменений на кем.комп. 31.01.2018 09:17
 	}
 
 	

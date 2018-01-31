@@ -248,6 +248,7 @@
 				<configuration>
 					<excludes>
 						<exclude>config.properties</exclude>
+						<exclude>application.properties</exclude>
  					</excludes>
 				</configuration>
 			</plugin> 

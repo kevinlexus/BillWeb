@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class PriceMng {
+public class PriceMng { // тестирование изменений на тур.комп. 31.01.2018 09:17
 
 	@Autowired
 	private ParMng parMng;

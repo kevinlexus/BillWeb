@@ -220,7 +220,10 @@ public class PriceMng { // тестирование изменений на ту
 			cdProp = "Цена"; 
 			stPrice = kartMng.getServPropByCD(rqn, calc, serv, cdProp, genDt);
 		}
-		return stPrice;  // тестирование изменений на кем.комп. 31.01.2018 09:17
+		if (1==1) {
+			
+		}
+		return stPrice;
 	}
 
 	

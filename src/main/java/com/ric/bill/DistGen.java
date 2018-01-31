@@ -615,7 +615,7 @@ public class DistGen {
 			//log.info("Ml.id={}, Тип={}, Факт объем={}, dt={}", ml.getId(), tp, nv.getVol(), genDt);
 			ml.getVol().add(vol);
 			
-		} if (tp==1 && (nv.getPartArea() != 0d || nv.getPartPers() !=0d) ) {
+		} else if (tp==1 && (nv.getPartArea() != 0d || nv.getPartPers() !=0d) ) {
 			// связь подсчета площади, кол-во проживающих, сохранять, если только в тестовом режиме TODO 
 			volTp = lstMng.getByCD("Площадь и проживающие");
 

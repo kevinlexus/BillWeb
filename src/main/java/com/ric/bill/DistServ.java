@@ -59,8 +59,6 @@ public class DistServ {
 	private LstMng lstMng;
 	@Autowired
 	private ServMng servMng;
-	@Autowired
-	private HouseMng houseMng;
 
 	@Autowired // -здесь не надо autowire, так как prototype
 	private DistGen distGen;
@@ -142,7 +140,7 @@ public class DistServ {
 	 *            - Id области
 	 * @throws ErrorWhileDist
 	 */
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
+/*	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
 	public void distAll(Calc calc, Integer houseId, Integer areaId, Integer tempLskId) throws ErrorWhileDist {
 		this.calc = calc;
 		int rqn = calc.getReqConfig().getRqn();
@@ -162,7 +160,7 @@ public class DistServ {
 					totalTime);
 		}
 	}
-
+*/
 	/**
 	 * распределить объем по всем услугам, по лиц.счету Как правило вызывается из
 	 * начисления, поэтому не нуждается в блокировке лиц.счета
@@ -320,7 +318,9 @@ public class DistServ {
 	 * @return
 	 * @throws ErrorWhileDist
 	 */
-	public void distHouseVol(int rqn, int houseId) throws ErrorWhileDist {
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
+	public void distHouseVol(Calc calc, int rqn, int houseId) throws ErrorWhileDist {
+		this.calc = calc;
 		House h = em.find(House.class, houseId);
 
 		// установить инициализацию дома

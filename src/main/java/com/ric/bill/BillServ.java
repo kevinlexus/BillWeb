@@ -27,6 +27,7 @@ import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ObjMng;
 import com.ric.bill.mm.ParMng;
+import com.ric.bill.model.ar.House;
 import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.mt.MLogs;
 import com.ric.bill.model.mt.MeterLog;
@@ -48,6 +49,8 @@ public class BillServ {
 	private ApplicationContext ctx;
 	@PersistenceContext
 	private EntityManager em;
+	@Autowired
+	private HouseMng houseMng;
 
 	// коллекция для формирования потоков
 	private List<Kart> kartThr;
@@ -129,7 +132,7 @@ public class BillServ {
 		try {
 			if (reqConfig.getIsDist()) {
 				Calc calc = new Calc(reqConfig);
-					distServ.distAll(calc, houseId, areaId, tempLskId);
+					distAll(calc, houseId, areaId, tempLskId);
 				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {
@@ -304,7 +307,7 @@ public class BillServ {
 		try {
 			if (isDistHouse == true) {
 				// задано распределить по дому, для перерасчета (например по отоплению, когда поменялась площадь и надо пересчитать гКал)
-				distServ.distAll(calc, calc.getHouse().getId(), null, null);
+				distAll(calc, calc.getHouse().getId(), null, null);
 				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах
 				calc.setKart(kart);
 			} else if (reqConfig.getIsDist()) {
@@ -330,6 +333,27 @@ public class BillServ {
 		return fut;
 	}
 
+	
+	private void distAll(Calc calc, Integer houseId, Integer areaId, Integer tempLskId) throws ErrorWhileDist {
+		int rqn = calc.getReqConfig().getRqn();
+		long startTime;
+		long endTime;
+		long totalTime;
+		for (House o : houseMng.findAll2(houseId, areaId, tempLskId, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2())) {
+			log.info("RQN={}, Распределение объемов по House.id={}", calc.getReqConfig().getRqn(), o.getId());
+			// распределить объемы
+			startTime = System.currentTimeMillis();
+
+			DistServ distServ = ctx.getBean(DistServ.class);
+			// распределение объемов по дому
+			distServ.distHouseVol(calc, rqn, o.getId());
+			endTime = System.currentTimeMillis();
+			totalTime = endTime - startTime;
+			log.info("RQN={}, House.id={}, Время распределения: {}", calc.getReqConfig().getRqn(), o.getId(),
+					totalTime);
+		}
+	}
+	
 	/**
 	 * ТЕСТ-вызов не удалять!
 	 * @param id

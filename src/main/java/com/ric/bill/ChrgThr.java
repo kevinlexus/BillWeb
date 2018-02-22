@@ -291,7 +291,7 @@ public class ChrgThr {
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
 
 		//log.info("serv.cd={}", serv.getCd());
-		if (serv.getId()==32) {
+		if (serv.getId()==90) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 
@@ -426,6 +426,9 @@ public class ChrgThr {
 	  		//Utl.logger(false, 7, kart.getLsk(), serv.getId()); //###
 	
 			// в случае перерасчета по расценке или по организации, выполнить их замену 
+	  		// TODO TODO TODO TODO !!!!Внимание!!!! в связи с тем что получение расценки вынесено в PriceMng, необходимо внести процесс получения
+	  		// расценки по перерасчету в PriceMng ред. Lev 14.02.2018
+	  		//  
 			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
 				
 				// организация
@@ -439,20 +442,12 @@ public class ChrgThr {
 				if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 					// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
 					Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-					if (stServ.getServPrice()==null) {
-						// если пуста услуга по которой хранится расценка, получить из текущей услуги - по нормативу
-						chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
-						if (chngPrice == null) {
-							// если не найдена расценка в перерасчете, поставить из тарифа 
-							chngPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-						}
-					} else {
-						// получить расценку от услуги по которой хранится расценка
-						chngPrice = tarMng.getChngVal(calc, stServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
-						if (chngPrice == null) {
-							// если не найдена расценка в перерасчете, поставить из тарифа 
-							chngPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-						}
+
+					chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+					
+					if (chngPrice == null) {
+						// если не найдена расценка в перерасчете, поставить из тарифа 
+						chngPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
 					}
 		
 					// если пуст один из параметров - занулить все, чтобы не было exception
@@ -875,14 +870,14 @@ public class ChrgThr {
 						tmpSqr = BigDecimal.ZERO;
 					}
 					tmpVol = absVol - tmpVol;
-					/*if (serv.getId() == 71) {
-						log.info("свыше dt={}, tmpVol={}", genDt, tmpVol);
-					}*/
 					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 									cntPers.cntFact, tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				} else {
 					// нет проживающих
+					//if (serv.getId() == 35) {
+						//log.info("0 прожив. dt={}", genDt);
+					//}
 					BigDecimal tmpSqr = BigDecimal.ZERO;
 					if (BigDecimal.valueOf(vol) != BigDecimal.ZERO &&
 							BigDecimal.valueOf(woKprPrice) != BigDecimal.ZERO ) {

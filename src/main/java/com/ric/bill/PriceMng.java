@@ -11,6 +11,7 @@ import com.ric.bill.Utl;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ParMng;
+import com.ric.bill.model.ar.House;
 import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.tr.Serv;
 
@@ -63,9 +64,10 @@ public class PriceMng { // тестирование изменений на ту
 			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 			// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
 			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-			if (stServ.getServPrice()==null) {
-				// если пуста услуга по которой хранится расценка, получить из текущей услуги - по нормативу
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+
+			if (serv.getCd().equals("Горячая вода ОДН")) {
+				// ГВ на ОИ, получить расценку в зависимости от параметров дома 
+				stPrice = getHotWaterPriceByConditions(calc, calc.getHouse(), genDt, rqn, serv, false);
 			} else {
 				// получить расценку от услуги по которой хранится расценка
 				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
@@ -80,23 +82,13 @@ public class PriceMng { // тестирование изменений на ту
 				stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
 			}
 		} else {
-			
-			//if (serv.getCd().equals("Горячая вода")) { ПОКА РАБОТАЕТ ТОЛЬКО ПО 0 ПРОЖИВАЮЩИХ!
-				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
-				// и изолированного стояка
-				
-				//stPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, stServ);
-
-			//} else {
-				// прочие варианты
-				if (stServ.getServPrice() != null) {
-					// указана услуга, откуда взять расценку
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-				} else {
-					// не указана услуга, откуда взять расценку
-					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-				}
-			//}
+			if (stServ.getServPrice() != null) {
+				// указана услуга, откуда взять расценку
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+			} else {
+				// не указана услуга, откуда взять расценку
+				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+			}
 		}
 		return stPrice;
 	}
@@ -121,11 +113,6 @@ public class PriceMng { // тестирование изменений на ту
 		Serv upStServ = serv.getServUpst();
 		Serv woKprServ = serv.getServWokpr();
 		if (upStServ != null) {
-			/*if (serv.getCd().equals("Горячая вода")) {  ПОКА РАБОТАЕТ ТОЛЬКО ПО 0 ПРОЖИВАЮЩИХ!
-				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
-				// и изолированного стояка
-				cp.upStPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, serv);
-			}*/
 			if (upStServ.getServPrice() != null) {
 				// указана услуга, откуда взять расценку
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
@@ -152,7 +139,7 @@ public class PriceMng { // тестирование изменений на ту
 			if (serv.getCd().equals("Горячая вода")) {
 				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
 				// и изолированного стояка
-				cp.woKprPrice = getHotWaterPriceByConditions(calc, kart, genDt, rqn, woKprServ);
+				cp.woKprPrice = getHotWaterPriceByConditions(calc, calc.getKart(), genDt, rqn, woKprServ, true);
 			} else if (woKprServ.getServPrice() != null) {
 				// указана услуга, откуда взять расценку
 				cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
@@ -184,19 +171,37 @@ public class PriceMng { // тестирование изменений на ту
 	
 	/**
 	 * Получить расценку по горячей воде, в зависимости от условий
-	 * @param calc
-	 * @param kart
-	 * @param genDt
-	 * @param rqn
-	 * @param serv
+	 * @param calc - объект, хранящий текущий дом, лиц.счет
+	 * @param genDt - дата формирования
+	 * @param rqn - id запроса
+	 * @param serv - услуга
+	 * @param isLookUpper - искать на уровне выше, если не найдено на текущем
 	 * @return
 	 * @throws EmptyStorable
 	 */
-	private Double getHotWaterPriceByConditions(Calc calc, Kart kart, Date genDt, int rqn, Serv serv) throws EmptyStorable {
+	private Double getHotWaterPriceByConditions(Calc calc, Storable st, Date genDt, int rqn, Serv serv, boolean isLookUpper) throws EmptyStorable {
 		//log.info("услуга name={}, id={}", serv.getName(), serv.getId());
 		Double stPrice;
-		Boolean isTowelHeatExist = Utl.nvl(parMng.getBool(rqn, kart, "Наличие полотенцесушителя", genDt), false);
-		Boolean isHotPipeInsulated = Utl.nvl(parMng.getBool(rqn, kart, "Стояк ГВС изолирован", genDt), false);
+		
+		Boolean isTowelHeatExist = parMng.getBool(rqn, st, "Наличие полотенцесушителя", genDt);
+		if (isTowelHeatExist == null && isLookUpper) {
+			// искать на уровне выше, если не найден на текущем
+			isTowelHeatExist = parMng.getBool(rqn, calc.getHouse(), "Наличие полотенцесушителя", genDt);
+		}
+		
+		Boolean isHotPipeInsulated = parMng.getBool(rqn, st, "Стояк ГВС изолирован", genDt);
+		if (isHotPipeInsulated == null && isLookUpper) {
+			// искать на уровне выше, если не найден на текущем
+			isHotPipeInsulated = parMng.getBool(rqn, calc.getHouse(), "Стояк ГВС изолирован", genDt);
+		}
+		
+		if (isTowelHeatExist == null) {
+			isTowelHeatExist = false;
+		}
+		if (isHotPipeInsulated == null) {
+			isHotPipeInsulated = false;
+		}
+		
 		String cdProp = null;
 		
 		if (isHotPipeInsulated && isTowelHeatExist) {

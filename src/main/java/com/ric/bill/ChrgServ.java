@@ -271,12 +271,6 @@ public class ChrgServ {
 			}		    
 		}		
 
-		// проверить коллекцию
-/*		prepChrg.stream().forEach(t->{
-			log.info("*************Check: serv.cd={}, vol={}, area={}, cntPers={}, summa={}, price={}", 
-					t.getServ().getCd(), t.getVol(), t.getArea(), t.getCntFact(), t.getSumAmnt(), t.getPrice());
-		});*/
-		
 		return res;
 	}
 

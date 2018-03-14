@@ -184,32 +184,30 @@ public class ChrgThr {
 			BigDecimal sumPriv = BigDecimal.ZERO;
 			BigDecimal sumAmnt = BigDecimal.ZERO;
 
-			if (!rec.isOnlyVol()) {
-				// если указан расчет начисления, не только объемов
-				// полная сумма = объем умножить на расценку
-				sumFull = vol.multiply(rec.getPrice());
-				// округлить до копеек
-				sumFull = sumFull.setScale(2, BigDecimal.ROUND_HALF_UP);
+			// если указан расчет начисления, не только объемов
+			// полная сумма = объем умножить на расценку
+			sumFull = vol.multiply(rec.getPrice());
+			// округлить до копеек
+			sumFull = sumFull.setScale(2, BigDecimal.ROUND_HALF_UP);
 
-				
-				if (rec.getTp() !=null && rec.getTp() == 1) {
-					// Вариант расчета: из полной суммы вычесть сумму льготы, получить результат
-					// сумма льготы: объем * цена по льготе (здесь Цена по льготе!!!)
-					sumPriv = vol.multiply(rec.getPricePriv());
-					sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
-					// Сумма итога
-					sumAmnt = sumFull.subtract(sumPriv);
-				} else if (rec.getTp() !=null && rec.getTp() == 0) {
-					// Вариант расчета: из полной суммы вычесть сумму начисления со льготой, получить результат
-					// Сумма итога со льготой: объем * цену с учетом льготы (здесь Цена с учётом льготы!!!)
-					sumAmnt = vol.multiply(rec.getPricePriv());
-					sumAmnt = sumAmnt.setScale(2, BigDecimal.ROUND_HALF_UP);
-					// Сумма льготы
-					sumPriv = sumFull.subtract(sumAmnt);
-				} else {
-					// Сумма итога (без льготы)
-					sumAmnt = sumFull;
-				}
+			
+			if (rec.getTp() !=null && rec.getTp() == 1) {
+				// Вариант расчета: из полной суммы вычесть сумму льготы, получить результат
+				// сумма льготы: объем * цена по льготе (здесь Цена по льготе!!!)
+				sumPriv = vol.multiply(rec.getPricePriv());
+				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
+				// Сумма итога
+				sumAmnt = sumFull.subtract(sumPriv);
+			} else if (rec.getTp() !=null && rec.getTp() == 0) {
+				// Вариант расчета: из полной суммы вычесть сумму начисления со льготой, получить результат
+				// Сумма итога со льготой: объем * цену с учетом льготы (здесь Цена с учётом льготы!!!)
+				sumAmnt = vol.multiply(rec.getPricePriv());
+				sumAmnt = sumAmnt.setScale(2, BigDecimal.ROUND_HALF_UP);
+				// Сумма льготы
+				sumPriv = sumFull.subtract(sumAmnt);
+			} else {
+				// Сумма итога (без льготы)
+				sumAmnt = sumFull;
 			}
 			
 			// записать, для будущего округления по виртуальной услуге

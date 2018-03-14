@@ -121,7 +121,7 @@ public class ChrgStore {
 		// добавить с группировкой по основной услуге TODO! Это нужно не по всем услугам, а только по тем, где есть дочерние услуги,
 		addGroupMainStore(vol, price, serv, dt);
 		// добавить с группировкой в детализированное хранилище 
-		addGroupVolDet(vol, price, pricePriv, tp, stdt, cntFact, area, serv, org, entry, dt, cntOwn, persPriv, met, onlyVol);
+		addGroupVolDet(vol, price, pricePriv, tp, stdt, cntFact, area, serv, org, entry, dt, cntOwn, persPriv, met);
 	}
 	
 	/**
@@ -187,16 +187,15 @@ public class ChrgStore {
 	 * @param dt - дата
      * @param cntOwn - кол-во собственников
      * @param persPriv - льгота по проживающему
-     * @param onlyVol - учитывать только объемы (без начисления)
 	 */
 	private void addGroupVolDet(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, Integer tp, BigDecimal stdt, Integer cntFact,
 			BigDecimal area, Serv serv, Org org, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv,
-			Integer met, boolean onlyVol) {
+			Integer met) {
 		List<VolDet> store = getStoreVolDet();
 		if (store.size() == 0) {
 			// завести новую строку
 			store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
-						serv, org, met, entry, dt, dt, cntOwn, persPriv, onlyVol));
+						serv, org, met, entry, dt, dt, cntOwn, persPriv));
 		} else {
 			VolDet lastRec = null;
 			// получить последний добавленный элемент. Поиск по услуге, льготе (если задано), проживающему (если задано) 
@@ -209,7 +208,7 @@ public class ChrgStore {
 			if (lastRec == null) {
 				//последний элемент с данной услугой не найден, - создать
 				store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
-						serv, org, met, entry, dt, dt, cntOwn, persPriv, onlyVol));
+						serv, org, met, entry, dt, dt, cntOwn, persPriv));
 			} else {
 				//последний элемент найден
 				//сравнить по-элементно
@@ -221,8 +220,7 @@ public class ChrgStore {
 						 Utl.cmp(lastRec.getCntFact(), cntFact) &&
 						  Utl.cmp(lastRec.getMet(), met) &&
 						   Utl.cmp(lastRec.getEntry(), entry) &&
-							Utl.cmp(lastRec.getCntOwn(), cntOwn) &&
-							 Utl.cmp(lastRec.isOnlyVol(), onlyVol)
+							Utl.cmp(lastRec.getCntOwn(), cntOwn)
 					) {
 						//добавить данные в последнюю строку, прибавить объем и площадь
 						if (lastRec.getVol() != null) {
@@ -242,7 +240,7 @@ public class ChrgStore {
 					} else {
 						//завести новую строку, если отличается расценкой или организацией
 						store.add(new VolDet(vol, price, pricePriv, tp, stdt, cntFact, area, 
-								serv, org, met, entry, dt, dt, cntOwn, persPriv, onlyVol));
+								serv, org, met, entry, dt, dt, cntOwn, persPriv));
 					}
 			}
 		}

@@ -11,8 +11,10 @@ import com.ric.bill.Utl;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ParMng;
+import com.ric.bill.mm.TarifMng;
 import com.ric.bill.model.ar.House;
 import com.ric.bill.model.ar.Kart;
+import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.tr.Serv;
 
 import lombok.Getter;
@@ -32,6 +34,8 @@ public class PriceMng { // тестирование изменений на ту
 	private ParMng parMng;
 	@Autowired
 	private KartMng kartMng;
+	@Autowired
+	private TarifMng tarMng;
 
 	/**
 	 * DTO для передачи составляющих цены
@@ -58,36 +62,45 @@ public class PriceMng { // тестирование изменений на ту
 	 * @return
 	 * @throws EmptyStorable
 	 */
-	public Double getStandartPrice(Calc calc, Kart kart, Serv serv, Date genDt, int rqn, Serv stServ) throws EmptyStorable {
-		Double stPrice;
-		if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-			// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
-			// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
-			Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+	public Double getStandartPrice(Calc calc, Kart kart, Serv serv, Date genDt, int rqn, Serv stServ, Chng chng) throws EmptyStorable {
+		Double stPrice = null;
 
-			if (serv.getCd().equals("Горячая вода ОДН")) {
-				// ГВ на ОИ, получить расценку в зависимости от параметров дома 
-				stPrice = getHotWaterPriceByConditions(calc, calc.getHouse(), genDt, rqn, serv, false);
+		if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
+			// перерасчет по расценке
+			stPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
+		}
+		
+		if (stPrice == null) {
+			// если не перерасчет или не найдена расценка по перерасчету
+			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
+				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+				// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
+				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+	
+				if (serv.getCd().equals("Горячая вода ОДН")) {
+					// ГВ на ОИ, получить расценку в зависимости от параметров дома 
+					stPrice = getHotWaterPriceByConditions(calc, calc.getHouse(), genDt, rqn, serv, false);
+				} else {
+					// получить расценку от услуги по которой хранится расценка
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+				}
+	
+				// если пуст один из параметров - занулить все, чтобы не было exception
+				if (stPrice == null || stVol == null) {
+					stPrice = 0d;
+					stVol = 0d;
+				} else {
+					// округлить
+					stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
+				}
 			} else {
-				// получить расценку от услуги по которой хранится расценка
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-			}
-
-			// если пуст один из параметров - занулить все, чтобы не было exception
-			if (stPrice == null || stVol == null) {
-				stPrice = 0d;
-				stVol = 0d;
-			} else {
-				// округлить
-				stPrice= Math.round (stPrice * stVol * 100.0) / 100.0;
-			}
-		} else {
-			if (stServ.getServPrice() != null) {
-				// указана услуга, откуда взять расценку
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
-			} else {
-				// не указана услуга, откуда взять расценку
-				stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+				if (stServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ.getServPrice(), "Цена", genDt);
+				} else {
+					// не указана услуга, откуда взять расценку
+					stPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
+				}
 			}
 		}
 		return stPrice;
@@ -107,12 +120,19 @@ public class PriceMng { // тестирование изменений на ту
 	 * @throws EmptyStorable
 	 */
 	public ComplexPrice getUpStPrice(Calc calc, Serv serv, Double stPrice, Date genDt, int rqn, Result res, 
-			Boolean isResid, Kart kart) throws EmptyStorable {
-		//log.info("услуга name={}, id={}", serv.getName(), serv.getId());
+			Boolean isResid, Kart kart, Chng chng) throws EmptyStorable {
 		ComplexPrice cp = new ComplexPrice();
 		Serv upStServ = serv.getServUpst();
 		Serv woKprServ = serv.getServWokpr();
-		if (upStServ != null) {
+
+		if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
+			// перерасчет по расценке
+			cp.upStPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
+			cp.woKprPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
+		}
+		
+		if (upStServ != null && cp.upStPrice == null) {
+			// если не перерасчет или не найдена расценка по перерасчету
 			if (upStServ.getServPrice() != null) {
 				// указана услуга, откуда взять расценку
 				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
@@ -134,8 +154,8 @@ public class PriceMng { // тестирование изменений на ту
 			cp.upStPrice = 0d;
 		}
 
-		if (woKprServ != null) {
-			//log.info("услуга woKprServ name={}, id={}", woKprServ.getName(), woKprServ.getId());
+		if (woKprServ != null && cp.woKprPrice != null) {
+			// если не перерасчет или не найдена расценка по перерасчету
 			if (serv.getCd().equals("Горячая вода")) {
 				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
 				// и изолированного стояка
@@ -162,6 +182,7 @@ public class PriceMng { // тестирование изменений на ту
 				// Добавить ошибку, что отсутствует расценка
 				res.addErr(rqn, 6, kart, serv);
 			}
+			
 		} else {
 			cp.woKprPrice = 0d;
 		}

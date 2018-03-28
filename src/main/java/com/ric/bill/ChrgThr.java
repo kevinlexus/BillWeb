@@ -341,15 +341,6 @@ public class ChrgThr {
 		
 		// признак отключения услуги в данном дне (по наличию параметра, а не по его значению)
 		Double switсhOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
-		// признак учета объёма, без начисления по услуге
-		Double onlyVolD = kartMng.getServPropByCD(rqn, calc, serv, "Объем без начисления", genDt);
-		boolean onlyVol;
-		if (onlyVolD != null && onlyVolD == 1d) {
-			onlyVol = true;
-		} else {
-			onlyVol = false;
-		}
-		
 		if (switсhOff != null) {
 			// вернуться из метода
 			log.trace("Услуга id={}, cd={}, genDt={} отключена!", serv.getId(), serv.getCd(), genDt);
@@ -369,18 +360,17 @@ public class ChrgThr {
 					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему-1"), 0d) == 1d) && serv.getServUpst() == null) {
 				throw new EmptyStorable("По услуге Id="+serv.getId()+" обнаружена пустая услуга свыше соц.нормы");
 			}
-			//Utl.logger(false, 3, kart.getLsk(), serv.getId()); //###
 
 			// Получить кол-во проживающих 
 			kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
-	
-			//Utl.logger(false, 4, kart.getLsk(), serv.getId()); //###
 
-			// получить расценку по норме	
-			stPrice = priceMng.getStandartPrice(calc, kart, serv, genDt, rqn, stServ);
-	
-			//Utl.logger(false, 5, kart.getLsk(), serv.getId()); //###
+			/*******************************
+			 * ПОЛУЧИТЬ РАСЦЕНКУ
+			 *******************************/
 			
+			// получить расценку по норме	
+			stPrice = priceMng.getStandartPrice(calc, kart, serv, genDt, rqn, stServ, chng);
+	
 			if (stPrice == null && isResid) {
 				// Добавить ошибку, что нет расценки по услуге (если это контролируется)
 				res.addErr(rqn, 8, kart, serv);
@@ -405,14 +395,12 @@ public class ChrgThr {
 				stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
 
 				// здесь же получить расценки по свыше соц.нормы и без проживающих 
-				ComplexPrice cp = priceMng.getUpStPrice(calc, serv, upStPrice, genDt, rqn, res, isResid, kart);
+				ComplexPrice cp = priceMng.getUpStPrice(calc, serv, upStPrice, genDt, rqn, res, isResid, kart, chng);
 				
 				upStPrice = cp.getUpStPrice();
 				woKprPrice = cp.getWoKprPrice();
 				
 			}
-			//Utl.logger(false, 6, kart.getLsk(), serv.getId()); //###
-				
 			
 			  // получить организацию
 			  org = kartMng.getOrg(rqn, calc, serv.getServOrg(), genDt);
@@ -424,109 +412,14 @@ public class ChrgThr {
 				  }
 			}
 			
-	  		//Utl.logger(false, 7, kart.getLsk(), serv.getId()); //###
-	
-			// в случае перерасчета по расценке или по организации, выполнить их замену 
-	  		// TODO TODO TODO TODO !!!!Внимание!!!! в связи с тем что получение расценки вынесено в PriceMng, необходимо внести процесс получения
-	  		// расценки по перерасчету в PriceMng ред. Lev 14.02.2018
-	  		//  
+			// в случае перерасчета по расценке, выполнить её замену 
 			if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
-				
-				// организация
 				Org chngOrg = getChngOrg(serv.getServOrg(), genDt, chng);
 				if (chngOrg != null) {
 					org = chngOrg; 
 				}
-	
-				// расценка по норме
-				Double chngPrice;
-				if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-					// по этому варианту получить расценку от услуги, хранящей расценку, умножить на норматив, округлить
-					Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-
-					chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
-					
-					if (chngPrice == null) {
-						// если не найдена расценка в перерасчете, поставить из тарифа 
-						chngPrice = kartMng.getServPropByCD(rqn, calc, stServ, "Цена", genDt);
-					}
-		
-					// если пуст один из параметров - занулить все, чтобы не было exception
-					if (chngPrice == null || stVol == null) {
-						chngPrice = 0d;
-						stVol = 0d;
-					} else {
-						// округлить
-						chngPrice= Math.round (chngPrice * stVol * 100.0) / 100.0;
-					}
-					
-					
-				} else {
-					// прочие варианты (здесь точно должна быть расценка, иначе нет смысла в перерасчете)
-					if (stServ.getServPrice() != null) {
-						// указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, stServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
-					} else {
-						// не указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
-					}
-				}
-	
-				if (chngPrice != null) {
-					stPrice = chngPrice; 
-				}
-				
-				//log.info("Serv.id={}, upStServ={}", serv.getId(), upStServ);
-				// расценка св.нормы
-				if (serv.getServUpst() != null) {
-					if (upStServ.getServPrice() != null) {
-						// указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, upStServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
-					} else {
-						// не указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
-					}
-					if (chngPrice != null) {
-						upStPrice = chngPrice; 
-					} else {
-						// если не найдена расценка в перерасчете, поставить из тарифа 
-						if (upStServ.getServPrice() != null) {
-							// указана услуга, откуда взять расценку
-							upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
-						} else {
-							// не указана услуга, откуда взять расценку
-							upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
-						}
-					}
-				}
-				
-				// расценка без проживающих
-				if (serv.getServWokpr() != null) {
-					if (woKprServ.getServPrice() != null) {
-						// указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, woKprServ.getServPrice(), genDt, "Изменение расценки (тарифа)", 1);
-					} else {
-						// не указана услуга, откуда взять расценку
-						chngPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
-					}
-					if (chngPrice != null) {
-						woKprPrice = chngPrice; 
-					} else {
-						// если не найдена расценка в перерасчете, поставить из тарифа 
-						if (woKprServ.getServPrice() != null) {
-							// указана услуга, откуда взять расценку
-							woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
-						} else {
-							// не указана услуга, откуда взять расценку
-							woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
-						}
-					}
-				}
-				
 			}
 			
-			//Utl.logger(false, 8, kart.getLsk(), serv.getId()); //###
-
 			Double raisCoeff = 0d;
 			// при отсутствии ПУ и возможности его установки, применить повышающий коэффициент для определённых услуг
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
@@ -551,12 +444,12 @@ public class ChrgThr {
 				}
 			}		
 			
-			//Utl.logger(false, 9, kart.getLsk(), serv.getId()); //###
+			/*******************************
+			 * ПОЛУЧИТЬ ОБЪЕМ ДЛЯ НАЧИСЛЕНИЯ
+			 *******************************/
 
 			// получить базу для начисления
 			baseCD = parMng.getStr(rqn, serv, "Name_CD_par_base_charge");
-			
-			//Utl.logger(false, 10, kart.getLsk(), serv.getId()); //###
 			
 			// доля площади в день, для любой услуги, чтобы записать в chrg
 			/* ред.28.09.17  СОСТОЯЛСЯ разговор с Дмитрием М. на тему того что почему параметр chng_val.fk_val_tp смотрит на list?
@@ -588,14 +481,10 @@ public class ChrgThr {
 				sqr = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d);
 				//log.info("******** площадь без перерасч={}, {}, serv.name={}, id={}", sqr, genDt, serv.getName(), serv.getId());
 			}
-			//Utl.logger(false, 11, kart.getLsk(), serv.getId()); //###
 			
 			//получить площадь одного дня
 			sqr =  sqr / calc.getReqConfig().getCntCurDays();
 	
-			/*******************************
-			 * ПОЛУЧИТЬ ОБЪЕМ ДЛЯ НАЧИСЛЕНИЯ
-			 *******************************/
 			if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d) {
 				//получить объем за месяц
 				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt, chng), 0d);
@@ -620,8 +509,6 @@ public class ChrgThr {
 						vol = vol * kartMng.getCapPrivs(rqn, calc, kart, genDt);
 					}
 				}
-				//Utl.logger(false, 12, kart.getLsk(), serv.getId()); //###
-
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 				// получить норматив 
@@ -719,7 +606,7 @@ public class ChrgThr {
 					// взять сумму в качестве объема, повыш.коэфф в качестве цены (потом занулить объем и цену в методе их умножения)
 					//log.info("CHECK2");
 					chStore.addChrg(rec.get().getSum(), BigDecimal.valueOf(raisCoeff), null, null, null, null, 
-							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				}
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d ||
@@ -729,16 +616,16 @@ public class ChrgThr {
 		        //или Х.В.Г.В. ОДН
 				//Вариант подразумевает объём, по параметру - базе, жилого фонда РАСПределённый по дням
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
-						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
 				chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
-							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);			
+							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);			
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				//тип расчета, например:Коммерческий найм, где цена = сумме
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
-						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 			} else if (serv.getCd().equals("Электроснабжение")) {
 				// тип расчета, например:Электроснабжение
 				// Вариант подразумевает объём по лог.счётчику, РАСПределённый по дням
@@ -791,7 +678,7 @@ public class ChrgThr {
 									privServ!=null ? privPrice : null, 
 									privServ!=null ? privServ.getTp() : null, 
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
-									entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null, onlyVol);
+									entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
 						}
 					}
 					if (absVol.compareTo(BigDecimal.ZERO) > 0) {
@@ -799,7 +686,7 @@ public class ChrgThr {
 						chStore.addChrg(absVol.multiply(BigDecimal.valueOf(Math.signum(vol))), BigDecimal.valueOf(upStPrice), 
 								null, null,
 								BigDecimal.valueOf(stdt.vol), cntPers.cntFact, null /* TODO площадь!*/, stServ, org, exsMet, 
-								entry, genDt, cntPers.cntOwn, null, onlyVol);
+								entry, genDt, cntPers.cntOwn, null);
 					}
 					
 				} else {
@@ -816,13 +703,13 @@ public class ChrgThr {
 						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 								 	cntPers.cntFact /*здесь не cntEmpt*/, 
-								 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+								 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 					} else {
 						// услуги без проживающих не существует, поставить на свыше соц.нормы
 						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 									cntPers.cntFact, /*здесь не cntEmpt*/ 
-									tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+									tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 					}
 					
 				}
@@ -855,7 +742,7 @@ public class ChrgThr {
 	
 					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(stPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpSqr, stServ, org, exsMet, 
-									entry, genDt, cntPers.cntOwn, null, onlyVol);
+									entry, genDt, cntPers.cntOwn, null);
 	
 					// выше соцнормы
 					if (tmpSqr == BigDecimal.ZERO && BigDecimal.valueOf(tmpVol * Math.signum(vol)) != BigDecimal.ZERO &&
@@ -868,7 +755,7 @@ public class ChrgThr {
 					tmpVol = absVol - tmpVol;
 					chStore.addChrg(BigDecimal.valueOf(tmpVol * Math.signum(vol)), BigDecimal.valueOf(upStPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
-									cntPers.cntFact, tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+									cntPers.cntFact, tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				} else {
 					// нет проживающих
 					//if (serv.getId() == 35) {
@@ -886,13 +773,13 @@ public class ChrgThr {
 						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 								 	cntPers.cntFact /*здесь не cntEmpt*/, 
-								 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+								 	tmpSqr, woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 					} else {
 						// услуги без проживающих не существует, поставить на свыше соц.нормы
 						chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, 
 									BigDecimal.valueOf(stdt.vol), //- убрал по просьбе ИВ (чтобы не было нормы в услуге св.соц нормы) 12.05.2017 --обратно добавил по её просьбе 16.05.2017
 									cntPers.cntFact, /*здесь не cntEmpt*/ 
-									tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+									tmpSqr, upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 					}
 					
 				}
@@ -954,7 +841,7 @@ public class ChrgThr {
 											Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 										chStore.addChrg(tmpVolD, BigDecimal.valueOf(stPrice), 
 												null, null, null, cntPers.cntFact, tmpInsArea, stServ, org, exsMet, 
-												entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null, onlyVol);
+												entry, genDt, cntPers.cntOwn, privServ!=null? persPriv : null);
 									}
 								}
 							}
@@ -987,7 +874,7 @@ public class ChrgThr {
 									// сохранить расчёт по св.соцнормы со льготой
 									chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), 
 											BigDecimal.valueOf(stPrice), privServ.getTp(), null, cntPers.cntFact, tmpInsArea, upStServ, org, exsMet, 
-											entry, genDt, cntPers.cntOwn, persPriv, onlyVol);
+											entry, genDt, cntPers.cntOwn, persPriv);
 								}
 								
 							}
@@ -1002,7 +889,7 @@ public class ChrgThr {
 							chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), 
 									null, null,
 									BigDecimal.valueOf(stdt.vol), cntPers.cntFact, tmpArea, upStServ, org, exsMet, 
-									entry, genDt, cntPers.cntOwn, null, onlyVol);
+									entry, genDt, cntPers.cntOwn, null);
 						}
 						
 						// Старый расчет
@@ -1044,7 +931,7 @@ public class ChrgThr {
 							if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
 									Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 								chStore.addChrg(tmpVolD, BigDecimal.valueOf(woKprPrice), null, null, null, cntPers.cntFact, 
-										BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+										BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 							}
 						} else {
 							//если нет услуги "без проживающих", взять расценку, по услуге свыше соц.нормы
@@ -1052,7 +939,7 @@ public class ChrgThr {
 							if (tmpVolD.compareTo(BigDecimal.ZERO)!=0 ||
 									Utl.nvl(parMng.getDbl(rqn, upStServ, "Сохранять_CHRG.AREA_CHRG.CNT_PERS"), 0d) == 1) {
 								chStore.addChrg(tmpVolD, BigDecimal.valueOf(upStPrice), null, null, null, cntPers.cntFact, 
-										BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+										BigDecimal.valueOf(sqr), upStServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 							}
 						}
 						
@@ -1067,13 +954,13 @@ public class ChrgThr {
 					//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(stPrice) );
 					//addChrg(kart, serv, tmpSum, vol, stPrice, genDt, chrgTpDet);
 					chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact, 
-							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				} else {
 					//нет проживающих
 					//tmpSum = BigDecimal.valueOf(vol).multiply( BigDecimal.valueOf(woKprPrice) );
 					//addChrg(kart, serv, tmpSum, vol, woKprPrice, genDt, chrgTpDet);
 					chStore.addChrg( BigDecimal.valueOf(vol), BigDecimal.valueOf(woKprPrice), null, null, null, cntPers.cntFact, 
-							BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null, onlyVol);
+							BigDecimal.valueOf(sqr), woKprServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 				}			
 
 				//Utl.logger(false, 24, kart.getLsk(), serv.getId()); //###

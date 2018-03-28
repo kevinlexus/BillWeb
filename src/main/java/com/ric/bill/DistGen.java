@@ -450,7 +450,7 @@ public class DistGen {
 						} else {
 							if (lnkODNVol.getVol() == null || lnkODNVol.getVol().equals(0D)) {
 								// если нулевой объем (еще не ввели) - получить объем предыдущего периода
-								Date backDt1 = Utl.getDateByPeriod(calc.getReqConfig().getPeriodBack());
+								Date backDt1 = Utl.getDateFromPeriod(calc.getReqConfig().getPeriodBack());
 								Date backDt2 = Utl.getLastDate(backDt1);
 								lnkODNVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(), 
 										calc.getReqConfig().getChng(),

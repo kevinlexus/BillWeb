@@ -108,11 +108,10 @@ public class ChrgStore {
 	 * @param dt - дата
      * @param cntOwn - кол-во собственников
      * @param persPriv - льгота по проживающему
-     * @param onlyVol - учитывать только объемы (без начисления)
      *  если по нельготной услуге, то передавать null
 	 */
 	public void addChrg(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, Integer tp, BigDecimal stdt, Integer cntFact, BigDecimal area, 
-						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv, boolean onlyVol) {
+						 Serv serv, Org org, Boolean exsMet, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv) {
 		Integer met = 0;
 		if (exsMet) {
 			met = 1;

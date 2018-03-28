@@ -283,7 +283,7 @@ public class ChrgThr {
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
 
 		//log.info("serv.cd={}", serv.getCd());
-		if (serv.getId()==90) {
+		if (serv.getId()==35) {
 			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 

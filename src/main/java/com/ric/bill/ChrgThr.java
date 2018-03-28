@@ -45,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * РАСЧЕТ НАЧИСЛЕНИЯ ПО УСЛУГЕ, ВЫЗЫВАЕТСЯ В ПОТОКЕ
  * @author lev
+ * @version 1.00
  *
  */
 

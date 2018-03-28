@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Сервис получения расценки
  * @author Leo
+ * @version 1.00
  *
  */
 @Service
@@ -121,72 +122,83 @@ public class PriceMng { // тестирование изменений на ту
 	 */
 	public ComplexPrice getUpStPrice(Calc calc, Serv serv, Double stPrice, Date genDt, int rqn, Result res, 
 			Boolean isResid, Kart kart, Chng chng) throws EmptyStorable {
+		if (serv.getId() == 35) {
+		//	log.info("Serv.id={}", serv.getId());
+		}
+
 		ComplexPrice cp = new ComplexPrice();
 		Serv upStServ = serv.getServUpst();
 		Serv woKprServ = serv.getServWokpr();
 
 		if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
 			// перерасчет по расценке
-			cp.upStPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
-			cp.woKprPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
+			if (upStServ != null) {
+				cp.upStPrice = tarMng.getChngVal(calc, upStServ, genDt, "Изменение расценки (тарифа)", 1);
+			}
+			if (woKprServ != null) {
+				cp.woKprPrice = tarMng.getChngVal(calc, woKprServ, genDt, "Изменение расценки (тарифа)", 1);
+			}
 		}
 		
-		if (upStServ != null && cp.upStPrice == null) {
-			// если не перерасчет или не найдена расценка по перерасчету
-			if (upStServ.getServPrice() != null) {
-				// указана услуга, откуда взять расценку
-				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
-			} else {
-				// не указана услуга, откуда взять расценку 
-				cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
-			}
-				
-			if (cp.upStPrice == null) { 
-				cp.upStPrice = 0d; 
-			}
-			
-			if (cp.upStPrice == 0d && isResid) {
-				// Добавить ошибку, что отсутствует расценка
-				res.addErr(rqn, 5, kart, serv);
-			}
-			
-		} else {
-			cp.upStPrice = 0d;
-		}
-
-		if (woKprServ != null && cp.woKprPrice != null) {
-			// если не перерасчет или не найдена расценка по перерасчету
-			if (serv.getCd().equals("Горячая вода")) {
-				// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
-				// и изолированного стояка
-				cp.woKprPrice = getHotWaterPriceByConditions(calc, calc.getKart(), genDt, rqn, woKprServ, true);
-			} else if (woKprServ.getServPrice() != null) {
-				// указана услуга, откуда взять расценку
-				cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
-			} else {
-				// не указана услуга, откуда взять расценку
-				//log.info("Check={}", woKprServ.getId());
-				cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
-			}
-
-			if (cp.woKprPrice == null && isResid) {
-				// Добавить ошибку, что отсутствует расценка
-				res.addErr(rqn, 6, kart, serv);
-				// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
-				if (cp.upStPrice == null || cp.upStPrice == 0d) {
-					cp.woKprPrice = stPrice;
+		if (cp.upStPrice == null) {
+			if (upStServ != null) {
+				// если не перерасчет или не найдена расценка по перерасчету
+				if (upStServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ.getServPrice(), "Цена", genDt);
 				} else {
-					cp.woKprPrice = cp.upStPrice;
+					// не указана услуга, откуда взять расценку 
+					cp.upStPrice = kartMng.getServPropByCD(rqn, calc, upStServ, "Цена", genDt);
 				}
-			} else if (cp.woKprPrice == 0d && isResid) {
-				// Добавить ошибку, что отсутствует расценка
-				res.addErr(rqn, 6, kart, serv);
+					
+				if (cp.upStPrice == null) { 
+					cp.upStPrice = 0d; 
+				}
+				
+				if (cp.upStPrice == 0d && isResid) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 5, kart, serv);
+				}
+				
+			} else {
+				cp.upStPrice = 0d;
 			}
-			
-		} else {
-			cp.woKprPrice = 0d;
 		}
-
+		
+		if (cp.woKprPrice == null) {
+			// если пуста расценка в перерасчете
+			if (woKprServ != null) {
+				if (serv.getCd().equals("Горячая вода")) {
+					// отдельный расчёт из за необходимости использовать расценки с учетом наличия полотенцесушителя
+					// и изолированного стояка
+					cp.woKprPrice = getHotWaterPriceByConditions(calc, calc.getKart(), genDt, rqn, woKprServ, true);
+				} else if (woKprServ.getServPrice() != null) {
+					// указана услуга, откуда взять расценку
+					cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ.getServPrice(), "Цена", genDt);
+				} else {
+					// не указана услуга, откуда взять расценку
+					//log.info("Check={}", woKprServ.getId());
+					cp.woKprPrice = kartMng.getServPropByCD(rqn, calc, woKprServ, "Цена", genDt);
+				}
+	
+				if (cp.woKprPrice == null && isResid) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 6, kart, serv);
+					// если не найдена цена с 0 проживающими, подставить цену по свыше соц.нормы, если и она не найдена, то по норме
+					if (cp.upStPrice == null || cp.upStPrice == 0d) {
+						cp.woKprPrice = stPrice;
+					} else {
+						cp.woKprPrice = cp.upStPrice;
+					}
+				} else if (cp.woKprPrice == 0d && isResid) {
+					// Добавить ошибку, что отсутствует расценка
+					res.addErr(rqn, 6, kart, serv);
+				}
+				
+			} else {
+				cp.woKprPrice = 0d;
+			}
+		}
 		return cp;
 	}
 	

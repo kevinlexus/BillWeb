@@ -65,9 +65,10 @@ public class PriceMng { // тестирование изменений на ту
 	 */
 	public Double getStandartPrice(Calc calc, Kart kart, Serv serv, Date genDt, int rqn, Serv stServ, Chng chng) throws EmptyStorable {
 		Double stPrice = null;
-
+		//log.info("serv={}", serv.getId());
 		if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Изменение расценки (тарифа)") ) {
 			// перерасчет по расценке
+			//log.info("stServ={}", stServ.getId());
 			stPrice = tarMng.getChngVal(calc, stServ, genDt, "Изменение расценки (тарифа)", 1);
 		}
 		

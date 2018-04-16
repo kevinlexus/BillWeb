@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationContext;
 
 
 @SpringBootApplication
-@EnableCaching
+//@EnableCaching
 public class BillWebApplication {
 
 	private static ApplicationContext applicationContext = null;
@@ -22,6 +22,7 @@ public class BillWebApplication {
 	}*/
 	
 	public static void main(String[] args) {
+		
         String mode = args != null && args.length > 0 ? args[0] : null;
 
 		if (AuthConfigFactory.getFactory() == null) {

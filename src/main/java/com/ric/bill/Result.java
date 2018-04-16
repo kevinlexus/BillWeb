@@ -25,6 +25,19 @@ import com.ric.web.AppConfig;
 @Slf4j
 public class Result {
 
+	// код ошибки
+	private int err;
+	// Список ошибок по услуге
+    private List<Err> lstErr;
+    static ApplicationContext ctx = null;
+	// обрабатываемый лс
+	int lsk;
+    
+	public Result() {
+		super();
+		lstErr = new ArrayList<Err>();
+	}
+
 	// Внутренний класс ошибки
 	public class Err {
 		// Услуга
@@ -62,20 +75,6 @@ public class Result {
 
 	}
 
-	// код ошибки
-	private int err;
-	// Список ошибок по услуге
-    private List<Err> lstErr;
-    static ApplicationContext ctx = null;
-	// обрабатываемый лс
-	int lsk;
-    
-	// Конструктор
-	public Result() {
-		super();
-		lstErr = new ArrayList<Err>();
-	}
-
 	public int getErr() {
 		return err;
 	}
@@ -101,7 +100,7 @@ public class Result {
 	}
 	
 	/**
-	 * Добавить новое значение ошибки, не дублируя
+	 * Добавить новое значение некритической ошибки, не дублируя
 	 * @param errId - код ошибки
 	 * @param serv - услуга
 	 * @param err - ошибка

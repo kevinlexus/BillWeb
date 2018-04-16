@@ -143,9 +143,9 @@ public class DistGen {
 	public NodeVol distNode (Calc calc, MLogs ml, int tp, Date genDt) 
 			throws WrongGetMethod, EmptyServ, NotFoundODNLimit, NotFoundNode, EmptyStorable, EmptyPar, WrongValue {
 		// номер текущего запроса
+		log.trace("MeterLog.id={}", ml.getId());
 		if (ml.getId()==520828//526089 
 				&& tp==3) {
-			log.trace("счетчик!");
 		}
 
 		int rqn = calc.getReqConfig().getRqn();
@@ -222,9 +222,9 @@ public class DistGen {
 					// перерасчет по изменению показаний ИПУ, добавляет объем к имеющемуся 
 					if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Корректировка показаний ИПУ") ) {
 						Double vlChng =0d; // объем перерасчета
-						vlChng=calc.getReqConfig().getChng().getChngLsk().parallelStream()
+						vlChng=calc.getReqConfig().getChng().getChngLsk().stream()
 						.filter(t -> t.getKart().getLsk().equals(calc.getKart().getLsk())) // фильтр по лиц.счету
-						.flatMap(t -> t.getChngVal().parallelStream().filter(d -> ml.equals(d.getMeter().getMeterLog()) // фильтр по getChngVal() 
+						.flatMap(t -> t.getChngVal().stream().filter(d -> ml.equals(d.getMeter().getMeterLog()) // фильтр по getChngVal() 
 																	&& Utl.between(genDt, d.getDtVal1(), d.getDtVal2()))
 																	.filter(d -> d.getDtVal1() != null && d.getDtVal2() != null ))
 						.mapToDouble(d -> Utl.nvl(d.getVal(), 0d) * Utl.getPartDays(d.getDtVal1(), d.getDtVal2()) ) // преобразовать в массив Double
@@ -244,7 +244,7 @@ public class DistGen {
 				
 				if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt) 
 						&& !metMng.checkExsKartMet(rqn, kart, ml.getServ(), genDt)) { // где не существует физический счетчик
-					vl = kartMng.getStandartVol(rqn, calc, ml.getServ(), null, genDt, 1).partVol; // здесь tp=1, для определения объема
+					vl = kartMng.getStandartVol(rqn, calc, ml.getServ(), genDt, 1).partVol; // здесь tp=1, для определения объема
 				}
 			}
 				
@@ -258,7 +258,7 @@ public class DistGen {
 				//площадь
 				if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры") ) {
 					OptionalDouble chngSqr = calc.getReqConfig().getChng().getChngLsk().stream()
-							.flatMap(t -> t.getChngVal().parallelStream().filter(d-> Utl.between(genDt, d.getDtVal1(), d.getDtVal2())) // фильтр по дате 
+							.flatMap(t -> t.getChngVal().stream().filter(d-> Utl.between(genDt, d.getDtVal1(), d.getDtVal2())) // фильтр по дате 
 									.filter(d -> d.getDtVal1() != null && d.getDtVal2() != null ))  // фильтр по не пустой дате
 									.filter(d -> d.getValTp().getCd().equals("Площадь (м2)")) // фильтр по типу параметра
 									.mapToDouble(d -> Utl.nvl(d.getVal(), 0d) * Utl.getPartDays(d.getDtVal1(), d.getDtVal2()) ) // преобразовать в массив Double
@@ -277,8 +277,7 @@ public class DistGen {
 					//log.info("******** площадь без перерасч={}",partArea);
 				}
 				//проживающие
-				CntPers cntPers= new CntPers();
-				kartMng.getCntPers(rqn, calc, kart, servChrg, cntPers, genDt);
+				CntPers cntPers = kartMng.getCntPers(rqn, calc, kart, servChrg, genDt);
 				partPers = cntPers.cntVol / calc.getReqConfig().getCntCurDays();
 			}
 		} else if (tp==2 && !isSwitchOff && mLogTp.equals("Лсчетчик")) {
@@ -364,7 +363,7 @@ public class DistGen {
 						//получить основную услугу
 						Serv mainServ = servMng.findMain(servChrg);
 						//получить счетчик основной услуги
-						log.trace("check serv="+mainServ.getServMet().getId());
+						//log.trace("check serv="+mainServ.getServMet().getId());
 						double tmpVol=0d;
 						SumNodeVol sumMainVol;
 						List<MLogs> lstMain = metMng.getAllMetLogByServTp(rqn, kart, mainServ.getServMet(), null);
@@ -528,7 +527,7 @@ public class DistGen {
 			}
 		}
 		if (ml.getInside().size() > 0) {
-			log.trace("}");
+			//log.trace("}");
 		}
 		
 		//после рекурсивного расчета дочерних узлов, и только по последней дате, выполнить расчет Лимита ОДН
@@ -641,8 +640,8 @@ public class DistGen {
 	 * @return - найденный объем
 	 */
 	@Cacheable(cacheNames="DistGen.findLstCheck", key="{ #id, #tp, #genDt }")
-	private NodeVol findLstCheck(int id, int tp, Date genDt) { //TODO переделать на ParallelStream Java 8!!!
-		Optional<Check> nv = lstCheck.parallelStream().filter(t -> t.getId()==id && t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
+	private NodeVol findLstCheck(int id, int tp, Date genDt) {
+		Optional<Check> nv = lstCheck.stream().filter(t -> t.getId()==id && t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
 		if (nv.isPresent()) {
 			return nv.get().getNodeVol();
 		} else {

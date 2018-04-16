@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 
 import com.ric.bill.Calc;
 import com.ric.bill.CntPers;
-import com.ric.bill.RegContains;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.mm.ParMng;

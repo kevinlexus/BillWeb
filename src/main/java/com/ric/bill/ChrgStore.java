@@ -190,6 +190,10 @@ public class ChrgStore {
 	private void addGroupVolDet(BigDecimal vol, BigDecimal price, BigDecimal pricePriv, Integer tp, BigDecimal stdt, Integer cntFact,
 			BigDecimal area, Serv serv, Org org, Integer entry, Date dt, Integer cntOwn, PersPrivilege persPriv,
 			Integer met) {
+		//if (serv.getId().equals(80)) {
+		//	log.info("store: serv.Id={}, vol={}, pricePriv={}, dt={}", serv.getId(), vol, pricePriv, dt);
+		//}
+
 		List<VolDet> store = getStoreVolDet();
 		if (store.size() == 0) {
 			// завести новую строку

@@ -167,13 +167,13 @@ public class ChrgServ {
     	Integer len;
     	if (level==0) {
      		// 0 уровень - найти независящие ни от каких услуг услуги))
-			Map<Serv, Integer> lst = servThr.parallelStream().filter(t -> t.getServDep() == null).collect(Collectors.toMap( (t) -> t , (t) -> level));
+			Map<Serv, Integer> lst = servThr.stream().filter(t -> t.getServDep() == null).collect(Collectors.toMap( (t) -> t , (t) -> level));
 			queBatch.putAll(lst);
 			len=lst.size();
     	} else {
     		// остальные итерации - зависимые услуги от уровня отстающего на -1
        		// отфильтровать по значению уровня -1, по родительской услуге, записать новый список 
-			Map<Serv, Integer> lst = servThr.parallelStream().filter(t -> queBatch.get(t.getServDep())!=null && queBatch.get(t.getServDep()).equals(old) 
+			Map<Serv, Integer> lst = servThr.stream().filter(t -> queBatch.get(t.getServDep())!=null && queBatch.get(t.getServDep()).equals(old) 
 							).collect(Collectors.toMap( (t) -> t , (t) -> level));
 			queBatch.putAll(lst);
 			len=lst.size();
@@ -210,7 +210,7 @@ public class ChrgServ {
 		ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
 		
 		while (true) {
-			log.trace("ChrgServ: Loading servs for threads");
+			//log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
 			List<Serv> servWork = getNextServ(1); // ограничил 1 потоком (подозрение на нехватку памяти в JVM при начислении многих лс) 
 
@@ -221,8 +221,8 @@ public class ChrgServ {
 			
 			// РАСЧЕТ услуг по циклу
 			for (Serv serv : servWork) {
-			    log.info("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(), 
-			    		calc.getKart().getLsk(), serv.getId());
+			    //log.info("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(), 
+			    //		calc.getKart().getLsk(), serv.getId());
 
 //			    log.info("--------1CHECK: serv.id={} size={}", serv.getId(), chStore.getStoreMainServ().size());
 
@@ -232,16 +232,18 @@ public class ChrgServ {
 			    chrgThr.setUp(calc, serv, chStore);
 
 			    Result res1;
-		    	try {
-		    		// выполнить начисление
+			    // выполнить начисление
+				try {
 					res1 = chrgThr.run1();
 				} catch (EmptyStorable e) {
 					e.printStackTrace();
-					throw new ErrorWhileChrg ("ОШИБКА! Была попытка получить параметр по пустому объекту хранения");
+					throw new ErrorWhileChrg ("ОШИБКА! Была попытка получить параметр по пустому объекту хранения! lsk="+calc.getKart().getLsk());
+				} catch (Exception e) {
+					e.printStackTrace();
+					log.error("ОШИБКА при вызове начисления по услуге! Прочие ошибки! serv.cd="+serv.getCd()+" lsk="+calc.getKart().getLsk(), e);
+					throw new ErrorWhileChrg ("ОШИБКА при вызове начисления по услуге! Прочие ошибки! serv.cd="+serv.getCd()+" lsk="+calc.getKart().getLsk());
 				}
 		    	
-//		    	log.info("--------2CHECK: serv.id={} size={}", serv.getId(), chStore.getStoreMainServ().size());
-			    log.trace("RQN={}, Начисление по лс={}, услуге={} закончено!", calc.getReqConfig().getRqn(), calc.getKart().getLsk(), serv.getId());
 		    	// добавить некритические ошибки выполнения 
 				res.getLstErr().addAll(res1.getLstErr());
 			}
@@ -270,7 +272,7 @@ public class ChrgServ {
 				}
 			}		    
 		}		
-
+		chrgThr = null; // ### TODO
 		return res;
 	}
 
@@ -356,6 +358,8 @@ public class ChrgServ {
 					
 			kart.getPrivilegeChrg().add(priv); 
 		}
+		
+		chStore = null; // ### TODO
 	}
 	
 

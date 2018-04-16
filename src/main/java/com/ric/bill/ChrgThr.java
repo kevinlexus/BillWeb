@@ -15,7 +15,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.ric.bill.PriceMng.ComplexPrice;
@@ -23,6 +22,7 @@ import com.ric.bill.dto.ChrgRec;
 import com.ric.bill.dto.VolDet;
 import com.ric.bill.excp.EmptyOrg;
 import com.ric.bill.excp.EmptyStorable;
+import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.excp.InvalidServ;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.LstMng;
@@ -41,7 +41,7 @@ import com.ric.bill.model.ps.Pers;
 import com.ric.bill.model.tr.Serv;
 
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.context.annotation.*;
 /**
  * РАСЧЕТ НАЧИСЛЕНИЯ ПО УСЛУГЕ, ВЫЗЫВАЕТСЯ В ПОТОКЕ
  * @author lev
@@ -51,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Scope("prototype") //собственный бин для каждого потока по услуге
+//@Scope(value = "session",  proxyMode = ScopedProxyMode.TARGET_CLASS)
 @Slf4j
 public class ChrgThr {
 	
@@ -104,7 +105,7 @@ public class ChrgThr {
 		//this.prepChrgMainServ = new ArrayList<ChrgMainServRec>(100);
 	}
 
-	public Result run1() throws EmptyStorable {
+	public Result run1() throws ErrorWhileChrg, EmptyStorable {
 		Kart kart = calc.getKart();
 		res = new Result();
 		res.setErr(0);
@@ -120,9 +121,9 @@ public class ChrgThr {
 		// номер текущего запроса
 		int rqn = calc.getReqConfig().getRqn();
 		
-		log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		//log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		if (serv.getId()==20) {
-			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+			//log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 		
 		//}
@@ -138,30 +139,25 @@ public class ChrgThr {
 				
 				if (tpOwn == null) {
 					res.addErr(rqn, 4, kart, serv);
-					//log.info("ОШИБКА! Не указанна форма собственности! lsk="+kart.getLsk(), 2);
 				}
-				// где лиц.счет является нежилым помещением, не начислять за данный день - ред.28.09.17 отключил - решили занулить такие расценки, чтобы оставалась площадь
-				//и гигакаллории по нежилым
-				/*if (tpOwn != null && (tpOwn.equals("Нежилое собственное") || tpOwn.equals("Нежилое муниципальное")
-					|| tpOwn.equals("Аренда некоммерч.") || tpOwn.equals("Для внутр. пользования"))) {
-					continue;
-				}*/
+					//try {
+					  // Расчет начисления по каждому дню
 					try {
-					  // Расчет начисления по каждой услуге и дню
-					  genChrg(calc, serv, tpOwn, genDt);
-					} catch (EmptyStorable e) {
-						e.printStackTrace();
-						throw new RuntimeException();
+						genChrg(calc, serv, tpOwn, genDt);
 					} catch (EmptyOrg e) {
+						//log.info("ОШИБКА в модуле начисления по услуге. Не заполнена организация! serv.cd={}", serv.getCd());
 						e.printStackTrace();
-						throw new RuntimeException();
+						throw new ErrorWhileChrg("ОШИБКА в модуле начисления по услуге. Не заполнена организация! serv.cd="+serv.getCd()+" lsk="+kart.getLsk());
 					} catch (InvalidServ e) {
+						//log.info("ОШИБКА в модуле начисления по услуге. Не корректно настроена услуга! serv.cd={}", serv.getCd());
 						e.printStackTrace();
-						throw new RuntimeException();
+						throw new ErrorWhileChrg("ОШИБКА в модуле начисления по услуге. Не корректно настроена услуга! serv.cd="+serv.getCd()+" lsk="+kart.getLsk());
+					} catch (Exception e) {
+						//log.info("ОШИБКА в модуле начисления по услуге. Прочие ошибки! serv.cd={}", serv.getCd());
+						e.printStackTrace();
+						throw new ErrorWhileChrg("ОШИБКА в модуле начисления по услуге. Прочие ошибки! serv.cd="+serv.getCd()+", lsk="+kart.getLsk());
 					}
-					
 			}
-			//break;
 		}
 		// Сохранить сгруппированные по основной услуге суммы начислений
 		// для последующего использования в таких услугах как ГВС(одн) п.344 РФ
@@ -191,7 +187,6 @@ public class ChrgThr {
 			// округлить до копеек
 			sumFull = sumFull.setScale(2, BigDecimal.ROUND_HALF_UP);
 
-			
 			if (rec.getTp() !=null && rec.getTp() == 1) {
 				// Вариант расчета: из полной суммы вычесть сумму льготы, получить результат
 				// сумма льготы: объем * цена по льготе (здесь Цена по льготе!!!)
@@ -211,12 +206,16 @@ public class ChrgThr {
 				sumAmnt = sumFull;
 			}
 			
+			//if (rec.getServ().getId().equals(80)) {
+			//	log.info("rec: serv.Id={}, vol={}, pricePriv={}, sumPriv={}, sumAmnt={}", rec.getServ().getId(), vol, rec.getPricePriv(), sumPriv, sumAmnt);
+			//}
+			
 			// записать, для будущего округления по виртуальной услуге
 			if (rec.getServ().getServVrt() != null) {
 				chStore.putMapServVal(rec.getServ().getServVrt(), sumFull);
 			}
 			// записать, сумму по виртуальной услуге
-			if (rec.getServ().getVrt()) {
+			if (Utl.nvl(rec.getServ().getVrt(), false)) {
 				chStore.putMapVrtVal(rec.getServ(), sumFull);
 			}
 
@@ -230,7 +229,7 @@ public class ChrgThr {
 			}
 					
 			// сохранить начисление
-			if (!rec.getServ().getVrt()) {
+			if (!Utl.nvl(rec.getServ().getVrt(), false)) {
 				// Если сумма <> 0 или по услуге принудительно сохранить объемы при нулевой сумме 	
 				if (sumFull.compareTo(BigDecimal.ZERO) != 0 || 
 					sumAmnt.compareTo(BigDecimal.ZERO) != 0 || sumPriv.compareTo(BigDecimal.ZERO) != 0 ||
@@ -283,9 +282,15 @@ public class ChrgThr {
 	 */
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
 
+		/*int aa=0;
+		if (calc.getKart().getLsk() == 3069) {
+			// искусственная ошибка
+			log.info("zero={}", 25/aa);
+		}*/
+		
 		//log.info("serv.cd={}", serv.getCd());
-		if (serv.getId()==35) {
-			log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		if (serv.getId()==8) {
+			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 
 		Kart kart = calc.getKart();
@@ -321,7 +326,8 @@ public class ChrgThr {
 		// Временный объем
 		Double tmpVol;
 		// Кол-во проживающих
-		CntPers cntPers = new CntPers();
+		CntPers cntPers;// = new CntPers();
+		
 		// Временные переменные
 		// Double tmp = 0d;
 		BigDecimal cf = BigDecimal.ZERO;
@@ -341,12 +347,12 @@ public class ChrgThr {
 		}
 		
 		// признак отключения услуги в данном дне (по наличию параметра, а не по его значению)
-		Double switсhOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
-		if (switсhOff != null) {
+		Double switchOff = kartMng.getServPropByCD(rqn, calc, serv, "Отключение", genDt);
+		if (switchOff != null) {
 			// вернуться из метода
-			log.trace("Услуга id={}, cd={}, genDt={} отключена!", serv.getId(), serv.getCd(), genDt);
-		} else if (switсhOff == null) {
-			log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
+			//log.trace("Услуга id={}, cd={}, genDt={} отключена!", serv.getId(), serv.getCd(), genDt);
+		} else if (switchOff == null) {
+			//log.trace("Расчет услуги id={}, cd={}, genDt={}", serv.getId(), serv.getCd(), genDt);
 			// получить необходимые подуслуги
 			stServ = serv.getServSt();
 			upStServ = serv.getServUpst();
@@ -363,7 +369,7 @@ public class ChrgThr {
 			}
 
 			// Получить кол-во проживающих 
-			kartMng.getCntPers(rqn, calc, kart, serv, cntPers, genDt);
+			cntPers = kartMng.getCntPers(rqn, calc, kart, serv, genDt);
 
 			/*******************************
 			 * ПОЛУЧИТЬ РАСЦЕНКУ
@@ -393,7 +399,7 @@ public class ChrgThr {
 					Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				
 				
-				stdt = kartMng.getStandartVol(rqn, calc, serv, cntPers, genDt, 0);
+				stdt = kartMng.getStandartVol(rqn, calc, serv, genDt, 0);
 
 				// здесь же получить расценки по свыше соц.нормы и без проживающих 
 				ComplexPrice cp = priceMng.getUpStPrice(calc, serv, upStPrice, genDt, rqn, res, isResid, kart, chng);
@@ -409,7 +415,7 @@ public class ChrgThr {
 				  if (org == null) {
 				    throw new EmptyOrg("При расчете л.с.="+kart.getLsk()+" , обнаружена пустая организция по услуге Id="+serv.getServOrg().getId());
 				  } else {
-					  log.trace("Организация по услуге: org.id={}", org.getId());
+					  //log.trace("Организация по услуге: org.id={}", org.getId());
 				  }
 			}
 			
@@ -595,7 +601,7 @@ public class ChrgThr {
 			 if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему осн.род.усл."), 0d) == 1d) {
 				
 				Optional<ChrgMainServRec> rec;
-				rec = chStore.getStoreMainServ().parallelStream()
+				rec = chStore.getStoreMainServ().stream()
 						.filter(t -> t.getMainServ().equals(serv.getServDep()) && t.getDt().equals(genDt) ).findAny();
 
 				//log.info("CHECK1 serv.cd={}, size={}", serv.getCd(), chStore.getStoreMainServ().size());
@@ -643,6 +649,12 @@ public class ChrgThr {
 	
 				if (cntPers.cntEmpt != 0) {
 					// есть проживающие
+					if (cnt.equals(BigDecimal.ZERO)) {
+						// Lev 05.04.2018 из за деления на ноль
+						// присваиваем соцнорму = 1 если всё таки нет проживающих для определения соцнормы
+						cnt = new BigDecimal(1D);
+					}
+					
 					if (absVol.compareTo(partVol) < 0) {
 						// получить новую соцнорму, если объем меньше текущей соцнормы
 						tmpVold = absVol.divide(cnt, RoundingMode.HALF_UP);  
@@ -659,7 +671,7 @@ public class ChrgThr {
 							privServ = kartMng.getPrivilegeServ(persPriv.getPrivilege(), serv);
 						}
 						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
-						//		privServ!=null?privServ.getDiscount(): null);
+							//	privServ!=null?privServ.getDiscount(): null);
 						if (absVol.compareTo(tmpVold) > 0) {
 							tmpInsVol = tmpVold.multiply(BigDecimal.valueOf(Math.signum(vol))); // умножить на знак
 							absVol = absVol.subtract(tmpVold);  
@@ -672,7 +684,6 @@ public class ChrgThr {
 							BigDecimal privPrice = null;
 							if (privServ!=null && privServ.getDiscount()!=null) {
 								privPrice = BigDecimal.valueOf(stPrice * privServ.getDiscount());
-								privPrice = privPrice.setScale(2, BigDecimal.ROUND_HALF_UP);		
 							}
 									
 							chStore.addChrg(tmpInsVol, BigDecimal.valueOf(stPrice), 
@@ -970,8 +981,10 @@ public class ChrgThr {
 			endTime   = System.currentTimeMillis();
 			totalTime = endTime - startTime2;
 			if (totalTime >10) {
-			  log.trace("ВРЕМЯ НАЧИСЛЕНИЯ по дате "+genDt.toLocaleString()+" услуге:"+totalTime);
+			  //log.trace("ВРЕМЯ НАЧИСЛЕНИЯ по дате "+genDt.toLocaleString()+" услуге:"+totalTime);
 			}
 		}
+	cntPers = null;
+	stdt = null;
 	}
 }

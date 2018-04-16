@@ -16,8 +16,8 @@
       <resources>
       <!-- <heap unit="entries">200000</heap> 
       <offheap unit="MB">100</offheap> --> 
-      <heap unit="entries">500000</heap> 
-      <offheap unit="MB">500</offheap> 
+      <heap unit="entries">10000</heap> 
+      <offheap unit="MB">100</offheap> 
     </resources>
   </cache-template> 
 </config>

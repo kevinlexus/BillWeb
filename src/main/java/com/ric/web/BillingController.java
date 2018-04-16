@@ -65,12 +65,13 @@ import com.ric.bill.mm.ServMng;
 import com.ric.bill.mm.TarifMng;
 import com.ric.bill.model.ar.Area;
 import com.ric.bill.model.bs.PeriodReports;
+import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.fn.Payord;
 import com.ric.bill.model.fn.PayordCmp;
 import com.ric.bill.model.fn.PayordFlow;
 import com.ric.bill.model.fn.PayordGrp;
 
-@EnableCaching
+//@EnableCaching
 @RestController
 @ComponentScan({ "com.ric.bill" })
 // -если убрать - не найдёт бины, например billServ
@@ -632,12 +633,14 @@ public class BillingController {
 	
 			// если пустой ID перерасчета
 			Integer chId = null;
+			Chng chng = null;
 			if (chngId.length() != 0 && chngId != null) {
 				log.info("chngId={}", chngId);
 				chId = Integer.valueOf(chngId);
+				chng = em.find(Chng.class, chId);
 			}
 	
-			RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
+			RequestConfig reqConfig = new RequestConfig();
 			long endTime1 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
 	
@@ -648,7 +651,7 @@ public class BillingController {
 				dt2 = Utl.getDateFromStr(genDt2); 
 			}
 			
-			if (!reqConfig.setUp(dist, tp, chId, rqn, dt1, dt2)) {
+			if (!reqConfig.setUp(dist, tp, chId, rqn, dt1, dt2, chng, config.getCurDt1(), config.getCurDt2())) {
 				// ошибка конфигурации
 				return "ERROR";
 			}
@@ -815,7 +818,8 @@ public class BillingController {
 
 		Future<Result> fut = null;
 
-		RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
+		//RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
+		RequestConfig reqConfig = new RequestConfig();
 		
 		Date dt1 = null;
 		Date dt2 = null;
@@ -823,7 +827,7 @@ public class BillingController {
 			dt1 = Utl.getDateFromStr(genDt1); 
 			dt2 = Utl.getDateFromStr(genDt2); 
 		}
-		if (!reqConfig.setUp(dist, "0", null, rqn, dt1, dt2)) {
+		if (!reqConfig.setUp(dist, "0", null, rqn, dt1, dt2, null, config.getCurDt1(), config.getCurDt2())) {
 			// ошибка конфигурации
 			log.info("Ошибка конфигурации: RQN={}", rqn);
 			return "ERROR";

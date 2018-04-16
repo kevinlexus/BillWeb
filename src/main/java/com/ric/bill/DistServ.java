@@ -74,7 +74,7 @@ public class DistServ {
 	 */
 	/*
 	 * private void setFilters() { Session session = em.unwrap(Session.class);
-	 * log.trace("Установлен фильтр: c:"+Calc.getCurDt1()+" по:"+Calc.getCurDt2());
+	 * //log.trace("Установлен фильтр: c:"+Calc.getCurDt1()+" по:"+Calc.getCurDt2());
 	 * session.enableFilter("FILTER_GEN_DT_OUTER").setParameter("DT1",
 	 * Calc.getCurDt1()) .setParameter("DT2", Calc.getCurDt2()); //отдельно
 	 * установить фильтр существования счетчиков }
@@ -203,7 +203,7 @@ public class DistServ {
 					Boolean v = parMng.getBool(rqn, serv, "Распределять объем по только по дому");
 					if (v == null || !v) {
 						// Если задано, распределять услугу, только при выборе дома (не ЛС!)
-						log.trace("Удаление объема по услуге" + serv.getCd());
+						//log.trace("Удаление объема по услуге" + serv.getCd());
 						// тип обработки = 0 - расход
 						calc.setCalcTp(0);
 						delKartServVolTp(rqn, kart, serv);
@@ -220,7 +220,7 @@ public class DistServ {
 				throw new ErrorWhileDist("Ошибка при удалении объемов счетчиков в лс=" + calc.getKart().getLsk());
 			}
 
-			log.trace("Распределение объемов");
+			//log.trace("Распределение объемов");
 			// найти все необходимые услуги для распределения
 
 			try {
@@ -228,7 +228,7 @@ public class DistServ {
 					Boolean v = parMng.getBool(rqn, serv, "Распределять объем по только по дому");
 					if (v == null || !v) {
 						// Если задано, распределять услугу, только при выборе дома (не ЛС!)
-						log.trace("Распределение услуги: " + serv.getCd());
+						//log.trace("Распределение услуги: " + serv.getCd());
 						calc.setCalcTp(0);
 						distKartServTp(rqn, kart, serv);
 						if (serv.getCd().equals("Отопление")) {
@@ -263,8 +263,8 @@ public class DistServ {
 	 * @throws CyclicMeter
 	 */
 	private void delKartServVolTp(int rqn, Kart kart, Serv serv) throws CyclicMeter {
-		log.trace("delKartServVolTp: kart.lsk=" + kart.getLsk() + ", serv.cd=" + serv.getCd() + " tp="
-				+ calc.getCalcTp());
+		//log.trace("delKartServVolTp: kart.lsk=" + kart.getLsk() + ", serv.cd=" + serv.getCd() + " tp="
+		//		+ calc.getCalcTp());
 		// перебрать все необходимые даты, за период
 		Calendar c = Calendar.getInstance();
 		// необходимый для формирования диапазон дат
@@ -392,7 +392,7 @@ public class DistServ {
 	 * @throws ErrorWhileDist
 	 */
 	private void distHouseServ(int rqn) throws ErrorWhileDist {
-		log.trace("******************Услуга*************=" + calc.getServ().getCd());
+		//log.trace("******************Услуга*************=" + calc.getServ().getCd());
 		calc.setCalcTp(1);
 		distHouseServTp(rqn, calc.getServ().getServMet());// Расчет площади, кол-во прожив
 		calc.setCalcTp(0);
@@ -415,10 +415,10 @@ public class DistServ {
 	 * @throws ErrorWhileDist
 	 */
 	private void distHouseServTp(int rqn, Serv serv) throws ErrorWhileDist {
-		log.trace("Распределение по типу:" + calc.getCalcTp());
+		//log.trace("Распределение по типу:" + calc.getCalcTp());
 		// найти все вводы по дому и по услуге
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, calc.getHouse(), serv, "Ввод")) {
-			log.trace("Вызов distGraph c id=" + ml.getId());
+			//log.trace("Вызов distGraph c id=" + ml.getId());
 			distGraph(ml);
 		}
 	}
@@ -431,7 +431,7 @@ public class DistServ {
 	 * @throws ErrorWhileDist
 	 */
 	private void distGraph(MLogs ml) throws ErrorWhileDist {
-		log.trace("DistServ.distGraph: Распределение счетчика:" + ml.getId());
+		//log.trace("DistServ.distGraph: Распределение счетчика:" + ml.getId());
 		// перебрать все необходимые даты, за период
 		Calendar c = Calendar.getInstance();
 		// необходимый для формирования диапазон дат

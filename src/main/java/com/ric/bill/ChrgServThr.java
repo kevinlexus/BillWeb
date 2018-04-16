@@ -19,6 +19,7 @@ import com.ric.bill.Calc;
 import com.ric.bill.ChrgServ;
 import com.ric.bill.Result;
 import com.ric.bill.excp.ErrorWhileChrg;
+import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.fn.ChngLsk;
 import com.ric.bill.model.tr.TarifKlsk;
 
@@ -42,7 +43,19 @@ public class ChrgServThr {
 	private Config config;
 	
 	@Async
-	public Future<Result> chrgAndSaveLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
+	public Future<Result> chrgAndSaveLsk(RequestConfig reqConfig, Integer kartId) throws ErrorWhileChrg, ExecutionException {
+//		Result res = new Result();
+//		return new AsyncResult<Result>(res );
+
+		// под каждый поток - свой Calc
+		Calc calc = new Calc(reqConfig);
+		Kart kart = em.find(Kart.class, kartId);
+		calc.setKart(kart);
+		calc.setHouse(kart.getKw().getHouse());
+		if (calc.getArea() ==null) {
+			throw new ErrorWhileChrg("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
+		}
+		
 		Integer lsk = calc.getKart().getLsk();
 		Integer houseId = calc.getKart().getKw().getHouse().getId();
 		// блокировка лиц.счета
@@ -66,6 +79,7 @@ public class ChrgServThr {
 
 		try {
 			ChrgServ chrgServ = ctx.getBean(ChrgServ.class);
+			
 			//загрузить все Lazy параметры, чтобы не было concurrensy issue в потоках например, на getDbl()
 			//ну или использовать EAGER в дочерних коллекциях, что более затратно
 			calc.getKart().getDw().size();
@@ -101,11 +115,13 @@ public class ChrgServThr {
 			if (res.getErr()==0) {
 				chrgServ.save(lsk); 
 			}
+			chrgServ = null; //### TODO;
 			return new AsyncResult<Result>(res);
 			
 		} finally {
 			// разблокировать лс
 			config.lock.unlockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId);
+			calc = null;  //### TODO;
 		}
 	}
 	

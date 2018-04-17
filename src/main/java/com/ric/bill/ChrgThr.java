@@ -289,10 +289,10 @@ public class ChrgThr {
 		}*/
 		
 		//log.info("serv.cd={}", serv.getCd());
-		if (serv.getId()==8) {
+/*		if (serv.getId()==8) {
 			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
-
+*/
 		Kart kart = calc.getKart();
 		// перерасчет
 		Chng chng = calc.getReqConfig().getChng();

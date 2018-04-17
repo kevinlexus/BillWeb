@@ -254,6 +254,7 @@ public class DistGen {
 			if (calc.getKart() == null) {
 			  log.error("Нет лиц.счета, привязанного к счетчику MeterLog.id={}", ml.getId());	
 			}
+			
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
 				//площадь
 				if (calc.getReqConfig().getOperTp()==1 && calc.getReqConfig().getChng().getTp().getCd().equals("Изменение площади квартиры") ) {
@@ -274,7 +275,7 @@ public class DistGen {
 					}
 				} else {
 					partArea = Utl.nvl(parMng.getDbl(rqn, kart, "Площадь.Общая", genDt, chng), 0d) / calc.getReqConfig().getCntCurDays(); 
-					//log.info("******** площадь без перерасч={}",partArea);
+					//log.info("******** лс={}, площадь без перерасч={}", kart.getLsk(), partArea);
 				}
 				//проживающие
 				CntPers cntPers = kartMng.getCntPers(rqn, calc, kart, servChrg, genDt);
@@ -442,6 +443,7 @@ public class DistGen {
 						var = 1D;
 					}
 					if (var == 2D) {
+						//log.info("point10 lnkODNVol.getArea()={}", lnkODNVol.getArea());
 						// распределить по счетчику
 						if (lnkODNVol.getArea()==0d) {
 							vl = 0d;
@@ -456,8 +458,14 @@ public class DistGen {
 										lnkLODN, tp, backDt1, backDt2);
 								//log.info("Взять старый объем={}", lnkODNVol.getVol());
 							}
+							if (lnkODNVol.getArea() != 0D) {
+								vl = lnkODNVol.getVol() * sumVol.getArea() / lnkODNVol.getArea();
+							} else {
+								// если нет площади счетчика в предыдущем периоде, иначе - DBZ
+								vl = 0D;
+							}
+							//log.info("point7, check lnkODN.id={}, {}, {}, {}, {}", lnkLODN.getId(), lnkODNVol.getVol(), sumVol.getArea(), lnkODNVol.getArea(), vl);
 							
-							vl = lnkODNVol.getVol() * sumVol.getArea() / lnkODNVol.getArea();
 						}
 						//log.info("*************метод 1 счетчик существует, объем={}", vl);
 					} else if (var == 1D) {
@@ -467,6 +475,7 @@ public class DistGen {
 						if (tmp != null) {
 							// установлено значение "Введено гкал." 
 							vl = tmp * sumVol.getArea();
+							//log.info("point8, check={}, {}", tmp, sumVol.getArea());
 						} else {
 							// не установлено
 							vl = 0D;
@@ -485,6 +494,7 @@ public class DistGen {
 					if (tmp != null) {
 						//установлено значение "Введено гкал." 
 						vl = tmp * sumVol.getArea();
+						//log.info("point9, check={}, {}", tmp, sumVol.getArea());
 					} else {
 						//НЕ установлено значение "Введено гкал."
 						// TODO сделать ветку если нет параметра "Введённое значение объёма на м2", рассчитать по строительному объему!
@@ -520,6 +530,8 @@ public class DistGen {
 							nv.addPartArea(nvChld.getPartArea());
 							nv.addPartPers(nvChld.getPartPers());
 							nv.addVol(nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));
+							//log.info("point5, check={}, {}, {}", nvChld.getVol(), g.getPrc(), Utl.nvl(g.getPrc(), 0d));
+							
 							//log.info("Объем из дочернего узла по id={}, vol={}", ml.getId(), nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));
 						}
 						//log.info("Объем после добавления по id={}, vol={}", ml.getId(), nv.getVol());
@@ -552,6 +564,7 @@ public class DistGen {
 					}
 					lmtVol = oplLiter(oplMan)/1000;
 					//записать лимит ОДН
+					//log.info("point2, check={}", lmtVol);
 					Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(), 
 							calc.getReqConfig().getOperTp(), chng);
 					//saveVol(ml, vol);
@@ -592,6 +605,7 @@ public class DistGen {
 								}
 							}
 							//записать лимит ОДН
+							//log.info("point3, check={}", lmtVol);
 							Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, 
 									calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(),
 									calc.getReqConfig().getOperTp(), chng);
@@ -608,6 +622,7 @@ public class DistGen {
 			// расчетная связь, расчетная связь ОДН
 			volTp = lstMng.getByCD("Фактический объем");
 
+			//log.info("point4, check={}", nv.getVol());
 			Vol vol = new Vol((MeterLog) ml, volTp, nv.getVol(), null, genDt, genDt,
 					calc.getReqConfig().getOperTp(), chng);
 			
@@ -618,6 +633,7 @@ public class DistGen {
 			// связь подсчета площади, кол-во проживающих, сохранять, если только в тестовом режиме TODO 
 			volTp = lstMng.getByCD("Площадь и проживающие");
 
+			//log.info("point1, check={}", nv.getPartArea());
 			Vol vol = new Vol((MeterLog) ml, volTp, nv.getPartArea(), nv.getPartPers(), genDt, genDt,
 							calc.getReqConfig().getOperTp(), chng);
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -21,6 +22,7 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ric.bill.dao.KartDAO;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.excp.ErrorWhileDist;
 import com.ric.bill.mm.HouseMng;
@@ -46,28 +48,27 @@ public class BillServ {
 	@Autowired
 	private KartMng kartMng;
 	@Autowired
+	private KartDAO kartDao;
+	@Autowired
 	private ApplicationContext ctx;
 	@PersistenceContext
 	private EntityManager em;
 	@Autowired
 	private HouseMng houseMng;
 
-	// коллекция для формирования потоков
-	private List<ResultSet> kartThr;
-
 	// конструктор
 	public BillServ() {
 
 	}
 
-	// получить список N следующих лиц.счетов, для расчета в потоках
-	private List<ResultSet> getNextKart(int cnt) {
-		List<ResultSet> lst = new ArrayList<ResultSet>();
+	// получить список N следующих объектов, для расчета в потоках
+	private List<ResultSet> getNextItem(int cnt, List<ResultSet> lst) {
+		List<ResultSet> lstRet = new ArrayList<ResultSet>();
 		int i = 1;
-		Iterator<ResultSet> itr = kartThr.iterator();
+		Iterator<ResultSet> itr = lst.iterator();
 		while (itr.hasNext()) {
 			ResultSet rs = itr.next();
-			lst.add(rs);
+			lstRet.add(rs);
 			itr.remove();
 			i++;
 			if (i > cnt) {
@@ -75,7 +76,19 @@ public class BillServ {
 			}
 		}
 
-		return lst;
+		return lstRet;
+	}
+
+	// получить следующий объект, для расчета в потоках
+	private ResultSet getNextItem(List<ResultSet> lst) {
+		Iterator<ResultSet> itr = lst.iterator();
+		ResultSet item = null;
+		if (itr.hasNext()) {
+			item  = itr.next();
+			itr.remove();
+		}
+
+		return item;
 	}
 
 	// Exception из потока
@@ -117,21 +130,20 @@ public class BillServ {
 		
 		// кол-во потоков
 		int cntThreads = 20;
-		// кол-во обраб.лиц.сч.
-		int cntLsk = 0;
-
-		long startTime;
-		long endTime;
-		long totalTime;
-		long totalTime3;
-
-		startTime = System.currentTimeMillis();
 
 		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
 		try {
 			if (reqConfig.getIsDist()) {
-				Calc calc = new Calc(reqConfig);
-					distAll(calc, houseId, areaId, tempLskId);
+				cntThreads = 10;
+				// загрузить все необходимые Дома
+				List<ResultSet> lstItem = houseMng.findAll2(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
+						.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
+				try {
+					invokeThread(reqConfig, cntThreads, lstItem, 1);
+				} catch (ErrorWhileChrg e) {
+					log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
+				}
+
 				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {
@@ -141,104 +153,13 @@ public class BillServ {
 		
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
 		if (res.getErr() ==0) {
-			long startTime3 = System.currentTimeMillis();
+			cntThreads = 20;
 			// загрузить все необходимые Лиц.счета
-			kartThr = kartMng.findAllLsk(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2());
-
-			//kartThr = kartMng.findAll(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2());
-			cntLsk = kartThr.size();
-			
-			while (true) {
-				//log.trace("BillServ.chrgAll: Loading karts for threads");
-				// получить следующие N лиц.счетов, рассчитать их в потоке
-				long startTime2;
-				long endTime2;
-				long totalTime2;
-				startTime2 = System.currentTimeMillis();
-	
-				List<ResultSet> kartWork = getNextKart(cntThreads);
-				if (kartWork.isEmpty()) {
-					// выйти, если все лс обработаны
-					break;
-				}
-	
-				List<Future<Result>> frl = new ArrayList<Future<Result>>();
-				List<ChrgServThr> thrl = new ArrayList<ChrgServThr>(cntThreads);
-				//log.info("========================================== Запуск на выполнение потоков ===");
-				for (ResultSet t : kartWork) {
-	
-					Future<Result> fut = null;
-					ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
-					
-					thrl.add(chrgServThr);
-					
-					try {
-						fut = chrgServThr.chrgAndSaveLsk(reqConfig, t.getId());
-					} catch (ErrorWhileChrg | ExecutionException e) {
-						// TODO Auto-generated catch block
-						//e.printStackTrace();
-						log.info("====================== НЕ ОБРАБОТАННАЯ ОШИБКА!!!!!!!!!!!!!!!");
-					}
-					frl.add(fut);
-					log.info("Начат поток для лс={}", t.getId());
-				}
-				kartWork = null;
-				
-				// проверить окончание всех потоков
-				int flag2 = 0;
-				while (flag2 == 0) {
-					//log.info("========================================== Ожидание выполнения потоков ===========");
-					flag2 = 1;
-					for (Future<Result> fut : frl) { 
-						//log.info("========= 1");
-						
-						if (!fut.isDone()) {
-							// не завершен поток
-							//log.info("========= Поток НЕ завершен! лс={}", fut.get().getLsk());
-							flag2 = 0;
-						} else {
-							try {
-								//log.info("Поток по лс={} завершен с результатом: Result.err:={}", fut.get().getLsk(), fut.get().getErr());
-								if (fut.get().getErr() == 1) {
-								  log.error("ОШИБКА ПОЛУЧЕНА ПОСЛЕ ЗАВЕРШЕНИЯ ПОТОКА!");
-								}
-							} catch (InterruptedException | ExecutionException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-								log.error("ОШИБКА ВО ВРЕМЯ ВЫПОЛНЕНИЯ ПОТОКА!", e1);
-							}
-	
-						}
-					}
-	
-					try {
-						Thread.sleep(10);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					//log.info("========= 2");
-
-				}
-				for (ChrgServThr a :thrl) {
-					a = null;
-				}
-				
-				frl = null;
-				thrl = null;
-
-				endTime2 = System.currentTimeMillis();
-				totalTime2 = endTime2 - startTime2;
-				log.info("Промежуточное время выполнения одного лс:" + totalTime2 / cntThreads, 2);
-	
-			}
-			endTime = System.currentTimeMillis();
-			totalTime = endTime - startTime;
-			totalTime3 = endTime - startTime3;
-			log.info("Рассчитано лицевых в данной areaId={}, cnt={}", areaId, cntLsk);
-			log.info("Общее время выполнения в данной areaId={}", areaId, totalTime);
-			if (cntLsk > 0) {
-				log.info("Итоговое время выполнения одного в данной areaId={}, cnt={}, мс.", areaId, totalTime3 / cntLsk);
+			List<ResultSet> lstItem = kartDao.findAllLsk(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2());
+			try {
+				invokeThread(reqConfig, cntThreads, lstItem, 0);
+			} catch (ErrorWhileDist | ErrorWhileChrg e) {
+				log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
 			}
 		}
 		return futM;
@@ -310,7 +231,14 @@ public class BillServ {
 		try {
 			if (isDistHouse == true) {
 				// задано распределить по дому, для перерасчета (например по отоплению, когда поменялась площадь и надо пересчитать гКал)
-				distAll(calc, calc.getHouse().getId(), null, null);
+				List<ResultSet> lstItem = houseMng.findAll2(calc.getHouse().getId(), null, null, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
+						.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
+				try {
+					invokeThread(reqConfig, 1, lstItem, 1);
+				} catch (ErrorWhileChrg e) {
+					log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
+				}
+
 				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах
 				calc.setKart(kart);
 			} else if (reqConfig.getIsDist()) {
@@ -318,7 +246,7 @@ public class BillServ {
 				// присвоить обратно лиц.счет, который мог быть занулён в предыдущ методах
 				calc.setKart(kart);
 			}
-		} catch (ErrorWhileDist e) {
+		} catch (ErrorWhileDist | ExecutionException e) {
 			e.printStackTrace();
 			res.setErr(1);
 			return fut;
@@ -337,23 +265,92 @@ public class BillServ {
 	}
 
 	
-	private void distAll(Calc calc, Integer houseId, Integer areaId, Integer tempLskId) throws ErrorWhileDist {
-		int rqn = calc.getReqConfig().getRqn();
-		long startTime;
-		long endTime;
-		long totalTime;
-		for (House o : houseMng.findAll2(houseId, areaId, tempLskId, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2())) {
-			log.info("RQN={}, Распределение объемов по House.id={}", calc.getReqConfig().getRqn(), o.getId());
-			// распределить объемы
-			startTime = System.currentTimeMillis();
+	private void invokeThread(RequestConfig reqConfig, int cntThreads, List<ResultSet> lstItem, int tp) throws ErrorWhileDist, ErrorWhileChrg, ExecutionException {
+		long startTime = System.currentTimeMillis();
 
-			DistServ distServ = ctx.getBean(DistServ.class);
-			// распределение объемов по дому
-			distServ.distHouseVol(calc, rqn, o.getId());
-			endTime = System.currentTimeMillis();
-			totalTime = endTime - startTime;
-			log.info("RQN={}, House.id={}, Время распределения: {}", calc.getReqConfig().getRqn(), o.getId(),
-					totalTime);
+		List<Future<Result>> frl = new ArrayList<Future<Result>>(cntThreads);
+		for (int i=1; i<=cntThreads; i++) {
+			frl.add(null);
+		}
+		// проверить окончание всех потоков и запуск новых потоков
+		ResultSet itemWork = null;
+		boolean isStop = false;
+		while (!isStop) {
+			//log.info("========================================== Ожидание выполнения потоков ===========");
+			Future<Result> fut;
+			int i=0;
+			// флаг наличия потоков
+			isStop = true;
+			for (Iterator<Future<Result>> itr = frl.iterator(); itr.hasNext();) {
+				
+/*				frl.stream().forEach(t -> {
+					log.info("frl isDone={}, val={}", t!=null?t.isDone():null, t);
+				});
+*/				fut = itr.next();
+
+				if (fut == null) {
+					// получить новый объект
+					itemWork = getNextItem(lstItem);		
+					if (itemWork != null) {
+						// создать новый поток
+						if (tp==0) {
+							ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
+							fut = chrgServThr.chrgAndSaveLsk(reqConfig, itemWork.getId());
+							log.info("================================ Начат поток начисления для лс={} ==================", itemWork.getId());
+						} else if (tp==1) {
+							DistServ distServ = ctx.getBean(DistServ.class);
+							fut = distServ.distHouseVol(reqConfig, itemWork.getId());
+							log.info("================================ Начат поток распределения объемов для house.id={} ==================", itemWork.getId());
+						}
+						frl.set(i, fut);
+						// не завершен поток
+						isStop = false;
+					}
+				} else if (!fut.isDone()) {
+					// не завершен поток
+					isStop = false;
+					//log.info("========= Поток НЕ завершен! лс={}", fut.get().getLsk());
+					//log.info("..................................... CHK1");
+				} else {
+					//log.info("------------------------------------- CHK2");
+					try {
+						if (fut.get().getErr() == 1) {
+						  //log.error("ОШИБКА ПОЛУЧЕНА ПОСЛЕ ЗАВЕРШЕНИЯ ПОТОКА!");
+							if (tp==0) {
+								log.error("================================ ОШИБКА ПОЛУЧЕНА ПОСЛЕ ЗАВЕРШЕНИЯ ПОТОКА начисления для лс={} ==================", fut.get().getItemId());
+							} else if (tp==1) {
+								log.error("================================ ОШИБКА ПОЛУЧЕНА ПОСЛЕ ЗАВЕРШЕНИЯ ПОТОКА распределения объемов для house.id={} ==================", fut.get().getItemId());
+							}
+						} else {
+							if (tp==0) {
+								log.info("================================ Успешно завершен поток начисления для лс={} ==================", fut.get().getItemId());
+							} else if (tp==1) {
+								log.info("================================ Успешно завершен поток распределения объемов для house.id={} ==================", fut.get().getItemId());
+							}
+						}
+					} catch (InterruptedException | ExecutionException e1) {
+						e1.printStackTrace();
+						log.error("ОШИБКА ВО ВРЕМЯ ВЫПОЛНЕНИЯ ПОТОКА!", e1);
+					} finally {
+						// очистить переменную потока
+						frl.set(i, null);
+					}
+
+				}					
+				i++;
+			}
+			
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		long endTime = System.currentTimeMillis();
+		long totalTime = endTime - startTime;
+		if (lstItem.size() > 0) {
+			log.info("Итоговое время выполнения одного {} cnt={}, мс.", 
+					tp==0?"лиц.счета":"дома", totalTime / lstItem.size());
 		}
 	}
 	

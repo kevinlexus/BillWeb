@@ -24,7 +24,7 @@ import com.ric.web.AppConfig;
 @ContextConfiguration(classes=AppConfig.class)
 //@ContextConfiguration(locations = { "classpath:spring.xml" }) //defines class-level metadata that is used to determine how to load and configure an ApplicationContext for integration tests.
 @Slf4j
-public class testChng {
+public class TestRkcOneLsk {
 
 
 	@Autowired
@@ -39,23 +39,9 @@ public class testChng {
     @PersistenceContext
     private EntityManager em;
 
-/*    @Test
-	public void testPar1() {
-		assertThat("Проверка наличия параметра Комната",
-				parMng.getByCD("Комната").getCd(), is("Комната"));
-	}
-
-	
+	// проверка НАЧИСЛЕНИЯ
 	@Test
-	public void testPar2() {
-		assertThat("Проверка наличия параметра Статус жилья",
-				parMng.getByCD("Статус жилья").getCd(), is("Статус жилья"));
-	}*/
-
-	
-	// проверка ПЕРЕРАСЧЕТА!
-	@Test
-	public void testChng() {
+	public void testChrg() {
 		Config config = ctx.getBean(Config.class);
     	// получить уникальный номер запроса
     	int rqn = config.incNextReqNum();
@@ -63,10 +49,9 @@ public class testChng {
     	Future<Result> fut = null;
 
     	RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
-    	//reqConfig.setUp(/*config, */"0", "1", 175961, rqn, null, null); 
+    	//reqConfig.setUp(/*config, */ "1", "0", null, rqn, null, null); 
     	
-    	
-    	fut = billServ.chrgLsk(reqConfig, null, 453194); // FLSK=85020028
+    	fut = billServ.chrgLsk(reqConfig, null, 1083); // FLSK=00001083
     	
 	   	//проверить окончание потока 
 	    while (!fut.isDone()) {

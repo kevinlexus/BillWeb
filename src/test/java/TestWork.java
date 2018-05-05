@@ -32,7 +32,7 @@ import com.ric.web.AppConfig;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes=AppConfig.class)
 @Slf4j
-public class testWork {
+public class TestWork {
 
 
 	@Autowired

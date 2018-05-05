@@ -651,10 +651,7 @@ public class BillingController {
 				dt2 = Utl.getDateFromStr(genDt2); 
 			}
 			
-			if (!reqConfig.setUp(dist, tp, chId, rqn, dt1, dt2, chng, config.getCurDt1(), config.getCurDt2())) {
-				// ошибка конфигурации
-				return "ERROR";
-			}
+			reqConfig.setUp(dist, tp, chId, rqn, dt1, dt2, chng, config.getCurDt1(), config.getCurDt2());
 	
 			long endTime2 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
@@ -827,11 +824,7 @@ public class BillingController {
 			dt1 = Utl.getDateFromStr(genDt1); 
 			dt2 = Utl.getDateFromStr(genDt2); 
 		}
-		if (!reqConfig.setUp(dist, "0", null, rqn, dt1, dt2, null, config.getCurDt1(), config.getCurDt2())) {
-			// ошибка конфигурации
-			log.info("Ошибка конфигурации: RQN={}", rqn);
-			return "ERROR";
-		}
+		reqConfig.setUp(dist, "0", null, rqn, dt1, dt2, null, config.getCurDt1(), config.getCurDt2());
 
 		BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 		String retStr = "ERROR";

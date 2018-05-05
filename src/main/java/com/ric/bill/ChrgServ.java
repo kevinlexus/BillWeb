@@ -191,7 +191,7 @@ public class ChrgServ {
 		log.info("RQN={}, Начисление по лс={}", calc.getReqConfig().getRqn(), calc.getKart().getLsk());
 		Result res = new Result();
 		res.setErr(0);
-		res.setLsk(calc.getKart().getLsk());
+		res.setItemId(calc.getKart().getLsk());
 
 		// создать очередь
 		queBatch = new HashMap<Serv, Integer>(0);
@@ -360,6 +360,7 @@ public class ChrgServ {
 		}
 		
 		chStore = null; // ### TODO
+		log.info("RQN={}, Начисление СОХРАНЕНО по лс={}", calc.getReqConfig().getRqn(), calc.getKart().getLsk());
 	}
 	
 

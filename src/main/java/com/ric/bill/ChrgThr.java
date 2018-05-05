@@ -190,6 +190,7 @@ public class ChrgThr {
 			if (rec.getTp() !=null && rec.getTp() == 1) {
 				// Вариант расчета: из полной суммы вычесть сумму льготы, получить результат
 				// сумма льготы: объем * цена по льготе (здесь Цена по льготе!!!)
+				//log.info("1 вар. vol={}, price={}", vol, rec.getPricePriv());
 				sumPriv = vol.multiply(rec.getPricePriv());
 				sumPriv = sumPriv.setScale(2, BigDecimal.ROUND_HALF_UP);
 				// Сумма итога
@@ -197,11 +198,13 @@ public class ChrgThr {
 			} else if (rec.getTp() !=null && rec.getTp() == 0) {
 				// Вариант расчета: из полной суммы вычесть сумму начисления со льготой, получить результат
 				// Сумма итога со льготой: объем * цену с учетом льготы (здесь Цена с учётом льготы!!!)
+				//log.info("2 вар. vol={}, price={}", vol, rec.getPricePriv());
 				sumAmnt = vol.multiply(rec.getPricePriv());
 				sumAmnt = sumAmnt.setScale(2, BigDecimal.ROUND_HALF_UP);
 				// Сумма льготы
 				sumPriv = sumFull.subtract(sumAmnt);
 			} else {
+				//log.info("3 вар.");
 				// Сумма итога (без льготы)
 				sumAmnt = sumFull;
 			}
@@ -289,10 +292,10 @@ public class ChrgThr {
 		}*/
 		
 		//log.info("serv.cd={}", serv.getCd());
-/*		if (serv.getId()==8) {
+		/*if (serv.getId()==20) {
 			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		}
-*/
+		}*/
+
 		Kart kart = calc.getKart();
 		// перерасчет
 		Chng chng = calc.getReqConfig().getChng();
@@ -655,14 +658,15 @@ public class ChrgThr {
 						cnt = new BigDecimal(1D);
 					}
 					
+					//log.info("absVol={}, partVol={}", absVol, partVol);
 					if (absVol.compareTo(partVol) < 0) {
 						// получить новую соцнорму, если объем меньше текущей соцнормы
-						tmpVold = absVol.divide(cnt, RoundingMode.HALF_UP);  
+						tmpVold = absVol.divide(cnt, 8, RoundingMode.HALF_UP);  
 					} else {
-						tmpVold = partVol.divide(cnt, RoundingMode.HALF_UP);
+						tmpVold = partVol.divide(cnt, 8, RoundingMode.HALF_UP);
 					}
 					
-					//log.info("соцнорма на одного человека: заданная={}, по факту={}", partVol.divide(cnt), tmpVold);
+					//log.info("tmpVold={}", tmpVold);
 					BigDecimal tmpInsVol;
 					for (Pers t : cntPers.persLst) {
 						PersPrivilege persPriv = kartMng.getPersPrivilege(t, serv, genDt);
@@ -672,6 +676,8 @@ public class ChrgThr {
 						}
 						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
 							//	privServ!=null?privServ.getDiscount(): null);
+						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={} vol={}", t.getId(), t.getLastname(), t.getFirstname(),
+						//		privServ!=null?privServ.getDiscount(): null, tmpVold);
 						if (absVol.compareTo(tmpVold) > 0) {
 							tmpInsVol = tmpVold.multiply(BigDecimal.valueOf(Math.signum(vol))); // умножить на знак
 							absVol = absVol.subtract(tmpVold);  

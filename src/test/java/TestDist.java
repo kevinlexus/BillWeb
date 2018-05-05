@@ -20,7 +20,7 @@ import com.ric.web.AppConfig;
 @ContextConfiguration(classes=AppConfig.class)
 //@ContextConfiguration(locations = { "classpath:spring.xml" }) //defines class-level metadata that is used to determine how to load and configure an ApplicationContext for integration tests.
 @Slf4j
-public class testDist {
+public class TestDist {
 
 
 	@Autowired

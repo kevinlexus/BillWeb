@@ -30,8 +30,8 @@ public class Result {
 	// Список ошибок по услуге
     private List<Err> lstErr;
     static ApplicationContext ctx = null;
-	// обрабатываемый лс
-	int lsk;
+	// Id обрабатываемого элемента 
+	int itemId;
     
 	public Result() {
 		super();
@@ -91,14 +91,15 @@ public class Result {
 		this.lstErr = lstErr;
 	}
 
-	public int getLsk() {
-		return lsk;
+	
+	public int getItemId() {
+		return itemId;
 	}
 
-	public void setLsk(int lsk) {
-		this.lsk = lsk;
+	public void setItemId(int itemId) {
+		this.itemId = itemId;
 	}
-	
+
 	/**
 	 * Добавить новое значение некритической ошибки, не дублируя
 	 * @param errId - код ошибки

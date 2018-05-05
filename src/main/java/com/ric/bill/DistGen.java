@@ -14,8 +14,10 @@ import javax.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 
 import com.ric.bill.excp.EmptyPar;
@@ -46,6 +48,7 @@ import com.ric.bill.model.tr.Serv;
 /**
  * Сервис распределения объема по узлам
  * @author lev
+ * @version 1.00
  *
  */
 
@@ -212,7 +215,11 @@ public class DistGen {
 								// добавить объем в объект объема
 								// умножить объем на процент существования счетчика и на долю дня действия объема 
 								if (Utl.between(genDt, e.getDt1(), e.getDt2())) {
-									vl=vl+Utl.nvl(v.getVol1(), 0d) * Utl.nvl(e.getPrc(), 0d) * Utl.getPartDays(v.getDt1(), v.getDt2());
+									
+									vl=vl+Utl.nvl(v.getVol1(), 0d) * metMng.getVolCoeff(e.getTp(), v.getUser()) 
+											* Utl.nvl(e.getPrc(), 0d) // убрал процент, договорились что он не нужен LEV 19.04.2018  
+											* Utl.getPartDays(v.getDt1(), v.getDt2());
+									
 								}
 
 							}
@@ -362,7 +369,7 @@ public class DistGen {
 						//экономия, но в пределах потреблённого по основной услуге объема. Внимание! в квартплате решили так не учитывать, а учитывать в контексте услуги ОДН!
 	
 						//получить основную услугу
-						Serv mainServ = servMng.findMain(servChrg);
+						Serv mainServ = servMng.getMain(servChrg);
 						//получить счетчик основной услуги
 						//log.trace("check serv="+mainServ.getServMet().getId());
 						double tmpVol=0d;
@@ -565,8 +572,18 @@ public class DistGen {
 					lmtVol = oplLiter(oplMan)/1000;
 					//записать лимит ОДН
 					//log.info("point2, check={}", lmtVol);
-					Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(), 
-							calc.getReqConfig().getOperTp(), chng);
+					//Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(), 
+					//		calc.getReqConfig().getOperTp(), chng);
+					Vol vol = Vol.builder()
+							.withMLog((MeterLog) ml)
+							.withTp(volTp)
+							.withVol1(lmtVol)
+							.withDt1(calc.getReqConfig().getCurDt1())
+							.withDt2(calc.getReqConfig().getCurDt2())
+							.withStatus(calc.getReqConfig().getOperTp())
+							.withChng(chng)
+							.build();
+					
 					//saveVol(ml, vol);
 					ml.getVol().add(vol);
 				}
@@ -606,9 +623,19 @@ public class DistGen {
 							}
 							//записать лимит ОДН
 							//log.info("point3, check={}", lmtVol);
-							Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, 
+/*							Vol vol = new Vol((MeterLog) ml, volTp, lmtVol, null, 
 									calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2(),
 									calc.getReqConfig().getOperTp(), chng);
+*/
+							Vol vol = Vol.builder()
+									.withMLog((MeterLog) ml)
+									.withTp(volTp)
+									.withVol1(lmtVol)
+									.withDt1(calc.getReqConfig().getCurDt1())
+									.withDt2(calc.getReqConfig().getCurDt2())
+									.withStatus(calc.getReqConfig().getOperTp())
+									.withChng(chng)
+									.build();
 							ml.getVol().add(vol);
 						}
 					}
@@ -623,8 +650,18 @@ public class DistGen {
 			volTp = lstMng.getByCD("Фактический объем");
 
 			//log.info("point4, check={}", nv.getVol());
-			Vol vol = new Vol((MeterLog) ml, volTp, nv.getVol(), null, genDt, genDt,
+/*			Vol vol = new Vol((MeterLog) ml, volTp, nv.getVol(), null, genDt, genDt,
 					calc.getReqConfig().getOperTp(), chng);
+*/
+			Vol vol = Vol.builder()
+					.withMLog((MeterLog) ml)
+					.withTp(volTp)
+					.withVol1(nv.getVol())
+					.withDt1(genDt)
+					.withDt2(genDt)
+					.withStatus(calc.getReqConfig().getOperTp())
+					.withChng(chng)
+					.build();
 			
 			//log.info("Ml.id={}, Тип={}, Факт объем={}, dt={}", ml.getId(), tp, nv.getVol(), genDt);
 			ml.getVol().add(vol);
@@ -634,9 +671,20 @@ public class DistGen {
 			volTp = lstMng.getByCD("Площадь и проживающие");
 
 			//log.info("point1, check={}", nv.getPartArea());
-			Vol vol = new Vol((MeterLog) ml, volTp, nv.getPartArea(), nv.getPartPers(), genDt, genDt,
+/*			Vol vol = new Vol((MeterLog) ml, volTp, nv.getPartArea(), nv.getPartPers(), genDt, genDt,
 							calc.getReqConfig().getOperTp(), chng);
+*/			Vol vol = Vol.builder()
+					.withMLog((MeterLog) ml)
+					.withTp(volTp)
+					.withVol1(nv.getPartArea())
+					.withVol2(nv.getPartPers())
+					.withDt1(genDt)
+					.withDt2(genDt)
+					.withStatus(calc.getReqConfig().getOperTp())
+					.withChng(chng)
+					.build();
 
+			
 			ml.getVol().add(vol);
 		}
 		
@@ -657,6 +705,7 @@ public class DistGen {
 	 */
 	@Cacheable(cacheNames="DistGen.findLstCheck", key="{ #id, #tp, #genDt }")
 	private NodeVol findLstCheck(int id, int tp, Date genDt) {
+		//log.info("*********************************** lstCheck.size={}", lstCheck.size());
 		Optional<Check> nv = lstCheck.stream().filter(t -> t.getId()==id && t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
 		if (nv.isPresent()) {
 			return nv.get().getNodeVol();

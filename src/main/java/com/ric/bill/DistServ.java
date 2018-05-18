@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ric.bill.dao.MeterDAO;
 import com.ric.bill.dao.ServDAO;
+import com.ric.bill.dao.UserDAO;
 import com.ric.bill.dto.MeterDTO;
 import com.ric.bill.excp.CyclicMeter;
 import com.ric.bill.excp.EmptyPar;
@@ -34,13 +35,11 @@ import com.ric.bill.excp.NotFoundNode;
 import com.ric.bill.excp.NotFoundODNLimit;
 import com.ric.bill.excp.WrongGetMethod;
 import com.ric.bill.excp.WrongValue;
-import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.LstMng;
 import com.ric.bill.mm.MeterLogMng;
 import com.ric.bill.mm.ParMng;
 import com.ric.bill.mm.ServMng;
-import com.ric.bill.mm.impl.MeterLogMngImpl;
 import com.ric.bill.mm.impl.MeterLogMngImpl.AvgVol;
 import com.ric.bill.model.ar.House;
 import com.ric.bill.model.ar.Kart;
@@ -50,14 +49,15 @@ import com.ric.bill.model.mt.MLogs;
 import com.ric.bill.model.mt.Meter;
 import com.ric.bill.model.mt.MeterLog;
 import com.ric.bill.model.mt.Vol;
+import com.ric.bill.model.sec.User;
 import com.ric.bill.model.tr.Serv;
-import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import com.ric.cmn.Utl;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Сервис распределения объемов
- * @version 1.0 
+ * @version 1.0
  * @author Lev
  *
  */
@@ -83,6 +83,8 @@ public class DistServ {
 	@Autowired
 	private ServDAO servDao;
 	@Autowired
+	private UserDAO userDao;
+	@Autowired
 	private ApplicationContext ctx;
 
 	//@Autowired // -здесь не надо autowire, так как prototype
@@ -95,7 +97,7 @@ public class DistServ {
 	//private Calc calc;
 	/**
 	 * Установить фильтры для сессии -убрал пока
-	 * 
+	 *
 	 */
 	/*
 	 * private void setFilters() { Session session = em.unwrap(Session.class);
@@ -107,7 +109,7 @@ public class DistServ {
 
 	/**
 	 * Удалить объем по вводам дома
-	 * 
+	 *
 	 * @param serv
 	 *            - заданная услуга
 	 * @throws CyclicMeter
@@ -128,7 +130,7 @@ public class DistServ {
 
 	/**
 	 * Удалить объем по вводу, определённой услуге
-	 * 
+	 *
 	 * @param serv - услуга
 	 * @throws CyclicMeter
 	 */
@@ -149,7 +151,7 @@ public class DistServ {
 		// удалить объемы по всем вводам по дому и по услуге
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, calc.getHouse(), serv, "Ввод")) {
 			//log.info("delNodeVol: house.id={}, mLog.id={}", calc.getHouse().getId(), ml.getId());
-			
+
 			metMng.delNodeVol(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(),
 					calc.getReqConfig().getChng(), ml, tp, calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2()
 							);
@@ -160,7 +162,7 @@ public class DistServ {
 	/**
 	 * распределить объем по всем услугам, по лиц.счету Как правило вызывается из
 	 * начисления, поэтому не нуждается в блокировке лиц.счета
-	 * 
+	 *
 	 * @throws ErrorWhileDist
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
@@ -189,8 +191,8 @@ public class DistServ {
 			int rqn = calc.getReqConfig().getRqn();
 
 			Kart kart = em.find(Kart.class, calc.getKart().getLsk());
-			// почистить коллекцию обработанных счетчиков
 			distGen = ctx.getBean(DistGen.class);
+			// почистить коллекцию обработанных счетчиков
 			distGen.clearLstChecks();
 
 			// найти все необходимые услуги для удаления объемов, здесь только по типу 0,1,2
@@ -250,7 +252,7 @@ public class DistServ {
 
 	/**
 	 * Удалить объем по Лиц.счету, определённой услуге
-	 * 
+	 *
 	 * @param Kart
 	 *            - лиц.счет
 	 * @param serv
@@ -290,7 +292,7 @@ public class DistServ {
 
 	/**
 	 * Распределить объем по счетчикам лицевого
-	 * 
+	 *
 	 * @param calcTp
 	 *            - тип обработки
 	 * @throws ErrorWhileDist
@@ -300,7 +302,7 @@ public class DistServ {
 		/*for (MLogs ml : metMng.getAllMetLogByServTp(rqn, kart, serv, null)) {
 			 log.info("Услуга: serv.cd={}, Узел id={}", serv.getCd() , ml.getId());
 		}*/
-		
+
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, kart, serv, null)) {
 			 //log.info("Услуга: serv.cd={}, Узел id={}", serv.getCd() , ml.getId());
 			distGraph(ml, calc);
@@ -309,7 +311,7 @@ public class DistServ {
 
 	/**
 	 * распределить объем по дому
-	 * 
+	 *
 	 * @param houseId
 	 * @return
 	 * @throws ErrorWhileDist
@@ -332,9 +334,9 @@ public class DistServ {
 		if (1==1) {
 			return fut;
 		}
-*/		
+*/
 		//this.calc = calc;
-		
+
 		House h = em.find(House.class, houseId);
 
 		Calc calc = new Calc(reqConfig);
@@ -354,7 +356,7 @@ public class DistServ {
 			if (waitTick > 60) {
 				log.error("********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!");
 				log.error(
-						"********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ к houseId={} для распределения объемов в ТЕЧЕНИИ 100 сек!{}",
+						"********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ house.id={} для распределения объемов в ТЕЧЕНИИ 60 сек!{}",
 						houseId);
 				throw new ErrorWhileDist("Ошибка при попытке блокировки дома house.id=" + houseId);
 			}
@@ -379,31 +381,33 @@ public class DistServ {
 					throw new ErrorWhileDist("Ошибка при распределении счетчиков в доме house.id=" + houseId);
 				}
 			}
-	
-			log.info("RQN={}, Распределение объемов по House.id={} house.klsk={}", calc.getReqConfig().getRqn(),
+
+			log.info("RQN={}, Распределение объемов по House.id={} House.klsk={}", calc.getReqConfig().getRqn(),
 					calc.getHouse().getId(), calc.getHouse().getKlskId(), 2);
 			// найти все необходимые услуги для распределения
 			try {
-				for (Serv s : servMng.getForDistVol()) {
+				for (Serv s : servMng.getForDistVol()/*.stream().filter(t->t.getId().equals(71)).collect(Collectors.toList())*/ ) {
 					calc.setServ(s);
 					log.info("RQN={}, Распределение услуги: cd={}", calc.getReqConfig().getRqn(), s.getCd(), 2);
 					distHouseServ(rqn, calc);
 				}
+				// почистить коллекцию обработанных счетчиков
+				distGen.clearLstChecks();
 			} catch (ErrorWhileDist e) {
 				e.printStackTrace();
-				throw new ErrorWhileDist("Ошибка при распределении объемов по дому: house.id=" + houseId);
+				throw new ErrorWhileDist("Ошибка при распределении объемов по дому: House.id=" + houseId);
 			}
 		} finally {
 			// разблокировать дом
 			config.lock.unlockDistHouse(rqn, houseId);
 		}
-		
+
 		return fut;
 	}
 
 	/**
 	 * распределить объем по услуге данного дома
-	 * 
+	 *
 	 * @throws ErrorWhileDist
 	 */
 	private void distHouseServ(int rqn, Calc calc) throws ErrorWhileDist {
@@ -412,6 +416,7 @@ public class DistServ {
 		distHouseServTp(rqn, calc.getServ().getServMet(), calc);// Расчет площади, кол-во прожив
 		calc.setCalcTp(0);
 		distHouseServTp(rqn, calc.getServ().getServMet(), calc);// Распределение объема
+
 		calc.setCalcTp(2);
 		distHouseServTp(rqn, calc.getServ().getServMet(), calc);// Расчет ОДН
 		calc.setCalcTp(3);
@@ -420,34 +425,34 @@ public class DistServ {
 			calc.setCalcTp(0);
 			distHouseServTp(rqn, calc.getServ().getServOdn(), calc);// Суммировать счетчики ОДН
 		}
-		
+
 	}
 
 	/**
 	 * Распределить объем по вводам дома
-	 * 
+	 *
 	 * @param calcTp
 	 *            - тип обработки
 	 * @throws ErrorWhileDist
 	 */
 	private void distHouseServTp(int rqn, Serv serv, Calc calc) throws ErrorWhileDist {
-		//log.trace("Распределение по типу:" + calc.getCalcTp());
+		log.info("Распределение по типу:" + calc.getCalcTp());
 		// найти все вводы по дому и по услуге
 		for (MLogs ml : metMng.getAllMetLogByServTp(rqn, calc.getHouse(), serv, "Ввод")) {
-			//log.trace("Вызов distGraph c id=" + ml.getId());
+			//log.info("Вызов distGraph c id=" + ml.getId());
 			distGraph(ml, calc);
 		}
 	}
 
 	/**
 	 * Распределить граф начиная с mLog
-	 * 
+	 *
 	 * @param ml
 	 *            - начальный узел распределения
 	 * @throws ErrorWhileDist
 	 */
 	private void distGraph(MLogs ml, Calc calc) throws ErrorWhileDist {
-		//log.trace("DistServ.distGraph: Распределение счетчика:" + ml.getId());
+		log.info("DistServ.distGraph: Распределение корневого счетчика MeterLog.id={}", ml.getId());
 		// перебрать все необходимые даты, за период
 		Calendar c = Calendar.getInstance();
 		// необходимый для формирования диапазон дат
@@ -463,12 +468,11 @@ public class DistServ {
 		}
 		for (c.setTime(dt1); !c.getTime().after(dt2); c.add(Calendar.DATE, 1)) {
 			calc.setGenDt(c.getTime());
+			//log.info("Распределение объема, ДАТА={}", c.getTime());
 			@SuppressWarnings("unused")
 			NodeVol dummy;
 			try {
 				dummy = distGen.distNode(calc, ml, calc.getCalcTp(), calc.getGenDt());
-				// почистить коллекцию обработанных счетчиков
-				distGen.clearLstChecks();
 
 			} catch (WrongGetMethod e) {
 				e.printStackTrace();
@@ -501,166 +505,231 @@ public class DistServ {
 
 	}
 
-	
+
 	/**
 	 * Автоначисление объемов по дому
-	 * 
-	 * @param houseId
+	 *
+	 * @param houseId - Id дома, или null, если весь фонд
+	 * @param chngId - Id автоначисления, если снятие (отмена) его, или null, если выполнения
 	 * @return
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, isolation = Isolation.READ_COMMITTED)
-	public void distHouseAutoVol(int houseId) {
+	public void distHouseAutoVol(Integer houseId, Integer chngId) {
 		Date dt1 = config.getCurDt1();
 		Date dt2 = config.getCurDt2();
-		log.info("Автоначисление за период: dt1={}, dt2={}", dt1, dt2);
-		House house = em.find(House.class, houseId);
-		Calc calc = new Calc(null);
-		calc.setHouse(house);
-		
-		// получить услуги для автоначисления
-		List<Serv> lstServ = servDao.getServAutoVol();
-		lstServ.stream().filter(t-> t.getId().equals(79))
-			.forEach(t-> {
-			log.info("Автоначисление по услуге {}", t.getName());
-			try {
-				distHouseServAutoVol(house, t, dt1, dt2);
-			} catch (EmptyStorable e) {
-				e.printStackTrace();
-				log.info("ОШИБКА ВО ВРЕМЯ АВТОНАЧИСЛЕНИЯ по услуге {}", t.getName());
+
+		RequestConfig reqConfig = new RequestConfig();
+		reqConfig.setUp("0", "0", null, 1, null, null, null, config.getCurDt1(), config.getCurDt2());
+		Calc calc = new Calc(reqConfig);
+
+		// пользователь автоначисления
+		User user = userDao.getByCd("GEN");
+
+		// заголовок автоначисления
+		Chng chng;
+		if (chngId != null) {
+			log.info("Снятие Автоначисления за период: dt1={}, dt2={} НАЧАТО", dt1, dt2);
+			if (houseId != null) {
+				log.info("по дому: house.id={}", houseId);
+			} else {
+				log.info("по всему фонду");
 			}
-		});
-		
+			// найти заголовок, для снятия автоначисления
+			chng = em.find(Chng.class, chngId);
+			House house = null;
+			if (houseId != null) {
+				house = em.find(House.class, houseId);
+			}
+			// получить список объемов
+			List<Vol> lstVol = meterDao.getVolPeriodByHouse(house, null, user, dt1, dt2);
+			lstVol.stream().filter(t -> t.getChng().equals(chng) ) // по заголовочной записи перерасчета
+				.forEach(v -> {
+				metMng.saveMeterVol(v.getMet(), -1 * v.getVol1().doubleValue(), chng, user, dt1, dt2);
+			});
+
+		} else {
+			log.info("Автоначисление за период: dt1={}, dt2={} НАЧАТО", dt1, dt2);
+			if (houseId != null) {
+				log.info("по дому: house.id={}", houseId);
+			} else {
+				log.info("по всему фонду");
+			}
+			Serv serv = em.find(Serv.class, 79); // TODO решить что нить с этим
+			// создать новый заголовок
+			chng = Chng.builder().withActName("Автоначисление по объекту:"+houseId!=null?"Дом, houseId="+String.valueOf(houseId):" Весь фонд")
+					.withServ(serv)
+					.withPeriod(Integer.valueOf(reqConfig.getPeriod()))
+				    .withMg(Integer.valueOf(reqConfig.getPeriod()))
+					.build();
+			em.persist(chng);
+			em.flush();
+
+			// получить услуги для автоначисления
+			List<Serv> lstServ = servDao.getServAutoVol();
+			lstServ.stream()//.filter(t-> t.getId().equals(79))
+				.forEach(t-> {
+				log.info("====================== Автоначисление по услуге {} =======================", t.getName());
+				try {
+
+					House house = null;
+					if (houseId != null) {
+						house = em.find(House.class, houseId);
+					}
+					// получить все счетчики ИПУ по дому(по фонду) и заданной услуге
+					// по которым не было показаний в данном периоде или по неисправным
+					// с учетом существования счетчика в METER_EXS?
+					List<MeterDTO> lstMeterDTO = metMng.getAllMeterAutoVol(house, t, dt1, dt2);
+					// выполнить автоначисление
+					distHouseServAutoVol(calc, lstMeterDTO, t, user, chng, dt1, dt2);
+				} catch (EmptyStorable e) {
+					e.printStackTrace();
+					log.info("ОШИБКА ВО ВРЕМЯ АВТОНАЧИСЛЕНИЯ по услуге {}", t.getName());
+				}
+			});
+		}
+
+		if (chngId !=null) {
+			log.info("Снятие Автоначисления ВЫПОЛНЕНО!");
+		} else {
+			log.info("Автоначисление ВЫПОЛНЕНО!");
+		}
 	}
-	
-	
+
+
 	/**
 	 * Автоначисление объемов по услуге и дому
+	 * @param calc - текущий объект расчета
 	 * @param house - дом
 	 * @param serv - услуга
-	 * @throws EmptyStorable 
+	 * @param user - пользователь
+	 * @param chng - заголовок автоначисления
+	 * @param dt1 - начало периода
+	 * @param dt2 - окончание периода
+	 * @throws EmptyStorable
 	 */
-	private void distHouseServAutoVol(House house, Serv serv, Date dt1, Date dt2) throws EmptyStorable {
-		log.info("Автоначисление по дому: house.id={}", house.getId());
-		RequestConfig reqConfig = new RequestConfig();
-		// String dist, String tp, Integer chngId, int rqn, Date genDt1, Date genDt2, Chng chng, Date curDt1, Date curDt2
-		reqConfig.setUp("0", "0", null, 1, null, null, null, config.getCurDt1(), config.getCurDt2());
-
-		// получить все счетчики ИПУ по дому и заданной услуге 
-		// по которым не было показаний в данном периоде или понеисправным 
-		// с учетом существования счетчика в METER_EXS?
-		List<MeterDTO> lstMeterDTO = metMng.getAllMeterAutoVol(house, serv, dt1, dt2); //meterDao.getAllWoVolMeterByHouseServ(house, serv, dt1, dt2);
-		
+	private void distHouseServAutoVol(Calc calc, List<MeterDTO> lstMeterDTO, Serv serv, User user, Chng chng, Date dt1, Date dt2) throws EmptyStorable {
 		List <MeterDTO> lst = new ArrayList<MeterDTO>(2);
 		Kart kartOld = null;
 		for (MeterDTO t: lstMeterDTO) {
-			if (t.getMeter().getId().equals(90787)) {
+			/*if (t.getMeter().getId().equals(90787)) {
 				log.info("chk");
-			}
+			}*/
 			// получить текущий лиц.счет
-			Kart kart = t.getMeter().getMeterLog().getKart();
+			//Kart kart = t.getMeter().getMeterLog().getKart();
+			Kart kart = em.find(Kart.class, t.getLsk());
 			Integer lsk = kart.getLsk();
 			if (kartOld!=null && !kartOld.getLsk().equals(lsk)) {
 				// новый лиц.счет
 				// обработать счетчики старого лиц.счета
-				Calc calc = new Calc(reqConfig);
 				// установить дом и счет
 				calc.setHouse(kartOld.getKw().getHouse());
 				calc.setKart(kartOld);
-
-				log.info("Автоначисление по лиц.сч: kart.lsk={}", kartOld.getLsk());
-				procMeter(calc, lst, dt1, dt2);
+				log.info("");
+				log.info("Автоначисление по лиц.сч: kart.flsk={}, kart.lsk={}", kartOld.getFlsk(), kartOld.getLsk());
+				procMeterAutoVol(calc, lst, user, chng, dt1, dt2);
 				lst.clear();
 			}
-			kartOld = kart;	
-		   
+			kartOld = kart;
+
 			// добавить счетчик
-			lst.add(t);			
+			lst.add(t);
 		}
 		// обработать счетчики (последнюю часть)
 		if (lst.size()!=0) {
-			Calc calc = new Calc(reqConfig);
 			// установить дом и счет
 			calc.setHouse(kartOld.getKw().getHouse());
 			calc.setKart(kartOld);
-			log.info("Автоначисление по лиц.сч: kart.lsk={}", kartOld.getLsk());
-			procMeter(calc, lst, dt1, dt2);
+			log.info("");
+			log.info("Автоначисление по лиц.сч: kart.flsk={}, kart.lsk={}", kartOld.getFlsk(), kartOld.getLsk());
+			procMeterAutoVol(calc, lst, user, chng, dt1, dt2);
 		}
 	}
 
 	/**
-	 * Обработать счетчики
+	 * Обработать счетчики по лицевому счету для автоначисления
+	 * @param calc - текущий объект расчета
 	 * @param lst - список DTO Счетчиков, для обработкиs
+	 * @param user - пользователь
+	 * @param chng - заголовок автоначисления
 	 * @param dt1 - начало периода
 	 * @param dt2 - окончание периода
-	 * @throws EmptyStorable 
+	 * @throws EmptyStorable
 	 */
-	private void procMeter(Calc calc, List<MeterDTO> lst, Date dt1, Date dt2) throws EmptyStorable {
-		Lst volTp = lstMng.getByCD("Фактический объем");
-
-		// кол-во месяцев по законодательству
+	private void procMeterAutoVol(Calc calc, List<MeterDTO> lst, User user, Chng chng, Date dt1, Date dt2) throws EmptyStorable {
+		// кол-во месяцев по законодательству, для принятия решения о начислении по нормативу
 		int cntMonth = 3;
+		// кол-во месяцев по законодательству, для определения кол-ва месяцев до последней корректной передачи показания
+		int cntMonthBack = 3;
+		// неисправность(и т.п.) предыдущего счетчика в лиц.счете
+		boolean isBroken = false;
+
 		for (MeterDTO t: lst) {
 			String str = null;
-			
+
+			Meter m = em.find(Meter.class, t.getMeterId());
+			/*if (t.getMeter().getId()==90869) {
+				log.info("Check");
+			}*/
 			str = getStatus(t, str);
-			log.info("Автоначисление по счетчику: Meter.id={}, Статус: {}", t.getMeter().getId(), str);
+			log.info("Автоначисление по счетчику: Meter.id={}, Статус={} Услуга={}", m.getId(), str, m.getMeterLog().getServ().getName());
 			AvgVol avgVol = null;
-			if (t.getTp().equals(0D)) {
-				// получить средний объем за период последних N мес при непередаче показаний
-				avgVol = new AvgVol();
-				avgVol.vol = metMng.getAvgVol(t.getMeter(), cntMonth, dt2);
-				log.info("Получен средний объем за период последних N мес при непередаче показаний, объем={}", avgVol.vol);
+			if (!isBroken) {
+				if (t.getTp().equals(0D)) {
+					// получить средний объем за период последних N мес при непередаче показаний
+					avgVol = new AvgVol();
+					avgVol.vol = metMng.getAvgVol(m, cntMonth, dt2);
+					log.info("Получен средний объем за период последних N мес при непередаче показаний, объем={}", avgVol.vol);
+				} else {
+					// получить средний объем и кол-во месяцев за период N мес. до последней передачи объема, при неисправном счетчике
+					avgVol = metMng.getAvgVolBeforeLastSend(m, cntMonthBack, dt2);
+					log.info("Получен средний объем и кол-во месяцев за период N мес. до последней передачи объема, "
+							+ "при неисправном(и.т.п.) счетчике, объем={}, кол-во мес.={}", avgVol.vol, avgVol.cnt);
+				}
 			} else {
-				// получить средний объем и кол-во месяцев за период N мес. до последней передачи объема, при неисправном счетчике
-				avgVol = metMng.getAvgVolBeforeLastSend(t.getMeter(), cntMonth, dt2);
-				log.info("Получен средний объем и кол-во месяцев за период N мес. до последней передачи объема, при неисправном(и.т.п.) счетчике, объем={}, кол-во мес.={}", avgVol.vol, avgVol.cnt);
+				log.info("ПРЕДЫДУЩИЙ счетчик в данном лиц.счете Неисправный (неповерен и т.п.), поэтому данный будет начислен по нормативу!");
 			}
-			
-			if (Utl.nvl(avgVol.vol, 0D) != 0D && avgVol.cnt <= cntMonth) {
-				BigDecimal vl = new BigDecimal(avgVol.vol);
+
+			BigDecimal vl;
+			if (!isBroken && Utl.nvl(avgVol.vol, 0D) != 0D && avgVol.cnt <= cntMonth) {
+				vl = new BigDecimal(avgVol.vol);
 			    vl = vl.setScale(6, RoundingMode.HALF_UP);
 
 			    // меньше N месяцев - начислить объем по среднему
-				log.info("Автоначисление по среднему объему, по счетчику: Meter.id={}, vol={}", t.getMeter().getId(), vl);
-				Vol vol = Vol.builder()
-						.withMet(t.getMeter())
-						.withTp(volTp)
-						.withVol1(vl.doubleValue())
-						.withDt1(dt1)
-						.withDt2(dt2)
-						.withStatus(0)
-						.build();
-				em.persist(vol);
+				log.info("Автоначисление по среднему объему, по счетчику: Meter.id={}, vol={}", m.getId(), vl);
 			} else {
-				// больше N месяцев или нулевой последний объем - начислить объем по нормативу потребления / кол-во счетчиков в лиц.счете
+				// больше N месяцев или нулевой средний объем или уже имеется неисправный счетчик - начислить
+				// объем по нормативу потребления / кол-во счетчиков в лиц.счете
 				// если был не допуск к счетчику - с применением повыш коэфф
-				Serv serv = t.getMeter().getMeterLog().getServ();
+
+				Serv serv = m.getMeterLog().getServ();
 				// получить норматив
 				Standart stdt = kartMng.getStandartVol(1, calc, serv, dt2, 0);
-				BigDecimal vl;
 				if (stdt.partVol != 0D) {
-					log.info("Получен суммарный норматив на всех проживающих, разделить на кол-во счетчиков, норматив={}, кол во счетчиков={}", stdt.partVol, lst.size());
 					// получить суммарный норматив на всех проживающих, разделить на кол-во счетчиков
-					vl = new BigDecimal(stdt.partVol / lst.size());
+					vl = new BigDecimal(stdt.partVol*calc.getReqConfig().getCntCurDays() / lst.size());
+					log.info("Получен суммарный норматив на всех проживающих, разделен на кол-во счетчиков, "
+							+ "норматив={}, кол во счетчиков={}", stdt.partVol*calc.getReqConfig().getCntCurDays(), lst.size());
 				} else {
-					log.info("Кол-во проживающих = 0, взять норматив на 1 человека, разделить на кол-во счетчиков, норматив={}, кол во счетчиков={}", stdt.vol / lst.size());
 					// если кол-во проживающих = 0, взять норматив на 1 человека, разделить на кол-во счетчиков
-					vl = new BigDecimal(stdt.vol / lst.size());
+					vl = new BigDecimal(stdt.vol*calc.getReqConfig().getCntCurDays() / lst.size());
+					log.info("Кол-во проживающих = 0, взят норматив на 1 человека, разделен на кол-во счетчиков, "
+							+ "норматив={}, кол во счетчиков={}", stdt.vol*calc.getReqConfig().getCntCurDays(), lst.size());
 				}
-			    
+
 				vl = vl.setScale(6, RoundingMode.HALF_UP);
-			    
-				log.info("Автоначисление по нормативу потребления, по счетчику: Meter.id={}, vol={}", t.getMeter().getId(), vl);
-				Vol vol = Vol.builder()
-						.withMet(t.getMeter())
-						.withTp(volTp)
-						.withVol1(vl.doubleValue())
-						.withDt1(dt1)
-						.withDt2(dt2)
-						.withStatus(0)
-						.build();
-				em.persist(vol);
+				log.info("Автоначисление по нормативу потребления, по счетчику: Meter.id={}, vol={}", m.getId(), vl);
 			}
+
+			if (!vl.equals(BigDecimal.ZERO)) {
+				metMng.saveMeterVol(m, vl.doubleValue(), chng, user, dt1, dt2);
+			}
+
+			if (!t.getTp().equals(0D)) {
+				// отметка неисправности счетчика, для расчета других счетчиков в лиц.счете
+				isBroken = true;
+			}
+
+			log.info("--");
 		}
 	}
 
@@ -681,7 +750,7 @@ public class DistServ {
 			break;
 			}
 		case 3 : {
-			str = "Не прошел проверку";
+			str = "Не прошел поверку";
 			break;
 			}
 		case 4 : {
@@ -694,7 +763,7 @@ public class DistServ {
 
 	/**
 	 * ТЕСТ-вызов не удалять!
-	 * 
+	 *
 	 * @param id
 	 * @return
 	 */
@@ -706,7 +775,7 @@ public class DistServ {
 
 	/**
 	 * ТЕСТ-вызов не удалять!
-	 * 
+	 *
 	 * @param id
 	 * @return
 	 */
@@ -722,7 +791,7 @@ public class DistServ {
 		Date dd1 = Utl.getDateFromStr("01.10.2017");
 		Date dd2 = Utl.getDateFromStr("31.10.2017");
 		Lst volTp = lstMng.getByCD("Лимит ОДН");
-		
+
 //		Vol vol = new Vol((MeterLog) mLog, volTp, Double.valueOf(id), null, dt1, dt2, null, null);
 //		mLog.getVol().add(vol);
 		mLog.getVol().stream()

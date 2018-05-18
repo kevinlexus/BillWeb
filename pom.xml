@@ -49,12 +49,18 @@
 
 	<dependencies>
 
+		<!-- BillCommon -->
+		<dependency>
+			<groupId>com.ric.cmn</groupId>
+			<artifactId>BillCommon</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
 		<!-- BWC -->
 		<dependency>
 			<groupId>com.ric.bill</groupId>
 			<artifactId>BWC</artifactId>
 			<version>0.0.2-SNAPSHOT</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<!-- Не удалять! ДОБАВЛЕНО ДЛЯ CACHE LEVEL 2 -->

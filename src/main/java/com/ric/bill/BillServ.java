@@ -36,7 +36,7 @@ import com.ric.bill.model.mt.MeterLog;
 
 /**
  * Главный сервис биллинга
- * 
+ * @version 1.0 
  * @author lev
  *
  */
@@ -129,7 +129,7 @@ public class BillServ {
 		AsyncResult<Result> futM = new AsyncResult<Result>(res);
 		
 		// кол-во потоков
-		int cntThreads = 20;
+		int cntThreads;
 
 		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
 		try {
@@ -138,13 +138,18 @@ public class BillServ {
 				// загрузить все необходимые Дома
 				List<ResultSet> lstItem = houseMng.findAll2(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
 						.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
+				log.info("Список House.id для Начисления:");
+				lstItem.stream().forEach(t-> {
+					log.info("House.id={}", t.getId());
+				});
 				try {
-					invokeThread(reqConfig, cntThreads, lstItem, 1);
+					log.info("BillServ.chrgAll: Распределение по заданным домам начато!");
+					invokeThreads(reqConfig, cntThreads, lstItem, 1);
+					log.info("BillServ.chrgAll: Распределение по заданным домам выполнено!");
 				} catch (ErrorWhileChrg e) {
 					log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
 				}
 
-				log.info("BillServ.chrgAll: Распределение по всем домам выполнено!");
 			}
 		} catch (ErrorWhileDist e) {
 			log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
@@ -156,8 +161,15 @@ public class BillServ {
 			cntThreads = 20;
 			// загрузить все необходимые Лиц.счета
 			List<ResultSet> lstItem = kartDao.findAllLsk(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2());
+
+/*			lstItem.stream().forEach(t-> {
+				log.info("Для начисления: lsk={}", t.getId());
+			});
+*/
 			try {
-				invokeThread(reqConfig, cntThreads, lstItem, 0);
+				log.info("BillServ.chrgAll: Начисление по заданным домам начато!");
+				invokeThreads(reqConfig, cntThreads, lstItem, 0);
+				log.info("BillServ.chrgAll: Начисление по заданным домам выполнено!");
 			} catch (ErrorWhileDist | ErrorWhileChrg e) {
 				log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
 			}
@@ -234,7 +246,7 @@ public class BillServ {
 				List<ResultSet> lstItem = houseMng.findAll2(calc.getHouse().getId(), null, null, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
 						.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
 				try {
-					invokeThread(reqConfig, 1, lstItem, 1);
+					invokeThreads(reqConfig, 1, lstItem, 1);
 				} catch (ErrorWhileChrg e) {
 					log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
 				}
@@ -265,7 +277,17 @@ public class BillServ {
 	}
 
 	
-	private void invokeThread(RequestConfig reqConfig, int cntThreads, List<ResultSet> lstItem, int tp) throws ErrorWhileDist, ErrorWhileChrg, ExecutionException {
+	/**
+	 * Вызвать выполнение потоков распределения объемов/ начисления
+	 * @param reqConfig - конфиг запроса
+	 * @param cntThreads - кол-во потоков
+	 * @param lstItem - список Id на обработку
+	 * @param tp - тип 0 - начисление, 1 - распределение
+	 * @throws ErrorWhileDist
+	 * @throws ErrorWhileChrg
+	 * @throws ExecutionException
+	 */
+	private void invokeThreads(RequestConfig reqConfig, int cntThreads, List<ResultSet> lstItem, int tp) throws ErrorWhileDist, ErrorWhileChrg, ExecutionException {
 		long startTime = System.currentTimeMillis();
 
 		List<Future<Result>> frl = new ArrayList<Future<Result>>(cntThreads);

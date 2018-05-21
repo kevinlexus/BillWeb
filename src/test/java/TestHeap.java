@@ -1,9 +1,5 @@
-import java.util.List;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-
-import lombok.extern.slf4j.Slf4j;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,18 +9,13 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestData
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.ric.bill.BillServ;
-import com.ric.bill.Utl;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.ParMng;
-import com.ric.bill.model.ar.Kart;
-import com.ric.bill.model.bs.Dw;
-import com.ric.bill.model.mt.MLogs;
-import com.ric.bill.model.mt.MeterLog;
 import com.ric.web.AppConfig;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes=AppConfig.class)
@@ -39,7 +30,7 @@ public class TestHeap {
 
 	@Autowired
     private ParMng parMng;
-	
+
 	@Autowired
     private KartMng kartMng;
 
@@ -51,7 +42,7 @@ public class TestHeap {
 	public void testJavaHeap() {
 		log.info("Start!");
 /*		List<Kart> lstKart = kartMng.findAll(8229, null, null, Utl.getDateFromStr("01.01.2017"), Utl.getDateFromStr("01.04.2018"));
-		
+
 		while (true) {
 		for (Kart kart : lstKart) {
 			//log.info("lsk={}", kart.getLsk());
@@ -62,13 +53,13 @@ public class TestHeap {
 				//log.info("Mlog.id={}", m.getId());
 				if (m.getDw() != null) {
 					for (Dw d : m.getDw()) {
-						
+
 						//log.info("Dw.N1={}", d.getN1());
 						//log.info("Dw.Par.cd={}", d.getPar().getCd());
 					}
 				}
 			}
-			
+
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -78,8 +69,8 @@ public class TestHeap {
 			}
 		}
 *///		log.info("End!");
-		
-		
+
+
 	}
 
 }

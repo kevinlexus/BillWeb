@@ -1,10 +1,7 @@
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-
-import lombok.extern.slf4j.Slf4j;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,25 +11,20 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestData
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.ric.bill.BillServ;
 import com.ric.bill.DistServ;
-import com.ric.bill.Utl;
 import com.ric.bill.dao.MeterDAO;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.MeterLogMng;
-import com.ric.bill.mm.ParMng;
 import com.ric.bill.model.ar.House;
-import com.ric.bill.model.ar.Kart;
-import com.ric.bill.model.bs.Dw;
-import com.ric.bill.model.mt.MLogs;
 import com.ric.bill.model.mt.Meter;
-import com.ric.bill.model.mt.MeterLog;
 import com.ric.bill.model.mt.Vol;
 import com.ric.bill.model.tr.Serv;
+import com.ric.cmn.Utl;
 import com.ric.web.AppConfig;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes=AppConfig.class)
@@ -47,7 +39,7 @@ public class TestMeter {
 
 	@Autowired
     private MeterDAO meterDao;
-	
+
 	@Autowired
     private MeterLogMng meterLogMng;
 
@@ -56,7 +48,7 @@ public class TestMeter {
 
 	@Autowired
     private DistServ distServ;
-	
+
 	@PersistenceContext
     private EntityManager em;
 
@@ -77,10 +69,10 @@ public class TestMeter {
 			log.info("meter.id={}", t.getId());
 		}
 		);*/
-		meterLogMng.getAllMeterAutoVol(house, serv, dt1, dt2).stream().forEach(t-> {
+/*		meterLogMng.getAllMeterAutoVol(house, serv, dt1, dt2).stream().forEach(t-> {
 			log.info("kart.lsk={}, meter.id={}, tp={}", t.getMeter().getMeterLog().getKart().getLsk(), t.getMeter().getId(), t.getTp());
 		});;
-		log.info("End!");
+*/		log.info("End!");
 	}
 
 	/**
@@ -94,8 +86,8 @@ public class TestMeter {
 		House house = em.find(House.class, 187);
 		Date dt1 = Utl.getDateFromStr("01.04.2018");
 		Date dt2 = Utl.getDateFromStr("30.04.2018");
-		
-		log.info("Сломанные счетчики:");
+
+/*		log.info("Сломанные счетчики:");
 		meterDao.getAllBrokenMeterByHouseServ(house, serv, dt2).stream().forEach(t-> {
 			log.info("kart.lsk={}, meter.id={}, tp={} ", t.getMeter().getMeterLog().getKart().getLsk(), t.getMeter().getId(), t.getTp());
 		});
@@ -103,11 +95,11 @@ public class TestMeter {
 		meterDao.getAllWoVolMeterByHouseServ(house, serv, dt1, dt2).stream().forEach(t-> {
 			log.info("kart.lsk={}, meter.id={}, tp={} ", t.getMeter().getMeterLog().getKart().getLsk(), t.getMeter().getId(), t.getTp());
 		});
-		
-		
+*/
+
 		log.info("End!");
-		
-		
+
+
 	}
 
 
@@ -123,10 +115,10 @@ public class TestMeter {
 		if (vol != null) {
 			log.info("meter vol.id={}, vol.vol1={}", vol.getId(), vol.getVol1());
 		}
-		
+
 		log.info("End!");
-		
-		
+
+
 	}
 
 }

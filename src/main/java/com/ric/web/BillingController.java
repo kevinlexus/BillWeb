@@ -9,18 +9,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
-import lombok.extern.slf4j.Slf4j;
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
@@ -36,10 +32,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.ric.bill.BillServ;
 import com.ric.bill.Config;
+import com.ric.bill.DistServ;
 import com.ric.bill.RequestConfig;
 import com.ric.bill.Result;
-import com.ric.bill.TestBean;
-import com.ric.bill.Utl;
 import com.ric.bill.dao.AreaDAO;
 import com.ric.bill.dto.AddrTpDTO;
 import com.ric.bill.dto.AreaDTO;
@@ -56,13 +51,13 @@ import com.ric.bill.dto.ServDTO;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.WrongDate;
 import com.ric.bill.excp.WrongExpression;
+import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.LstMng;
 import com.ric.bill.mm.OrgMng;
 import com.ric.bill.mm.PayordMng;
 import com.ric.bill.mm.ReportMng;
 import com.ric.bill.mm.SecMng;
 import com.ric.bill.mm.ServMng;
-import com.ric.bill.mm.TarifMng;
 import com.ric.bill.model.ar.Area;
 import com.ric.bill.model.bs.PeriodReports;
 import com.ric.bill.model.fn.Chng;
@@ -70,6 +65,11 @@ import com.ric.bill.model.fn.Payord;
 import com.ric.bill.model.fn.PayordCmp;
 import com.ric.bill.model.fn.PayordFlow;
 import com.ric.bill.model.fn.PayordGrp;
+import com.ric.cmn.Utl;
+
+import lombok.extern.slf4j.Slf4j;
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 //@EnableCaching
 @RestController
@@ -102,10 +102,12 @@ public class BillingController {
 	@Autowired
 	private AreaDAO areaDao;
 	@Autowired
-	private ReportMng repMng;	
+	private ReportMng repMng;
+	@Autowired
+	private HouseMng houseMng;
 	@Autowired
     private DataSource dataSource;
-	
+
 	/**
 	 * Получить отчет по платежкам
 	 * @param modelMap - служеб. Spring
@@ -115,7 +117,7 @@ public class BillingController {
 	 */
 	@RequestMapping(value = "/rep/payordFlow1", method = RequestMethod.GET, produces = "application/pdf;charset=UTF-8")
 	public ModelAndView repPayordFlow1(ModelMap modelMap, ModelAndView modelAndView,
-				@RequestParam(value = "periodId") Integer periodId 
+				@RequestParam(value = "periodId") Integer periodId
 				) {
 		log.info("GOT /rep/payordFlow1 with periodId={}", periodId);
 		PeriodReports pr = em.find(PeriodReports.class, periodId);
@@ -130,7 +132,7 @@ public class BillingController {
 		} else {
 			return null;
 		}
-		
+
 	}
 
 	/**
@@ -139,13 +141,13 @@ public class BillingController {
 	 * @param modelAndView - служеб. Spring
 	 * @param periodId1 - Id нач. периода
 	 * @param periodId2 - Id кон. периода
-	 * @return - служеб. Spring 
+	 * @return - служеб. Spring
 	 */
 	@RequestMapping(value = "/rep/payordFlow2", method = RequestMethod.GET, produces = "application/pdf;charset=UTF-8")
 	public ModelAndView repPayordFlow2(ModelMap modelMap, ModelAndView modelAndView,
 				@RequestParam(value = "periodId1") Integer periodId1,
-				@RequestParam(value = "periodId2") Integer periodId2, 
-				@RequestParam(value = "repCd") String repCd 
+				@RequestParam(value = "periodId2") Integer periodId2,
+				@RequestParam(value = "repCd") String repCd
 				) {
 		log.info("GOT /rep/payordFlow2 with periodId1={}, periodId2={}", periodId1, periodId2);
 		PeriodReports pr1 = em.find(PeriodReports.class, periodId1);
@@ -172,14 +174,14 @@ public class BillingController {
 	 * Получить отчет по оплате
 	 * @param modelMap - служеб. Spring
 	 * @param modelAndView - служеб. Spring
-	 * @return - служеб. Spring 
+	 * @return - служеб. Spring
 	 */
 	@RequestMapping(value = "/rep/payordPayment", method = RequestMethod.GET, produces = "application/pdf;charset=UTF-8")
 	public ModelAndView repPayordPayment(ModelMap modelMap, ModelAndView modelAndView,
 				@RequestParam(value = "dt1") String genDt1,
-				@RequestParam(value = "dt2") String genDt2, 
-				@RequestParam(value = "uk", required = false) Integer uk, 
-				@RequestParam(value = "repCd") String repCd 
+				@RequestParam(value = "dt2") String genDt2,
+				@RequestParam(value = "uk", required = false) Integer uk,
+				@RequestParam(value = "repCd") String repCd
 				) {
 		log.info("GOT /rep/payordPayment with repCd={}, dt1={}, dt2={}, uk={}", repCd, genDt1, genDt2, uk);
 			modelMap.put("datasource", dataSource);
@@ -194,7 +196,7 @@ public class BillingController {
 
 	/**
  	 * Получить периоды для элементов интерфейса
- 	 * 
+ 	 *
  	 * @param repCd - CD отчета
  	 * @param tp    - тип периода 0 - по месяцам, 1 - по дням
  	 * @return
@@ -204,12 +206,12 @@ public class BillingController {
  	public List<PeriodReportsDTO> getPeriodReports(
  			@RequestParam(value = "repCd") String repCd,
  			@RequestParam(value = "tp", defaultValue = "0") Integer tp) {
- 
+
  		log.info("GOT /rep/getPeriodReports with repCd={}, tp={}", repCd, tp);
  		return repMng.getPeriodByCD(repCd, tp);
- 
+
  	}
-	 
+
 	// Получить все движения по платежкам по Типу и Дате
 	@RequestMapping("/payord/getPayordFlowByTpDt")
 	@ResponseBody
@@ -248,14 +250,14 @@ public class BillingController {
 		lst.stream().forEach(t -> payordMng.delPayordFlowDto(t));
 		return null;
 	}
-	
+
 	// Добавить движение платежки
 	@RequestMapping(value = "/payord/addPayordFlow", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	@ResponseBody
 	public List<PayordFlowDTO> addPayordFlow(@RequestBody List<PayordFlowDTO> lst) {
 		log.info("GOT /payord/addPayordFlow");
 		List<PayordFlow> lst2 = new ArrayList<PayordFlow>();
-		
+
 		// добавить созданные группы платежек в коллекцию
 		lst.stream().forEach(t -> {
 			try {
@@ -267,7 +269,7 @@ public class BillingController {
 		} );
 		// обновить группы платежки из базы
 		lst2.stream().forEach(t -> payordMng.refreshPayordFlow(t) );
-		
+
 		return dtoBuilder.getPayordFlowDTOLst(lst2);
 	}
 
@@ -296,15 +298,15 @@ public class BillingController {
 	public List<PayordGrpDTO> addPayordGrp(@RequestBody List<PayordGrpDTO> lst) {
 		log.info("GOT /payord/addPayordGrp");
 		List<PayordGrp> lst2 = new ArrayList<PayordGrp>();
-		
+
 		// добавить созданные группы платежек в коллекцию
 		lst.stream().forEach(t -> lst2.add( payordMng.addPayordGrpDto(t)) );
 		// обновить группы платежки из базы
 		lst2.stream().forEach(t -> payordMng.refreshPayordGrp(t) );
-		
+
 		return dtoBuilder.getPayordGrpDTOLst(lst2);
 	}
-	
+
 	// Удалить группу платежки
 	@RequestMapping(value = "/payord/delPayordGrp", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
 	@ResponseBody
@@ -334,10 +336,10 @@ public class BillingController {
 		lst.stream().forEach(t -> payordMng.delPayordCmpDto(t));
 		return null;
 	}
-	
+
 	/**
 	 * Получить все компоненты платежки по её ID
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/payord/getPayordCmp")
@@ -360,11 +362,11 @@ public class BillingController {
 		lst.stream().forEach(t -> payordMng.setPayordCmpDto(t));
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * Получить все платежки
-	 * 
+	 *
 	 * @return
 	 */
 	/*@RequestMapping("/payord/getPayordAll")
@@ -378,7 +380,7 @@ public class BillingController {
 
 	/**
 	 * Получить платежки по Id группы
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/payord/getPayord")
@@ -420,15 +422,15 @@ public class BillingController {
 	public List<PayordDTO> addPayord(@RequestBody List<PayordDTO> lst) {
 		log.info("GOT /payord/addPayord");
 		List<Payord> lst2 = new ArrayList<Payord>();
-		
+
 		// добавить созданные группы платежек в коллекцию
 		lst.stream().forEach(t -> lst2.add( payordMng.addPayordDto(t)) );
 		// обновить группы платежки из базы
 		lst2.stream().forEach(t -> payordMng.refreshPayord(t) );
-		
+
 		return dtoBuilder.getPayordDTOLst(lst2);
 	}
-	
+
 
 	/**
 	 * Создать формулу платежки
@@ -440,16 +442,16 @@ public class BillingController {
 	public List<PayordCmpDTO> addPayordCmp(@RequestBody List<PayordCmpDTO> lst) {
 		log.info("GOT /payord/addPayordCmp");
 		List<PayordCmp> lst2 = new ArrayList<PayordCmp>();
-		
+
 		// добавить созданные группы платежек в коллекцию
 		lst.stream().forEach(t -> lst2.add( payordMng.addPayordCmpDto(t)) );
 		// обновить группы платежки из базы
 		lst2.stream().forEach(t -> payordMng.refreshPayordCmp(t) );
-		
+
 		return dtoBuilder.getPayordCmpDTOLst(lst2);
 	}
 
-	
+
 	/**
 	 * Получить список типов адресов
 	 * @param tp - 0 - весь список, 1 - ограниченный основными типами, 2 - только Дом
@@ -464,9 +466,9 @@ public class BillingController {
 
 	/**
 	 * Получить список по типу
-	 * 
+	 *
 	 * @param tp - тип списка
-	 *            
+	 *
 	 * @return
 	 */
 	@RequestMapping("/base/getLstByTp")
@@ -478,9 +480,9 @@ public class BillingController {
 
 	/**
 	 * Получить список объектов определённого типа, с фильтром
-	 * 
+	 *
 	 * @param addrTp - тип адреса
-	 *            
+	 *
 	 * @return
 	 */
 	@RequestMapping("/base/getKoAddrTpFlt")
@@ -489,22 +491,22 @@ public class BillingController {
 									 @RequestParam(value = "flt") String flt
 			) {
 		log.info("GOT /base/getKoAddrTpFlt with addrTp={}, flt={}", addrTpId, flt);
-		
+
 //		Ko ko = em.find(Ko.class, 769857);
 //		log.info("Org={} cd={}",ko.getOrg(), ko.getAddrTp().getCd());
-		
+
 //		dtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt)).stream().forEach(
 //				t-> {log.info("lst={}, {}", t.getId(), t.getName());});
-		
+
 		//logdtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt)).size()
 		return dtoBuilder.getKoDTOLst(lstMng.getKoByAddrTpFlt(addrTpId, flt));
 	}
 
-	
+
 	/**
 	 * Получить список организаций, доступных текущему пользователю по роли и
 	 * действию
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/sec/getOrgCurUser")
@@ -518,7 +520,7 @@ public class BillingController {
 
 	/**
 	 * Получить список всех организаций
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/base/getOrgAll")
@@ -530,7 +532,7 @@ public class BillingController {
 
 	/**
 	 * Получить список всех услуг
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/base/getServAll")
@@ -542,7 +544,7 @@ public class BillingController {
 
 	/**
 	 * Получить список всех типов объекта сбора инф.
-	 * 
+	 *
 	 * @return
 	 */
 	@RequestMapping("/base/getAreaAll")
@@ -559,25 +561,25 @@ public class BillingController {
 		} else if (genDt1.length() == 0 && genDt2.length() == 0) {
 			return true;
 		}
-		
+
 		Date dt1 = Utl.getDateFromStr(genDt1);
 		Date dt2 = Utl.getDateFromStr(genDt2);
-		
+
 		Date firstDt = Utl.getFirstDate(dt1);
 		Date lastDt = Utl.getLastDate(dt1);
-		
+
 		// проверить, что даты в одном диапазоне
 		if (!(Utl.between(dt1, firstDt, lastDt) && Utl.between(dt2, firstDt, lastDt)))  {
 			return false;
 		}
-			
+
 		return true;
 	}
-	
+
 	/**
 	 * Сформировать платежки
 	 * @param genDt - дата формирования
-	 * @param isFinal - финальная платежка 
+	 * @param isFinal - финальная платежка
 	 * @param isEndMonth - итоговое формирование сальдо
 	 * @return
 	 */
@@ -589,14 +591,14 @@ public class BillingController {
 			@RequestParam(value = "payordId", defaultValue = "-1") Integer payordId,
 			@RequestParam(value = "payordCmpId", defaultValue = "-1") Integer payordCmpId
 			) {
-		
+
 		log.info("GOT /genPayord with: genDt={}, isFinal={}, isEndMonth={}", genDt, isFinal, isEndMonth);
 		Date dt = null;
 		if (genDt != null &&genDt != "") {
 			dt = Utl.getDateFromStr(genDt);
 		}
 		try {
-			payordMng.genPayord(dt, isFinal, isEndMonth, (payordId == -1 ? null: payordId), 
+			payordMng.genPayord(dt, isFinal, isEndMonth, (payordId == -1 ? null: payordId),
 					(payordCmpId == -1 ? null: payordCmpId));
 		} catch (WrongDate | ParseException | EmptyStorable | WrongExpression e) {
 			e.printStackTrace();
@@ -604,7 +606,7 @@ public class BillingController {
 		}
 		return null;
 	}
-	
+
 	@RequestMapping("/chrglsk")
 	public String chrgLsk(
 			@RequestParam(value = "lsk", defaultValue = "00000000") Integer lsk,
@@ -625,12 +627,12 @@ public class BillingController {
 			}
 			// получить уникальный номер запроса
 			int rqn = config.incNextReqNum();
-	
+
 			log.info("RQN={}, user={}", rqn, user);
 			long beginTime = System.currentTimeMillis();
-	
+
 			Future<Result> fut;
-	
+
 			// если пустой ID перерасчета
 			Integer chId = null;
 			Chng chng = null;
@@ -639,32 +641,32 @@ public class BillingController {
 				chId = Integer.valueOf(chngId);
 				chng = em.find(Chng.class, chId);
 			}
-	
+
 			RequestConfig reqConfig = new RequestConfig();
 			long endTime1 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
-	
+
 			Date dt1 = null;
 			Date dt2 = null;
 			if (genDt1!=null && genDt1.length() !=0 && genDt2!=null && genDt2.length() !=0) {
-				dt1 = Utl.getDateFromStr(genDt1); 
-				dt2 = Utl.getDateFromStr(genDt2); 
+				dt1 = Utl.getDateFromStr(genDt1);
+				dt2 = Utl.getDateFromStr(genDt2);
 			}
-			
+
 			reqConfig.setUp(dist, tp, chId, rqn, dt1, dt2, chng, config.getCurDt1(), config.getCurDt2());
-	
+
 			long endTime2 = System.currentTimeMillis() - beginTime;
 			beginTime = System.currentTimeMillis();
-	
+
 			BillServ billServ = ctx.getBean(BillServ.class); // добавил, было Autowired
 			// Расчет начисления
 			fut = billServ.chrgLsk(reqConfig, null, lsk);
-	
+
 			long endTime3 = System.currentTimeMillis() - beginTime; // время
 																	// инициализации
 																	// billServ bean
 			beginTime = System.currentTimeMillis();
-	
+
 			// ждать окончание потока
 			try {
 				fut.get();
@@ -672,13 +674,13 @@ public class BillingController {
 				e1.printStackTrace();
 				return "ERROR";
 			}
-	
+
 			long endTime4 = System.currentTimeMillis() - beginTime;
-	
+
 			log.info(
 					"TIMING: доступ.к л.с.={}, конфиг={}, инит. bean={}, расчет={}",
 					endTime1, endTime2, endTime3, endTime4);
-	
+
 			try {
 				if (fut.get().getErr() == 0) {
 					log.info("OK /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
@@ -741,38 +743,38 @@ public class BillingController {
 
 		return "OK";
 	}
-	
-	
+
+
 	@RequestMapping(value = "/uploadFile", method = RequestMethod.POST)
 	@ResponseBody
 	public String uploadFile(@RequestParam("file") MultipartFile file) {// имена параметров (тут - "file") - из формы JSP.
- 
+
 		String name = null;
- 
+
 		if (!file.isEmpty()) {
 			try {
 				byte[] bytes = file.getBytes();
- 
+
 				name = file.getOriginalFilename();
- 
+
 				String rootPath = "C:\\temp\\";
 				File dir = new File(rootPath + File.separator + "loadFiles");
- 
+
 				if (!dir.exists()) {
 					dir.mkdirs();
 				}
- 
+
 				File uploadedFile = new File(dir.getAbsolutePath() + File.separator + name);
- 
+
 				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(uploadedFile));
 				stream.write(bytes);
 				stream.flush();
 				stream.close();
- 
+
 				log.info("uploaded: " + uploadedFile.getAbsolutePath());
- 
+
 				return "You successfully uploaded file=" + name;
- 
+
 			} catch (Exception e) {
 				return "You failed to upload " + name + " => " + e.getMessage();
 			}
@@ -780,7 +782,7 @@ public class BillingController {
 			return "You failed to upload " + name + " because the file was empty.";
 		}
 	}
-	
+
 	@RequestMapping("/chrgall")
 	public String chrgAll(
 			@RequestParam(value = "dist", defaultValue = "0", required = true) String dist,
@@ -802,7 +804,7 @@ public class BillingController {
 			// разрешить другим процессам формировать начисление по лиц.счетам
 			config.setIsRestrictChrgLsk(false);
 		}
-		
+
 		// получить уникальный номер запроса
 		int rqn = config.incNextReqNum();
 		log.info("RQN={}, user={}", rqn, user);
@@ -817,12 +819,12 @@ public class BillingController {
 
 		//RequestConfig reqConfig = ctx.getBean(RequestConfig.class);
 		RequestConfig reqConfig = new RequestConfig();
-		
+
 		Date dt1 = null;
 		Date dt2 = null;
 		if (genDt1!=null && genDt1.length() !=0 && genDt2!=null && genDt2.length() !=0) {
-			dt1 = Utl.getDateFromStr(genDt1); 
-			dt2 = Utl.getDateFromStr(genDt2); 
+			dt1 = Utl.getDateFromStr(genDt1);
+			dt2 = Utl.getDateFromStr(genDt2);
 		}
 		reqConfig.setUp(dist, "0", null, rqn, dt1, dt2, null, config.getCurDt1(), config.getCurDt2());
 
@@ -848,7 +850,7 @@ public class BillingController {
 					e.printStackTrace();
 				}
 			}
-			
+
 			try {
 				if (fut.get().getErr() == 0) {
 				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
@@ -896,7 +898,7 @@ public class BillingController {
 					e.printStackTrace();
 				}
 			}
-			
+
 			try {
 				if (fut.get().getErr() == 0) {
 				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
@@ -920,6 +922,30 @@ public class BillingController {
 		}
 		// разрешить другим процессам формировать начисление по лиц.счетам
 		config.setIsRestrictChrgLsk(false);
+
+		return retStr;
+
+	}
+
+	/**
+	 * Автоначисление
+	 * @param houseId - Id дома
+	 * @param user - пользователь
+	 * @return
+	 */
+	@RequestMapping("/autovol")
+	public String autoVol(
+			@RequestParam(value = "houseId", defaultValue = "", required = false) Integer houseId,
+			@RequestParam(value = "chngId", defaultValue = "", required = false) Integer chngId,
+			@RequestParam(value = "user", defaultValue = "", required = false) String user
+			) {
+		String retStr = "OK";
+
+		log.info("GOT /autovol with: houseId={}, chngId={}, user={}", houseId, chngId, user);
+
+		DistServ distServ = ctx.getBean(DistServ.class);
+
+		distServ.distHouseAutoVol(houseId, chngId);
 
 		return retStr;
 

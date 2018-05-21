@@ -1,10 +1,5 @@
-import java.util.Date;
-import java.util.List;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-
-import lombok.extern.slf4j.Slf4j;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,25 +9,19 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestData
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.ric.bill.BillServ;
 import com.ric.bill.DistServ;
-import com.ric.bill.Utl;
 import com.ric.bill.dao.MeterDAO;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.MeterLogMng;
-import com.ric.bill.mm.ParMng;
-import com.ric.bill.model.ar.House;
-import com.ric.bill.model.ar.Kart;
-import com.ric.bill.model.bs.Dw;
-import com.ric.bill.model.mt.MLogs;
+import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.mt.Meter;
-import com.ric.bill.model.mt.MeterLog;
-import com.ric.bill.model.mt.Vol;
-import com.ric.bill.model.tr.Serv;
+import com.ric.bill.model.sec.User;
+import com.ric.cmn.Utl;
 import com.ric.web.AppConfig;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes=AppConfig.class)
@@ -47,16 +36,16 @@ public class TestMeterAutoVol {
 
 	@Autowired
     private MeterDAO meterDao;
-	
+
 	@Autowired
-    private MeterLogMng meterLogMng;
+    private MeterLogMng metMng;
 
 	@Autowired
     private KartMng kartMng;
 
 	@Autowired
     private DistServ distServ;
-	
+
 	@PersistenceContext
     private EntityManager em;
 
@@ -66,9 +55,16 @@ public class TestMeterAutoVol {
 	@Test
 	public void testDistHouseAutoVol() {
 		log.info("Start testDistHouseAutoVol!");
-		
-		distServ.distHouseAutoVol(187);
-		
+
+		Meter mm = em.find(Meter.class, 88489);
+		Chng ch = em.find(Chng.class, 23);
+		User user = em.find(User.class, 4);
+
+		metMng.saveMeterVol(mm, 1D, ch, user, Utl.getDateFromStr("01.02.2018"), Utl.getDateFromStr("30.02.2018"));
+
+		//log.info("Date={}",Utl.addMonths(Utl.getDateFromStr("01.02.2018"), -2));
+		//distServ.distHouseAutoVol(187);
+
 		log.info("End!");
 	}
 

@@ -49,6 +49,13 @@
 
 	<dependencies>
 
+		<!-- BillCommon -->
+		<dependency>
+			<groupId>com.ric.cmn</groupId>
+			<artifactId>BillCommon</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
 		<!-- BWC -->
 		<dependency>
 			<groupId>com.ric.bill</groupId>
@@ -94,7 +101,6 @@
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-context-support</artifactId>
-		    <version>4.3.10.RELEASE</version>
 		</dependency>
 
 		<!-- Шрифты для Jasper -->
@@ -168,7 +174,7 @@
  		<dependency>
 	      <groupId>org.ehcache</groupId>
 	      <artifactId>ehcache</artifactId>
-	      </dependency>
+      </dependency>
 
 
 		<dependency>

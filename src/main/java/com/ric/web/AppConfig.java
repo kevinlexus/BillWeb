@@ -25,11 +25,12 @@ import org.springframework.web.servlet.view.jasperreports.JasperReportsViewResol
 public class AppConfig  implements ApplicationContextAware {
 
 	static ApplicationContext ctx = null;
-	
+
+	@Override
 	public void setApplicationContext(ApplicationContext context) throws BeansException {
 		ctx = context;
 	}
-	
+
 	/**
 	 * Note that this is a static method which expose ApplicationContext
 	 **/
@@ -49,10 +50,10 @@ public class AppConfig  implements ApplicationContextAware {
 	  resolver.setViewClass(JasperReportsMultiFormatView.class);
 	  resolver.setOrder(0);
 	  return resolver;
-	}  
+	}
 
 	/**
-	 * Для многопоточности, добавил 01.10.17 - УБРАТЬ ЕСЛИ НЕ РАЗБЕРУСЬ TODO 
+	 * Для многопоточности, добавил 01.10.17 - УБРАТЬ ЕСЛИ НЕ РАЗБЕРУСЬ TODO
 	 * @return
 	 */
 	public Executor getAsyncExecutor() {
@@ -64,7 +65,7 @@ public class AppConfig  implements ApplicationContextAware {
         executor.initialize();
         return executor;
     }
-	
+
 /*	@Bean
 	public InternalResourceViewResolver getInternalResourceViewResolver() {
 	  InternalResourceViewResolver resolver = new InternalResourceViewResolver();
@@ -73,5 +74,5 @@ public class AppConfig  implements ApplicationContextAware {
 	  resolver.setOrder(1);
 	  return resolver;
 	}*/
-	
+
 }

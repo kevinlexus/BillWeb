@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,28 +17,24 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.ric.bill.dao.KartDAO;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.excp.ErrorWhileDist;
 import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
-import com.ric.bill.mm.ObjMng;
-import com.ric.bill.mm.ParMng;
-import com.ric.bill.model.ar.House;
 import com.ric.bill.model.ar.Kart;
-import com.ric.bill.model.mt.MLogs;
-import com.ric.bill.model.mt.MeterLog;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Главный сервис биллинга
- * @version 1.0 
+ * @version 1.0
  * @author lev
  *
  */
 @Service
-@Scope("prototype") // странно что стоит prototype, а вызвается как Autowired в BillingController - поменял это, но проверить! TODO!  
+@Scope("prototype") // странно что стоит prototype, а вызвается как Autowired в BillingController - поменял это, но проверить! TODO!
 @Slf4j
 public class BillServ {
 
@@ -93,6 +86,7 @@ public class BillServ {
 
 	// Exception из потока
 	Thread.UncaughtExceptionHandler expThr = new Thread.UncaughtExceptionHandler() {
+		@Override
 		public void uncaughtException(Thread th, Throwable ex) {
 			System.out.println("BillServ: Error in thread: " + th.getName()
 					+ " " + ex.getMessage());
@@ -102,21 +96,21 @@ public class BillServ {
 
 	/**
 	 * выполнить распределение объемов и начисление по всем домам в потоках
-	 * 
+	 *
 	 * @param isDist
 	 *            - распределять ли объемы
 	 * @param isChrg
 	 *            - выполнять ли начисление
 	 * @return
-	 * @throws ExecutionException 
-	 * @throws InterruptedException 
+	 * @throws ExecutionException
+	 * @throws InterruptedException
 	 */
 	@Async
-	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
+	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll",
 			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
 			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
 			"ParDAOImpl.checkPar", "ServDAOImpl.findMain", "ServDAOImpl.getByCD", "DistGen.findLstCheck", "MeterLogMngImpl.getAllMetLogByServTp", "MeterLogMngImpl.checkExsKartMet",
-			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode", 
+			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode",
 			"MeterLogMngImpl.getKart", "ParMngImpl.isExByCd", "ParMngImpl.getBool1", "ParMngImpl.getBool2", "ParMngImpl.getDbl1", "ParMngImpl.getDbl2", "ParMngImpl.getDate",
 			"ParMngImpl.getStr1", "ParMngImpl.getStr2", "TarifMngImpl.getProp", "TarifDAOImpl.getPropByCD", "VsecDAOImpl.getPrivByUserRoleAct", "LstMngImpl.getByCD",
 			"ServMngImpl.getUpper", "ServMngImpl.getUpperTree", "MeterLogMngImpl.delNodeVol",
@@ -127,7 +121,7 @@ public class BillServ {
 		Result res = new Result();
 		res.setErr(0);
 		AsyncResult<Result> futM = new AsyncResult<Result>(res);
-		
+
 		// кол-во потоков
 		int cntThreads;
 
@@ -155,7 +149,7 @@ public class BillServ {
 			log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
 			res.setErr(1);
 		}
-		
+
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
 		if (res.getErr() ==0) {
 			cntThreads = 20;
@@ -177,10 +171,10 @@ public class BillServ {
 		return futM;
 	}
 
-	
+
 	/**
 	 * выполнить начисление по лиц.счету
-	 * 
+	 *
 	 * @param kart
 	 *            - лиц счет (заполнен либо он, либо lsk)
 	 * @param lsk
@@ -191,11 +185,11 @@ public class BillServ {
 	 * @throws ErrorWhileChrg
 	 */
 	@Async
-	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll", 
+	@CacheEvict(value = {"TarifMngImpl.getOrg", "KartMngImpl.getOrg", "KartMngImpl.getServ", "KartMngImpl.getServAll",
 			"KartMngImpl.getCapPrivs", "KartMngImpl.getServPropByCD", "KartMngImpl.getStandartVol", "KartMngImpl.getCntPers", "KartMngImpl.checkPersNullStatus",
 			"KartMngImpl.checkPersStatusExt", "KartMngImpl.checkPersStatus", "ObjDAOImpl.getByCD", "MeterLogDAOImpl.getKart", "OrgDAOImpl.getByKlsk", "ParDAOImpl.getByCd",
 			"ParDAOImpl.checkPar", "ServDAOImpl.findMain", "ServDAOImpl.getByCD", "DistGen.findLstCheck", "MeterLogMngImpl.getAllMetLogByServTp", "MeterLogMngImpl.checkExsKartMet",
-			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode", 
+			"MeterLogMngImpl.checkExsMet", "MeterLogMngImpl.getVolPeriod1", "MeterLogMngImpl.getVolPeriod2", "MeterLogMngImpl.getLinkedNode",
 			"MeterLogMngImpl.getKart", "ParMngImpl.isExByCd", "ParMngImpl.getBool1", "ParMngImpl.getBool2", "ParMngImpl.getDbl1", "ParMngImpl.getDbl2", "ParMngImpl.getDate",
 			"ParMngImpl.getStr1", "ParMngImpl.getStr2", "TarifMngImpl.getProp", "TarifDAOImpl.getPropByCD", "VsecDAOImpl.getPrivByUserRoleAct", "LstMngImpl.getByCD",
 			"ServMngImpl.getUpper", "ServMngImpl.getUpperTree", "MeterLogMngImpl.delNodeVol",
@@ -204,7 +198,7 @@ public class BillServ {
 			Integer lsk) {
 		Result res = new Result();
 		Future<Result> fut = new AsyncResult<Result>(res);
-		
+
 		ChrgServThr chrgServThr = ctx.getBean(ChrgServThr.class);
 		DistServ distServ = ctx.getBean(DistServ.class);
 
@@ -234,7 +228,7 @@ public class BillServ {
 					.filter(t -> t.getKart().getLsk().equals(lsk))
 					.filter(t -> t.getServ() != null)
 					.map(t-> t.getServ().getCd()).collect(Collectors.toList());
-			if (lstServCd.contains("Отопление") || lstServCd.contains("Отопление(объем), соц.н.") || 
+			if (lstServCd.contains("Отопление") || lstServCd.contains("Отопление(объем), соц.н.") ||
 					lstServCd.contains("Отопление(объем), св.соц.н.") || lstServCd.contains("Отопление(объем), без прожив.")) {
 				isDistHouse = true;
 			}
@@ -276,7 +270,7 @@ public class BillServ {
 		return fut;
 	}
 
-	
+
 	/**
 	 * Вызвать выполнение потоков распределения объемов/ начисления
 	 * @param reqConfig - конфиг запроса
@@ -304,7 +298,7 @@ public class BillServ {
 			// флаг наличия потоков
 			isStop = true;
 			for (Iterator<Future<Result>> itr = frl.iterator(); itr.hasNext();) {
-				
+
 /*				frl.stream().forEach(t -> {
 					log.info("frl isDone={}, val={}", t!=null?t.isDone():null, t);
 				});
@@ -312,7 +306,7 @@ public class BillServ {
 
 				if (fut == null) {
 					// получить новый объект
-					itemWork = getNextItem(lstItem);		
+					itemWork = getNextItem(lstItem);
 					if (itemWork != null) {
 						// создать новый поток
 						if (tp==0) {
@@ -326,11 +320,11 @@ public class BillServ {
 						}
 						frl.set(i, fut);
 						// не завершен поток
-						isStop = false;
+						//isStop = false;
 					}
 				} else if (!fut.isDone()) {
 					// не завершен поток
-					isStop = false;
+					//isStop = false;
 					//log.info("========= Поток НЕ завершен! лс={}", fut.get().getLsk());
 					//log.info("..................................... CHK1");
 				} else {
@@ -358,10 +352,15 @@ public class BillServ {
 						frl.set(i, null);
 					}
 
-				}					
+				}
+
+				if (fut !=null) {
+					// не завершен поток TODO ПРОВЕРИТЬ! 27.05.2018
+					isStop = false;
+				}
 				i++;
 			}
-			
+
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -371,11 +370,11 @@ public class BillServ {
 		long endTime = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		if (lstItem.size() > 0) {
-			log.info("Итоговое время выполнения одного {} cnt={}, мс.", 
+			log.info("Итоговое время выполнения одного {} cnt={}, мс.",
 					tp==0?"лиц.счета":"дома", totalTime / lstItem.size());
 		}
 	}
-	
+
 	/**
 	 * ТЕСТ-вызов не удалять!
 	 * @param id

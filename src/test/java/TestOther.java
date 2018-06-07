@@ -1,5 +1,3 @@
-import java.util.List;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,10 +8,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.ric.bill.ResultSet;
 import com.ric.bill.dao.KartDAO;
 import com.ric.bill.dao.PayordDAO;
-import com.ric.bill.dao.VolDAO;
 import com.ric.bill.mm.MeterLogMng;
 import com.ric.web.AppConfig;
 
@@ -37,7 +33,7 @@ public class TestOther {
 	private MeterLogMng meterLogMng;
 
 	/**
-	 * получить список физических счетчиков для перерасчета
+	 * протестировать транзакцию
 	 */
 	@Test
 	public void test() {

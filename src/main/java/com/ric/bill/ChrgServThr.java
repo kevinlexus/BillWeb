@@ -6,22 +6,21 @@ import java.util.concurrent.Future;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.ric.bill.Calc;
-import com.ric.bill.ChrgServ;
-import com.ric.bill.Result;
 import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.fn.ChngLsk;
 import com.ric.bill.model.tr.TarifKlsk;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Асинхронный поток начисления, выполняет вызовы функций начисления
@@ -41,8 +40,9 @@ public class ChrgServThr {
     private EntityManager em;
 	@Autowired
 	private Config config;
-	
+
 	@Async
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public Future<Result> chrgAndSaveLsk(RequestConfig reqConfig, Integer kartId) throws ErrorWhileChrg, ExecutionException {
 //		Result res = new Result();
 //		return new AsyncResult<Result>(res );
@@ -55,7 +55,7 @@ public class ChrgServThr {
 		if (calc.getArea() ==null) {
 			throw new ErrorWhileChrg("Ошибка! По записи house.id={}, в его street, не заполнено поле area!");
 		}
-		
+
 		Integer lsk = calc.getKart().getLsk();
 		Integer houseId = calc.getKart().getKw().getHouse().getId();
 		// блокировка лиц.счета
@@ -79,7 +79,7 @@ public class ChrgServThr {
 
 		try {
 			ChrgServ chrgServ = ctx.getBean(ChrgServ.class);
-			
+
 			//загрузить все Lazy параметры, чтобы не было concurrensy issue в потоках например, на getDbl()
 			//ну или использовать EAGER в дочерних коллекциях, что более затратно
 			calc.getKart().getDw().size();
@@ -89,40 +89,40 @@ public class ChrgServThr {
 			}
 			calc.getKart().getReg().size();
 			calc.getKart().getRegState().size();
-	
+
 			calc.getKart().getMlog().size();
-	
+
 			calc.getHouse().getTarifklsk().size();
 			for (TarifKlsk k : calc.getHouse().getTarifklsk()) {
 				k.getTarprop().size();
 			}
-	
+
 			calc.getArea().getTarifklsk().size();
 			for (TarifKlsk k : calc.getArea().getTarifklsk()) {
 				k.getTarprop().size();
 			}
-			
+
 			if (calc.getReqConfig().getChng() != null) {
 				calc.getReqConfig().getChng().getChngLsk().size();
 				for (ChngLsk a : calc.getReqConfig().getChng().getChngLsk()) {
 					a.getChngVal().size();
 				}
 			}
-			
+
 			//Выполнить начисление
 			Result res = chrgServ.chrgLsk(calc);
 			//Сохранить результат
 			if (res.getErr()==0) {
-				chrgServ.save(lsk); 
+				chrgServ.save(lsk);
 			}
 			chrgServ = null; //### TODO;
 			return new AsyncResult<Result>(res);
-			
+
 		} finally {
 			// разблокировать лс
 			config.lock.unlockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId);
 			calc = null;  //### TODO;
 		}
 	}
-	
+
 }

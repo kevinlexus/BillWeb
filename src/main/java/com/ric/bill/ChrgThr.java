@@ -286,9 +286,9 @@ public class ChrgThr {
 		}*/
 
 		//log.info("serv.cd={}", serv.getCd());
-		/*if (serv.getId()==20) {
-			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		}*/
+		if (serv.getId()==66) {
+//			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		}
 
 		Kart kart = calc.getKart();
 		// перерасчет
@@ -619,6 +619,7 @@ public class ChrgThr {
 				//тип расчета, например:Взносы на капремонт
 		        //или Х.В.Г.В. ОДН
 				//Вариант подразумевает объём, по параметру - базе, жилого фонда РАСПределённый по дням
+				//log.info("serv.name={}, serv.id={}, vol= {}, stPrice= {}, cntPers= {}, sqr", serv.getName(), serv.getId(), vol, stPrice, cntPers, sqr);
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 

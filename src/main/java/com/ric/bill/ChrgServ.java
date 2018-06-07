@@ -2,58 +2,37 @@ package com.ric.bill;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
-import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.StoredProcedureQuery;
 
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.collections4.MapIterator;
-import org.apache.commons.collections4.keyvalue.MultiKey;
-import org.apache.commons.collections4.map.MultiKeyMap;
-import org.hibernate.Filter;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.ric.bill.dto.ChrgRec;
 import com.ric.bill.dto.PrivRec;
 import com.ric.bill.excp.EmptyStorable;
 import com.ric.bill.excp.ErrorWhileChrg;
-import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.LstMng;
-import com.ric.bill.mm.MeterLogMng;
-import com.ric.bill.mm.ParMng;
-import com.ric.bill.mm.ServMng;
-import com.ric.bill.mm.TarifMng;
 import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.bs.Lst;
-import com.ric.bill.model.bs.Org;
-import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.fn.Chrg;
-import com.ric.bill.model.fn.PersPrivilege;
 import com.ric.bill.model.fn.PrivilegeChrg;
 import com.ric.bill.model.tr.Serv;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Сервис формирования начисления
@@ -77,10 +56,10 @@ public class ChrgServ {
     //коллекция для формирования потоков
     private List<Serv> servThr;
     private Calc calc;
-    
+
 	// текущий уровень очереди
     Integer servLevel;
-    
+
     // хранилище коллекций
     ChrgStore chStore;
 	//конструктор
@@ -93,7 +72,7 @@ public class ChrgServ {
 
     /**
      * получить список N следующих услуг, для расчета в потоках
-     * что такое уровни? они необходимы, чтобы услуги вызывались последовательно 
+     * что такое уровни? они необходимы, чтобы услуги вызывались последовательно
      * по зависимости друг от друга, эта зависимость прописывается в serv.fk_dep
      * @param cnt // кол-во услуг
      */
@@ -111,18 +90,18 @@ public class ChrgServ {
 	    		return lst;
 			}
     	}
-    	
+
     }
-    
+
     /**
-     * получить список N следующих услуг, по уровню, для расчета в потоках 
+     * получить список N следующих услуг, по уровню, для расчета в потоках
      * @param level // уровень
      * @param cnt // кол-во услуг
      */
     private List<Serv> getNextServByLevel(int level, int cnt) {
-    	List<Serv> lst = new ArrayList<Serv>(); 
+    	List<Serv> lst = new ArrayList<Serv>();
 		int i=1;
-    	
+
 		Iterator<Entry<Serv, Integer>> itr = queBatch.entrySet().iterator();
 		while (itr.hasNext()) {
 			Entry<Serv, Integer> entry =  itr.next();
@@ -137,11 +116,11 @@ public class ChrgServ {
 				}
 			}
 		}
-		
+
 		return lst;
     }
-    
-    
+
+
     /**
      * заполнить пачки услуг
      */
@@ -149,7 +128,7 @@ public class ChrgServ {
     	Integer level=0, old=-1;
     	while (true) {
     		if (addQueBatch(level, old) != 0){
-        		level++; 
+        		level++;
         		old++;
     		} else {
     			break;
@@ -172,19 +151,19 @@ public class ChrgServ {
 			len=lst.size();
     	} else {
     		// остальные итерации - зависимые услуги от уровня отстающего на -1
-       		// отфильтровать по значению уровня -1, по родительской услуге, записать новый список 
-			Map<Serv, Integer> lst = servThr.stream().filter(t -> queBatch.get(t.getServDep())!=null && queBatch.get(t.getServDep()).equals(old) 
+       		// отфильтровать по значению уровня -1, по родительской услуге, записать новый список
+			Map<Serv, Integer> lst = servThr.stream().filter(t -> queBatch.get(t.getServDep())!=null && queBatch.get(t.getServDep()).equals(old)
 							).collect(Collectors.toMap( (t) -> t , (t) -> level));
 			queBatch.putAll(lst);
 			len=lst.size();
     	}
     	return len;
     }
-    
+
     /**
 	 * выполнить расчет начисления по лиц.счету
 	 * @param kart - объект лиц.счета
-	 * @throws ErrorWhileChrg 
+	 * @throws ErrorWhileChrg
 	 */
 	public Result chrgLsk(Calc calc) throws ErrorWhileChrg, ExecutionException {
     	this.calc=calc;
@@ -195,33 +174,33 @@ public class ChrgServ {
 
 		// создать очередь
 		queBatch = new HashMap<Serv, Integer>(0);
-		
+
 		//найти все услуги, действительные в лиц.счете
 		//и создать потоки по кол-ву услуг
-		
+
 		//загрузить все услуги по данному л.с.
 		servThr = kartMng.getServAll(calc.getReqConfig().getRqn(), calc);
-		
+
 		// сбросить уровень
 		servLevel=0;
 		// создать список обрабатываемых услуг, с очередями
 		setQueBatch();
-		
+
 		ChrgThr chrgThr = ctx.getBean(ChrgThr.class);
-		
+
 		while (true) {
 			//log.trace("ChrgServ: Loading servs for threads");
 			//получить следующие N услуг, рассчитать их в потоке
-			List<Serv> servWork = getNextServ(1); // ограничил 1 потоком (подозрение на нехватку памяти в JVM при начислении многих лс) 
+			List<Serv> servWork = getNextServ(1); // ограничил 1 потоком (подозрение на нехватку памяти в JVM при начислении многих лс)
 
 			if (servWork.size()==0) {
 				//выйти, если все услуги обработаны
 				break;
 			}
-			
+
 			// РАСЧЕТ услуг по циклу
 			for (Serv serv : servWork) {
-			    //log.info("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(), 
+			    //log.info("RQN={}, Начисление по лс={}, услуге serv.id={} начато!", calc.getReqConfig().getRqn(),
 			    //		calc.getKart().getLsk(), serv.getId());
 
 //			    log.info("--------1CHECK: serv.id={} size={}", serv.getId(), chStore.getStoreMainServ().size());
@@ -243,12 +222,12 @@ public class ChrgServ {
 					log.error("ОШИБКА при вызове начисления по услуге! Прочие ошибки! serv.cd="+serv.getCd()+" lsk="+calc.getKart().getLsk(), e);
 					throw new ErrorWhileChrg ("ОШИБКА при вызове начисления по услуге! Прочие ошибки! serv.cd="+serv.getCd()+" lsk="+calc.getKart().getLsk());
 				}
-		    	
-		    	// добавить некритические ошибки выполнения 
+
+		    	// добавить некритические ошибки выполнения
 				res.getLstErr().addAll(res1.getLstErr());
 			}
 		}
-		
+
 		// КОРРЕКЦИЯ на сумму разности между основной и виртуальной услугой
 		for (Map.Entry<Serv, BigDecimal> entryVrt : chStore.getMapVrt().entrySet()) {
 		    Serv servVrt = entryVrt.getKey();
@@ -258,7 +237,7 @@ public class ChrgServ {
 					BigDecimal diff = entryVrt.getValue().subtract(entryServ.getValue());
 					if (diff.compareTo(BigDecimal.ZERO) != 0) {
 						//существует разница, найти услугу, куда кинуть округление
-						Serv servRound = servVrt.getServRound(); 
+						Serv servRound = servVrt.getServRound();
 						//найти только что добавленные строки начисления, и вписать в одну из них
 						boolean flag = false; //флаг, чтобы больше не корректировать, если уже раз найдено
 						for (ChrgRec chrg : chStore.getPrepChrg()) {
@@ -270,8 +249,8 @@ public class ChrgServ {
 						}
 					}
 				}
-			}		    
-		}		
+			}
+		}
 		chrgThr = null; // ### TODO
 		return res;
 	}
@@ -280,9 +259,9 @@ public class ChrgServ {
 	/**
 	 * перенести в архив предыдущее и сохранить новое начисление
 	 * @param lsk - лиц.счет передавать строкой!
-	 * @throws ErrorWhileChrg 
+	 * @throws ErrorWhileChrg
 	 */
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
+	//@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
 	public void save (Integer lsk) throws ErrorWhileChrg {
 		Integer status;
 		if (calc.getReqConfig().getOperTp().equals(1)) {
@@ -292,13 +271,13 @@ public class ChrgServ {
 			// начисление
 			status=1;
 		}
-		
+
 		Session session = em.unwrap(Session.class);
-		
+
 		session.enableFilter("FILTER_CHRG1").setParameter("PERIOD", calc.getReqConfig().getPeriod())
 		   .setParameter("STATUS", 1);
 		Kart kart = em.find(Kart.class, lsk); //здесь так, иначе записи не прикрепятся к объекту не из этой сессии!
-		
+
 		Query query1 = null, query2 = null;
 		//перенести предыдущий расчет начисления в статус "архив" (1->0)
 		if (calc.getReqConfig().getOperTp().equals(0)) {
@@ -342,27 +321,27 @@ public class ChrgServ {
 
 		// сохранить новое начисление (переписать из prepChrg)
 		for (ChrgRec chrg : chStore.getPrepChrg()) {
-			
-			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(), 
-					chrg.getSumFull(), chrg.getSumPriv(), chrg.getSumAmnt(), 
-					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntFact(), chrg.getArea(), chrgTp ,  
-					calc.getReqConfig().getChng(), chrg.getMet(), chrg.getEntry(), chrg.getDt1(), chrg.getDt2(), chrg.getCntOwn()); 
-			
-			kart.getChrg().add(chrg2); 
+
+			Chrg chrg2 = new Chrg(kart, chrg.getServ(), chrg.getOrg(), status, calc.getReqConfig().getPeriod(),
+					chrg.getSumFull(), chrg.getSumPriv(), chrg.getSumAmnt(),
+					chrg.getVol(), chrg.getPrice(), chrg.getStdt(), chrg.getCntFact(), chrg.getArea(), chrgTp ,
+					calc.getReqConfig().getChng(), chrg.getMet(), chrg.getEntry(), chrg.getDt1(), chrg.getDt2(), chrg.getCntOwn());
+
+			kart.getChrg().add(chrg2);
 		}
 
 		// сохранить возмещение по льготе (переписать из prepPriv)
 		for (PrivRec t : chStore.getPrepPriv()) {
 			PrivilegeChrg priv = new PrivilegeChrg(kart, t.getServ(), t.getOrg(), status, t.getPersPriv(), calc.getReqConfig().getPeriod(), t.getSumma().doubleValue(),
 					t.getVol().doubleValue(), calc.getReqConfig().getChng(), t.getPrice().doubleValue(), t.getDt1(), t.getDt2());
-					
-			kart.getPrivilegeChrg().add(priv); 
+
+			kart.getPrivilegeChrg().add(priv);
 		}
-		
+
 		chStore = null; // ### TODO
 		log.info("RQN={}, Начисление СОХРАНЕНО по лс={}", calc.getReqConfig().getRqn(), calc.getKart().getLsk());
 	}
-	
+
 
 }
 

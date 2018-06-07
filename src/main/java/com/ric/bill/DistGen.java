@@ -143,19 +143,15 @@ public class DistGen {
 	public NodeVol distNode (Calc calc, MLogs ml, int tp, Date genDt)
 			throws WrongGetMethod, EmptyServ, NotFoundODNLimit, NotFoundNode, EmptyStorable, EmptyPar, WrongValue {
 		// номер текущего запроса
-/*		if (ml.getId()==520862//526089
-				&& tp==0) {
+		if (ml.getId()==574889
+				&& tp==2) {
 			log.info("MeterLog.id={}, genDt={}", ml.getId(), genDt);
 		}
-*/
+
 		int rqn = calc.getReqConfig().getRqn();
 		//log.info("*********************************** House.id={}, lstCheck.size={}", calc.getHouse().getId(), lstCheck.size());
 
 		Chng chng = calc.getReqConfig().getChng();
-		Integer chngId = null;
-		if (chng != null) {
-			chngId = chng.getId();
-		}
 
 		NodeVol nv = findLstCheck(ml.getId(), tp, genDt);
 		//если рассчитанный узел найден, вернуть готовый объем
@@ -215,12 +211,11 @@ public class DistGen {
 						if (v.getTp().getCd().equals("Фактический объем") && Utl.between(genDt, v.getDt1(), v.getDt2()) ) {
 							//log.info("Записано1 genDt={}, {}, {}", genDt, v.getDt1(), v.getDt2());
 							for (MeterExs e : m.getExs()) { // периоды сущ.
-								// добавить объем в объект объема
 								// умножить объем на процент существования счетчика и на долю дня действия объема
 								if (Utl.between(genDt, e.getDt1(), e.getDt2())) {
-
-									vl=vl+Utl.nvl(v.getVol1(), 0d) * metMng.getVolCoeff(e.getTp(), v.getUser())
-											* Utl.nvl(e.getPrc(), 0d) // убрал процент, договорились что он не нужен LEV 19.04.2018
+									// добавить объем в объект объема
+									vl=vl+Utl.nvl(v.getVol1(), 0d) * metMng.getVolCoeff(e.getTp(), v.getUser()) // только по Рабочим счетчикам!
+											//* Utl.nvl(e.getPrc(), 0d) // убрал процент, договорились что он не нужен LEV 19.04.2018
 											* Utl.getPartDays(v.getDt1(), v.getDt2());
 
 								}
@@ -289,7 +284,7 @@ public class DistGen {
 				}
 				//проживающие
 				CntPers cntPers = kartMng.getCntPers(rqn, calc, kart, servChrg, genDt);
-				partPers = cntPers.cntVol / calc.getReqConfig().getCntCurDays();
+				partPers = cntPers.cntForVol / calc.getReqConfig().getCntCurDays();
 			}
 		} else if (tp==2 && !isSwitchOff && mLogTp.equals("Лсчетчик")) {
 			// по расчетной связи ОДН (только у лог.счетчиков, при наличии расчетной связи ОДН)
@@ -532,25 +527,50 @@ public class DistGen {
 					if (g.getSrc().getId() == 544463) {
 						log.info("-------------DDDDDD");
 					}*/
-					log.info("Текущий узел по MeterLog.id={}, внешний узел MeterLog.id={}, тип={}", ml.getId(), g.getSrc().getId(), g.getSrc().getTp().getCd());
+					//log.info("Текущий узел по MeterLog.id={}, внешний узел MeterLog.id={}, тип={}", ml.getId(), g.getSrc().getId(), g.getSrc().getTp().getCd());
 					NodeVol nvChld = distNode(calc, g.getSrc(), tp, genDt);
 
 					if (nvChld != null){
 						//добавить объемы от дочерних узлов
 						nv.addPartArea(nvChld.getPartArea());
 						nv.addPartPers(nvChld.getPartPers());
-						if (g.getSrc().getTp().getCd().equals("ЛГрупп") && ml.getTp().getCd().equals("ЛИПУ")) {
-							// если внешний узел - групповой счетчик, а текущий - ЛИПУ, то рассчитать долю данного узла
+						if (tp == 0 && g.getSrc().getTp().getCd().equals("ЛГрупп") && ml.getTp().getCd().equals("ЛИПУ")) {
+							// Групповые счетчики
+							// если расчетная связь и внешний узел - групповой счетчик, а текущий - ЛИПУ, то рассчитать долю данного узла
 							// по соотношению кол-во проживающих или по общей площади, если кол-во прожив.=0
-							// TODO
 							// получить сумму кол-во проживающих и общей площади по групповому счетчику
-							SumNodeVol metGroupCntPersSqr = metMng.getSumOutsideCntPersSqr(rqn, chngId, chng, g.getSrc(), genDt);
+							SumNodeVol metGroupCntPersSqr = metMng.getSumOutsideCntPersSqr(calc, servChrg, g.getSrc(), genDt);
+							double proc = 0D;
 							// получить кол-во проживающих и общей площади по текущему счетчику
-						//	SumNodeVol vol = getVolPeriod(rqn, chngId, chng, ml, 1, genDt, genDt);
+							if (!metGroupCntPersSqr.getPers().equals(0D)) {
+								//проживающие, в доле дня
+								CntPers cntPers = kartMng.getCntPers(rqn, calc, ml.getKart(), servChrg, genDt);
+								// кол-во проживающих
+								double partKartPers = cntPers.cntForVol / calc.getReqConfig().getCntCurDays();
+								proc = partKartPers / metGroupCntPersSqr.getPers();
+								log.info("от локального: кол-во прож={}", partKartPers);
+								log.info("от группового: кол-во прож={}, %={}", metGroupCntPersSqr.getPers(), proc);
+							} else {
+								// если кол-во проживающих по Групп счетчику = 0, использовать соотношение по площади
+								// общая площадь, в доле дня
+								double partKartArea = Utl.nvl(parMng.getDbl(rqn, ml.getKart(), "Площадь.Общая", genDt, chng), 0d)
+										/ calc.getReqConfig().getCntCurDays();
+								if (!metGroupCntPersSqr.getArea().equals(0D)) {
+									proc = partKartArea / metGroupCntPersSqr.getArea();
+									log.info("от локального: общ.площ.={}", partKartArea);
+									log.info("от группового: общ.площ.={}, %={}", metGroupCntPersSqr.getArea(), proc);
+								} else {
+									log.error("ОШИБКА! некорректно указана площадь по Групповому счетчику Mlog.id={}", g.getSrc().getId());
+								}
+							}
+							// рассчитать долю от группового сч
+							nv.addVol(nvChld.getVol() * proc);
+							log.info("доля объема от группового={}", nv.getVol());
 
-
+						} else {
+							// Прочие счетчики
+							nv.addVol(nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));  // НЕЛЬЗЯ убирать процент - не считается ОДН 28.05.2018! убрал Процент! 25.05.2018
 						}
-						nv.addVol(nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));
 						//log.info("point5, Mlog.id={}, check={}, {}, {}", ml.getId(), nvChld.getVol(), g.getPrc(), Utl.nvl(g.getPrc(), 0d));
 
 						//log.info("Объем из дочернего узла по id={}, vol={}", ml.getId(), nvChld.getVol() * Utl.nvl(g.getPrc(), 0d));

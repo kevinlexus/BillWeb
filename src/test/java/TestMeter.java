@@ -19,7 +19,6 @@ import com.ric.bill.mm.KartMng;
 import com.ric.bill.mm.MeterLogMng;
 import com.ric.bill.model.ar.House;
 import com.ric.bill.model.mt.Meter;
-import com.ric.bill.model.mt.Vol;
 import com.ric.bill.model.tr.Serv;
 import com.ric.cmn.Utl;
 import com.ric.web.AppConfig;
@@ -111,10 +110,10 @@ public class TestMeter {
 		log.info("Start testGetLastVol!");
 
 		Meter meter = em.find(Meter.class, 87096);
-		Vol vol = meterDao.getLastVol(meter);
+		/*Vol vol = meterDao.getLastVol(meter);
 		if (vol != null) {
 			log.info("meter vol.id={}, vol.vol1={}", vol.getId(), vol.getVol1());
-		}
+		}*/
 
 		log.info("End!");
 

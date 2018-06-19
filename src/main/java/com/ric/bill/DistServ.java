@@ -528,7 +528,8 @@ public class DistServ {
 		// заголовок автоначисления
 		Chng chng;
 		if (chngId != null) {
-			log.info("Снятие Автоначисления за период: dt1={}, dt2={} НАЧАТО", dt1, dt2);
+			log.info("Снятие Автоначисления за период: dt1={}, dt2={} НАЧАТО",
+					Utl.getStrFromDate(dt1), Utl.getStrFromDate(dt2));
 			if (houseId != null) {
 				log.info("по дому: house.id={}", houseId);
 			} else {
@@ -548,7 +549,8 @@ public class DistServ {
 			});
 
 		} else {
-			log.info("Автоначисление за период: dt1={}, dt2={} НАЧАТО", dt1, dt2);
+			log.info("Автоначисление за период: dt1={}, dt2={} НАЧАТО",
+					Utl.getStrFromDate(dt1), Utl.getStrFromDate(dt2));
 			if (houseId != null) {
 				log.info("по дому: house.id={}", houseId);
 			} else {
@@ -556,7 +558,7 @@ public class DistServ {
 			}
 			Serv serv = em.find(Serv.class, 79); // TODO решить что нить с этим
 			// создать новый заголовок
-			chng = Chng.builder().withActName("Автоначисление по объекту:"+houseId!=null?"Дом, houseId="+String.valueOf(houseId):" Весь фонд")
+			chng = Chng.builder().withActName("Автоначисление по объекту:".concat(houseId!=null?"Дом, houseId="+String.valueOf(houseId):" Весь фонд"))
 					.withServ(serv)
 					.withPeriod(Integer.valueOf(reqConfig.getPeriod()))
 				    .withMg(Integer.valueOf(reqConfig.getPeriod()))
@@ -607,7 +609,8 @@ public class DistServ {
 	 * @param dt2 - окончание периода
 	 * @throws EmptyStorable
 	 */
-	private void distHouseServAutoVol(Calc calc, List<MeterDTO> lstMeterDTO, Serv serv, User user, Chng chng, Date dt1, Date dt2) throws EmptyStorable {
+	private void distHouseServAutoVol(Calc calc, List<MeterDTO> lstMeterDTO,
+			Serv serv, User user, Chng chng, Date dt1, Date dt2) throws EmptyStorable {
 		List <MeterDTO> lst = new ArrayList<MeterDTO>(2);
 		Kart kartOld = null;
 		for (MeterDTO t: lstMeterDTO) {
@@ -659,7 +662,7 @@ public class DistServ {
 		// кол-во месяцев по законодательству, для принятия решения о начислении по нормативу
 		int cntMonth = 3;
 		// кол-во месяцев по законодательству, для определения кол-ва месяцев до последней корректной передачи показания
-		int cntMonthBack = 3;
+		int cntMonthBack = 6;
 		// неисправность(и т.п.) предыдущего счетчика в лиц.счете
 		boolean isBroken = false;
 
@@ -677,11 +680,11 @@ public class DistServ {
 				if (t.getTp().equals(0D)) {
 					// получить средний объем за период последних N мес при непередаче показаний
 					avgVol = new AvgVol();
-					avgVol.vol = metMng.getAvgVol(m, cntMonth, dt2);
+					avgVol.vol = metMng.getAvgVol(m, cntMonthBack, dt2);
 					log.info("Получен средний объем за период последних N мес при непередаче показаний, объем={}", avgVol.vol);
 				} else {
 					// получить средний объем и кол-во месяцев за период N мес. до последней передачи объема, при неисправном счетчике
-					avgVol = metMng.getAvgVolBeforeLastSend(m, cntMonthBack, dt2);
+					avgVol = metMng.getAvgVolBeforeLastSend(m, cntMonthBack, dt1);
 					log.info("Получен средний объем и кол-во месяцев за период N мес. до последней передачи объема, "
 							+ "при неисправном(и.т.п.) счетчике, объем={}, кол-во мес.={}", avgVol.vol, avgVol.cnt);
 				}
@@ -692,7 +695,7 @@ public class DistServ {
 			BigDecimal vl;
 			if (!isBroken && Utl.nvl(avgVol.vol, 0D) != 0D && avgVol.cnt <= cntMonth) {
 				vl = new BigDecimal(avgVol.vol);
-			    vl = vl.setScale(6, RoundingMode.HALF_UP);
+			    vl = vl.setScale(5, RoundingMode.HALF_UP);
 
 			    // меньше N месяцев - начислить объем по среднему
 				log.info("Автоначисление по среднему объему, по счетчику: Meter.id={}, vol={}", m.getId(), vl);
@@ -716,7 +719,7 @@ public class DistServ {
 							+ "норматив={}, кол во счетчиков={}", stdt.vol*calc.getReqConfig().getCntCurDays(), lst.size());
 				}
 
-				vl = vl.setScale(6, RoundingMode.HALF_UP);
+				vl = vl.setScale(5, RoundingMode.HALF_UP);
 				log.info("Автоначисление по нормативу потребления, по счетчику: Meter.id={}, vol={}", m.getId(), vl);
 			}
 
@@ -724,7 +727,7 @@ public class DistServ {
 				metMng.saveMeterVol(m, vl.doubleValue(), chng, user, dt1, dt2);
 			}
 
-			if (!t.getTp().equals(0D)) {
+			if (!t.getTp().equals(0)) {
 				// отметка неисправности счетчика, для расчета других счетчиков в лиц.счете
 				isBroken = true;
 			}

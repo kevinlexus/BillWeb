@@ -548,8 +548,8 @@ public class DistGen {
 								// кол-во проживающих
 								double partKartPers = cntPers.cntForVol / calc.getReqConfig().getCntCurDays();
 								proc = partKartPers / metGroupCntPersSqr.getPers();
-								log.info("от локального: кол-во прож={}", partKartPers);
-								log.info("от группового: кол-во прож={}, %={}", metGroupCntPersSqr.getPers(), proc);
+								//log.info("от локального: кол-во прож={}", partKartPers);
+								//log.info("от группового: кол-во прож={}, %={}", metGroupCntPersSqr.getPers(), proc);
 							} else {
 								// если кол-во проживающих по Групп счетчику = 0, использовать соотношение по площади
 								// общая площадь, в доле дня
@@ -557,15 +557,15 @@ public class DistGen {
 										/ calc.getReqConfig().getCntCurDays();
 								if (!metGroupCntPersSqr.getArea().equals(0D)) {
 									proc = partKartArea / metGroupCntPersSqr.getArea();
-									log.info("от локального: общ.площ.={}", partKartArea);
-									log.info("от группового: общ.площ.={}, %={}", metGroupCntPersSqr.getArea(), proc);
+									//log.info("от локального: общ.площ.={}", partKartArea);
+									//log.info("от группового: общ.площ.={}, %={}", metGroupCntPersSqr.getArea(), proc);
 								} else {
 									log.error("ОШИБКА! некорректно указана площадь по Групповому счетчику Mlog.id={}", g.getSrc().getId());
 								}
 							}
 							// рассчитать долю от группового сч
 							nv.addVol(nvChld.getVol() * proc);
-							log.info("доля объема от группового={}", nv.getVol());
+							//log.info("доля объема от группового={}", nv.getVol());
 
 						} else {
 							// Прочие счетчики

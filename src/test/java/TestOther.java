@@ -1,3 +1,5 @@
+import java.math.BigDecimal;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,12 @@ public class TestOther {
 	@Test
 	public void test() {
 		log.info("Start!");
+		BigDecimal bd = new BigDecimal("1E-8");
+		bd.setScale(15, BigDecimal.ROUND_HALF_UP);
+		log.info("bd={}, compare={}", bd, bd.compareTo(BigDecimal.ZERO) ==0);
+
+		log.info("End!");
+
 		//volDao.testMe();
 		//List<ResultSet> lstItem = kartDao.findAllLsk(7966, null, null, null, null);
 /*		lstItem.stream().forEach(t-> {

@@ -116,7 +116,7 @@ public class ChrgThr {
 		int rqn = calc.getReqConfig().getRqn();
 
 		//log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
-		if (serv.getId()==20) {
+		if (serv.getId()==79) {
 			//log.trace("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 
@@ -286,8 +286,8 @@ public class ChrgThr {
 		}*/
 
 		//log.info("serv.cd={}", serv.getCd());
-		if (serv.getId()==66) {
-//			log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
+		if (serv.getId()==79) {
+			//log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
 
 		Kart kart = calc.getKart();
@@ -366,7 +366,9 @@ public class ChrgThr {
 			}
 
 			// Получить кол-во проживающих
+			//log.info("************");
 			cntPers = kartMng.getCntPers(rqn, calc, kart, serv, genDt);
+			//log.info("************ size={}", cntPers.persLst.size());
 
 			/*******************************
 			 * ПОЛУЧИТЬ РАСЦЕНКУ
@@ -644,6 +646,7 @@ public class ChrgThr {
 				//log.info("Дата={}", genDt);
 				//log.info("Объем={}", absVol);
 				//log.info("Соцнорма на 1 прож.={}", stdt.vol);
+				//log.info("Соцнорма на всех прож. в доле дня ={}", stdt.partVol);
 
 				if (cntPers.cntEmpt != 0) {
 					// есть проживающие
@@ -671,9 +674,10 @@ public class ChrgThr {
 						}
 						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={}", t.getId(), t.getLastname(), t.getFirstname(),
 							//	privServ!=null?privServ.getDiscount(): null);
-						//log.info("Проживающий id={}, фамилия={}, имя={}, дисконт={} vol={}", t.getId(), t.getLastname(), t.getFirstname(),
-						//		privServ!=null?privServ.getDiscount(): null, tmpVold);
-						if (absVol.compareTo(tmpVold) > 0) {
+/*						log.info("genDt={}, Проживающий id={}, фамилия={}, имя={} отчество={}, дисконт={} vol={}",
+								genDt, t.getId(), t.getLastname(), t.getFirstname(), t.getMiddlename(),
+								privServ!=null?privServ.getDiscount(): null, tmpVold);
+*/						if (absVol.compareTo(tmpVold) > 0) {
 							tmpInsVol = tmpVold.multiply(BigDecimal.valueOf(Math.signum(vol))); // умножить на знак
 							absVol = absVol.subtract(tmpVold);
 						} else {
@@ -681,11 +685,14 @@ public class ChrgThr {
 							absVol = BigDecimal.ZERO;
 						}
 
-						if (tmpInsVol.compareTo(BigDecimal.ZERO) !=0) {
+/*						log.info("tmpInsVol={} compare={}, size={}", tmpInsVol,
+								tmpInsVol.compareTo(BigDecimal.ZERO) !=0, cntPers.persLst.size());
+*/						if (tmpInsVol.compareTo(BigDecimal.ZERO) !=0) {
 							BigDecimal privPrice = null;
 							if (privServ!=null && privServ.getDiscount()!=null) {
 								privPrice = BigDecimal.valueOf(stPrice * privServ.getDiscount());
 							}
+//							log.info("privPrice={}", privPrice);
 
 							chStore.addChrg(tmpInsVol, BigDecimal.valueOf(stPrice),
 									privServ!=null ? privPrice : null,

@@ -31,6 +31,7 @@ import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.fn.ChngLsk;
 import com.ric.bill.model.fn.PersPrivilege;
 import com.ric.bill.model.fn.PrivilegeServ;
+import com.ric.bill.model.mt.MLogs;
 import com.ric.bill.model.ps.Pers;
 import com.ric.bill.model.tr.Serv;
 import com.ric.cmn.Utl;
@@ -279,13 +280,6 @@ public class ChrgThr {
 	 */
 	private void genChrg(Calc calc, Serv serv, String tpOwn, Date genDt) throws EmptyStorable, EmptyOrg, InvalidServ {
 
-		/*int aa=0;
-		if (calc.getKart().getLsk() == 3069) {
-			// искусственная ошибка
-			log.info("zero={}", 25/aa);
-		}*/
-
-		//log.info("serv.cd={}", serv.getCd());
 		if (serv.getId()==79) {
 			//log.info("ChrThr.run1: "+thrName+", Услуга:"+serv.getCd()+" Id="+serv.getId());
 		}
@@ -298,10 +292,8 @@ public class ChrgThr {
 		long endTime;
 		long totalTime;
 		startTime2 = System.currentTimeMillis();
-
 		// номер текущего запроса
 		int rqn = calc.getReqConfig().getRqn();
-
 		// услуги по норме, свыше и без проживающих
 		Serv stServ, upStServ, woKprServ;
 		// нормативный объем, доля норматива
@@ -318,21 +310,23 @@ public class ChrgThr {
 		Double sqr = 0d;
 		// № порядк.записи
 		// int npp;
-		// Временная сумма
+		// временная сумма
 		// BigDecimal tmpSum;
-		// Временный объем
+		// временный объем
 		Double tmpVol;
-		// Кол-во проживающих
+		// кол-во проживающих
 		CntPers cntPers;// = new CntPers();
 
-		// Временные переменные
+		// временные переменные
 		// Double tmp = 0d;
 		BigDecimal cf = BigDecimal.ZERO;
 		BigDecimal tmpVolD = BigDecimal.ZERO;
-		// Наличие счетчика в периоде
+		// наличие счетчика в периоде
 		Boolean exsMet = false;
-		// Номер ввода
+		// номер ввода
 		Integer entry = null;
+		// вариант распределения ОДН
+		Double distODNtp = 0D;
 
 		// признак жилого помещения
 		Boolean isResid = true;
@@ -517,16 +511,35 @@ public class ChrgThr {
 				}
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
 				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
-				// получить норматив
-				Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
-				// объем: норматив * долю площади
-				if (stVol != null) {
-					vol = stVol * sqr;
-					//log.info("vol={} stVol={} sqr={}", vol, stVol, sqr);
-				} else {
-					vol = 0d;
-				}
 				//Utl.logger(false, 13, kart.getLsk(), serv.getId()); //###
+
+				// найти счетчик, привязанный к лиц.счету, по данной услуге
+				MLogs metLog =
+						metMng.getAllMetLogByServTp(rqn, kart, serv.getServMet(), "Лсчетчик")
+						.stream().findFirst().orElse(null);
+				if (metLog != null) {
+					// найти счетчик ЛОДН
+					MLogs lnkLODN = metMng.getLinkedNode(rqn, metLog, "ЛОДН", genDt, false);
+					// получить вариант распределения ОДН
+					distODNtp = Utl.nvl(parMng.getDbl(rqn, lnkLODN, "Вариант распределения ОДН"), 0D);
+				}
+
+				if (distODNtp.equals(0D)) {
+					// расчет по нормативу
+					Double stVol = kartMng.getServPropByCD(rqn, calc, serv, "Норматив", genDt);
+					// объем: норматив * долю площади
+					if (stVol != null) {
+						vol = stVol * sqr;
+						//log.info("vol={} stVol={} sqr={}", vol, stVol, sqr);
+					} else {
+						vol = 0D;
+					}
+				} else {
+					// расчет по распределенному объему
+			        // например Х.В.Г.В. ОДН
+					vol = getVolDoesNotDistByDays(calc, serv, kart, chng, rqn, chngLsk);
+				}
+
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета для полива"), 0d) == 1d) {
 				//получить объем за месяц
 				vol = Utl.nvl(parMng.getDbl(rqn, kart, baseCD, genDt, chng), 0d);
@@ -570,23 +583,7 @@ public class ChrgThr {
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
 				// Вариант подразумевает объём по лог.счётчику, НЕ распределённый по дням,
 				// а записанный одной строкой (одним периодом дата нач.-дата кон.)
-				if (serv.getServMet() == null) {
-					throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
-				}
-				if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
-					// перерасчет
-					vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
-				} else {
-					// получить объем по услуге за период
-					SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(),
-							calc.getReqConfig().getChng(),
-							kart, serv.getServMet(),
-							calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
-					vol = tmpNodeVol.getVol();
-				}
-				// разделить на кол-во дней в месяце, так как получен объем за весь месяц
-				vol = vol / calc.getReqConfig().getCntCurDays();
-				//Utl.logger(false, 16, kart.getLsk(), serv.getId()); //###
+				vol = getVolDoesNotDistByDays(calc, serv, kart, chng, rqn, chngLsk);
 
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				vol = 1 / calc.getReqConfig().getCntCurDays();
@@ -617,18 +614,27 @@ public class ChrgThr {
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-2"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по кол-ву точек-1"), 0d) == 1d ||
 				Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по объему без исп.норматива-1"), 0d) == 1d) {
+
 				//без соцнормы и свыше!
 				//тип расчета, например:Взносы на капремонт
-		        //или Х.В.Г.В. ОДН
+		        //или Х.В.Г.В. ОДН - старый вариант, не используется!
 				//Вариант подразумевает объём, по параметру - базе, жилого фонда РАСПределённый по дням
 				//log.info("serv.name={}, serv.id={}, vol= {}, stPrice= {}, cntPers= {}, sqr", serv.getName(), serv.getId(), vol, stPrice, cntPers, sqr);
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
 						BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
 
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по общей площади-3"), 0d) == 1d) {
-				// обычно услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
-				chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
+				// услуги ХВ, ГВ, Эл на Общее имущество (ОИ)
+				if (distODNtp.equals(0D)) {
+					// норматив по площади
+					chStore.addChrg(BigDecimal.valueOf(sqr), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
 							BigDecimal.valueOf(vol), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
+				} else {
+					// распределение объема
+					chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
+							BigDecimal.valueOf(sqr), stServ, org, exsMet, entry, genDt, cntPers.cntOwn, null);
+				}
+
 			} else if (Utl.nvl(parMng.getDbl(rqn, serv, "Вариант расчета по готовой сумме"), 0d) == 1d) {
 				//тип расчета, например:Коммерческий найм, где цена = сумме
 				chStore.addChrg(BigDecimal.valueOf(vol), BigDecimal.valueOf(stPrice), null, null, null, cntPers.cntFact,
@@ -994,5 +1000,40 @@ public class ChrgThr {
 		}
 	cntPers = null;
 	stdt = null;
+	}
+
+	/**
+	 * Получить объем по услуге, не распределенный по дням
+	 * (записанный одной строкой)
+	 * @param calc - объект для калькуляции
+	 * @param serv - услуга
+	 * @param kart - лиц.счет
+	 * @param chng - перерасчет
+	 * @param rqn - итерация вызова
+	 * @param chngLsk - перерасчет по лиц.счету
+	 * @return
+	 * @throws InvalidServ
+	 */
+	private Double getVolDoesNotDistByDays(Calc calc, Serv serv, Kart kart, Chng chng, int rqn, ChngLsk chngLsk)
+			throws InvalidServ {
+		Double vol;
+		if (serv.getServMet() == null) {
+			throw new InvalidServ("По услуге Id="+serv.getId()+" не установлена соответствующая услуга счетчика");
+		}
+		if (calc.getReqConfig().getOperTp()==1 && chng.getTp().getCd().equals("Начисление за прошлый период") && chngLsk != null ) {
+			// перерасчет
+			vol = tarMng.getChngVal(calc, serv, null, "Начисление за прошлый период", 0) / calc.getReqConfig().getCntCurDays();
+		} else {
+			// получить объем по услуге за период
+			SumNodeVol tmpNodeVol = metMng.getVolPeriod(rqn, calc.getReqConfig().getChng()==null ? null : calc.getReqConfig().getChng().getId(),
+					calc.getReqConfig().getChng(),
+					kart, serv.getServMet(),
+					calc.getReqConfig().getCurDt1(), calc.getReqConfig().getCurDt2());
+			vol = tmpNodeVol.getVol();
+		}
+		// разделить на кол-во дней в месяце, так как получен объем за весь месяц
+		vol = vol / calc.getReqConfig().getCntCurDays();
+		//Utl.logger(false, 16, kart.getLsk(), serv.getId()); //###
+		return vol;
 	}
 }

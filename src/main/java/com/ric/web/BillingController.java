@@ -693,8 +693,15 @@ public class BillingController {
 						log.info("msg={}", msg);
 					}
 					return "OK"+(msg.equals("") ? "" : ":"+msg);
+				} else if (fut.get().getErr() == 2) {
+					// ошибка блокировки
+					log.error(
+							"ERROR /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
+							lsk, dist, tp, chngId);
+					return "ERRLOCK";
 				} else {
-					log.info(
+					// ошибка
+					log.error(
 							"ERROR /chrglsk with: lsk={}, dist={}, tp={}, chngId={}",
 							lsk, dist, tp, chngId);
 					return "ERROR";
@@ -855,6 +862,8 @@ public class BillingController {
 				if (fut.get().getErr() == 0) {
 				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
 					retStr = "OK";
+				} else if (fut.get().getErr() == 2) {
+					retStr = "ERRLOCK";
 				} else {
 					retStr = "ERROR";
 				}
@@ -868,8 +877,8 @@ public class BillingController {
 				retStr = "ERROR";
 			}
 
-			if (retStr.equals("ERROR")) {
-				log.info("Начисление и распределение объемов выполнено с ОШИБКОЙ, в Area.id={}, Area.Name={}", area.getId(), area.getName());
+			if (retStr.equals("ERROR") || retStr.equals("ERRLOCK")) {
+				log.error("Начисление и распределение объемов выполнено с ОШИБКОЙ, в Area.id={}, Area.Name={}", area.getId(), area.getName());
 				// Выйти из цикла
 				break;
 			}
@@ -903,6 +912,8 @@ public class BillingController {
 				if (fut.get().getErr() == 0) {
 				//	log.info("Начисление выполнено успешно, в Area.id={}, Area.Name={}", area.getId(), area.getName());
 					retStr = "OK";
+				} else if (fut.get().getErr() == 2) {
+					retStr = "ERRLOCK";
 				} else {
 					retStr = "ERROR";
 				}
@@ -916,8 +927,8 @@ public class BillingController {
 				retStr = "ERROR";
 			}
 
-			if (retStr.equals("ERROR")) {
-				log.info("Начисление выполнено с ОШИБКОЙ, в House.id={}", houseId);
+			if (retStr.equals("ERROR") || retStr.equals("ERRLOCK")) {
+				log.error("Начисление выполнено с ОШИБКОЙ, в House.id={}", houseId);
 			}
 		}
 		// разрешить другим процессам формировать начисление по лиц.счетам

@@ -24,6 +24,8 @@ import com.ric.bill.excp.ErrorWhileDist;
 import com.ric.bill.mm.HouseMng;
 import com.ric.bill.mm.KartMng;
 import com.ric.bill.model.ar.Kart;
+import com.ric.cmn.Utl;
+import com.ric.cmn.excp.CantLock;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -126,28 +128,29 @@ public class BillServ {
 		int cntThreads;
 
 		// РАСПРЕДЕЛЕНИЕ ОБЪЕМОВ, если задано
-		try {
-			if (reqConfig.getIsDist()) {
-				cntThreads = 10;
-				// загрузить все необходимые Дома
-				List<ResultSet> lstItem = houseMng.findAll2(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
-						.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
-				log.info("Список House.id для Начисления:");
-				lstItem.stream().forEach(t-> {
-					log.info("House.id={}", t.getId());
-				});
-				try {
-					log.info("BillServ.chrgAll: Распределение по заданным домам начато!");
-					invokeThreads(reqConfig, cntThreads, lstItem, 1);
-					log.info("BillServ.chrgAll: Распределение по заданным домам выполнено!");
-				} catch (ErrorWhileChrg e) {
-					log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
-				}
-
+		if (reqConfig.getIsDist()) {
+			cntThreads = 10;
+			// загрузить все необходимые Дома
+			List<ResultSet> lstItem = houseMng.findAll2(houseId, areaId, tempLskId, reqConfig.getCurDt1(), reqConfig.getCurDt2()).stream()
+					.map(t-> new ResultSet(t.getId())).collect(Collectors.toList());
+			log.info("Список House.id для Начисления:");
+			lstItem.stream().forEach(t-> {
+				log.info("House.id={}", t.getId());
+			});
+			try {
+				log.info("BillServ.chrgAll: Распределение по заданным домам начато!");
+				invokeThreads(reqConfig, cntThreads, lstItem, 1);
+				log.info("BillServ.chrgAll: Распределение по заданным домам выполнено!");
+			} catch (ErrorWhileChrg e) {
+				log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
+			} catch (CantLock e) {
+				// ошибка блокировки
+				log.error(Utl.getStackTraceString(e));
+				res.setErr(2);
+			} catch (ErrorWhileDist e) {
+				log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
+				res.setErr(1);
 			}
-		} catch (ErrorWhileDist e) {
-			log.error("Ошибка при распределении объемов по дому house.id={}", houseId);
-			res.setErr(1);
 		}
 
 		// РАСЧЕТ НАЧИСЛЕНИЯ ПО ЛС В ПОТОКАХ
@@ -166,6 +169,10 @@ public class BillServ {
 				log.info("BillServ.chrgAll: Начисление по заданным домам выполнено!");
 			} catch (ErrorWhileDist | ErrorWhileChrg e) {
 				log.info("НЕОБРАБОТАННАЯ ОШИБКА В ПОТОКЕ!");
+			} catch (CantLock e) {
+				// ошибка блокировки
+				log.error(Utl.getStackTraceString(e));
+				res.setErr(2);
 			}
 		}
 		return futM;
@@ -253,8 +260,14 @@ public class BillServ {
 				calc.setKart(kart);
 			}
 		} catch (ErrorWhileDist | ExecutionException e) {
-			e.printStackTrace();
+			// ошибка
+			log.error(Utl.getStackTraceString(e));
 			res.setErr(1);
+			return fut;
+		} catch (CantLock e) {
+			// ошибка блокировки
+			log.error(Utl.getStackTraceString(e));
+			res.setErr(2);
 			return fut;
 		}
 
@@ -262,9 +275,14 @@ public class BillServ {
 		try {
 			fut = chrgServThr.chrgAndSaveLsk(reqConfig, kart.getLsk());
 		} catch (ErrorWhileChrg | ExecutionException e) {
+			// ошибка
 			e.printStackTrace();
 			res.setErr(1);
 			return fut;
+		} catch (CantLock e) {
+			// ошибка блокировки
+			log.error(Utl.getStackTraceString(e));
+			res.setErr(2);
 		}
 
 		return fut;
@@ -280,8 +298,9 @@ public class BillServ {
 	 * @throws ErrorWhileDist
 	 * @throws ErrorWhileChrg
 	 * @throws ExecutionException
+	 * @throws CantLock
 	 */
-	private void invokeThreads(RequestConfig reqConfig, int cntThreads, List<ResultSet> lstItem, int tp) throws ErrorWhileDist, ErrorWhileChrg, ExecutionException {
+	private void invokeThreads(RequestConfig reqConfig, int cntThreads, List<ResultSet> lstItem, int tp) throws ErrorWhileDist, ErrorWhileChrg, ExecutionException, CantLock {
 		long startTime = System.currentTimeMillis();
 
 		List<Future<Result>> frl = new ArrayList<Future<Result>>(cntThreads);

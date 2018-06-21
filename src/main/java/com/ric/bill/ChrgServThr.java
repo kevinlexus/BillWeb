@@ -19,6 +19,7 @@ import com.ric.bill.excp.ErrorWhileChrg;
 import com.ric.bill.model.ar.Kart;
 import com.ric.bill.model.fn.ChngLsk;
 import com.ric.bill.model.tr.TarifKlsk;
+import com.ric.cmn.excp.CantLock;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,7 +44,7 @@ public class ChrgServThr {
 
 	@Async
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public Future<Result> chrgAndSaveLsk(RequestConfig reqConfig, Integer kartId) throws ErrorWhileChrg, ExecutionException {
+	public Future<Result> chrgAndSaveLsk(RequestConfig reqConfig, Integer kartId) throws ErrorWhileChrg, ExecutionException, CantLock {
 //		Result res = new Result();
 //		return new AsyncResult<Result>(res );
 
@@ -62,18 +63,18 @@ public class ChrgServThr {
 		int waitTick = 0;
 		while (!config.lock.setLockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId)) {
 			waitTick++;
-			if (waitTick > 60) {
+			if (waitTick > 10) {
 				log.error(
 						"********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!");
 				log.error(
-						"********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ к lsk={} В ТЕЧЕНИИ 60 сек!{}", lsk);
-				throw new ErrorWhileChrg("Ошибка при блокировке лс lsk="+lsk);
+						"********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ к lsk={} В ТЕЧЕНИИ 10 сек!{}", lsk);
+				throw new CantLock("Ошибка при блокировке лс lsk="+lsk);
 			}
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				throw new ErrorWhileChrg("Ошибка при блокировке лс lsk="+lsk);
+				throw new CantLock("Ошибка при блокировке лс lsk="+lsk);
 			}
 		}
 

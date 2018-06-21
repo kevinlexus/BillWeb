@@ -52,6 +52,7 @@ import com.ric.bill.model.mt.Vol;
 import com.ric.bill.model.sec.User;
 import com.ric.bill.model.tr.Serv;
 import com.ric.cmn.Utl;
+import com.ric.cmn.excp.CantLock;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -164,25 +165,26 @@ public class DistServ {
 	 * начисления, поэтому не нуждается в блокировке лиц.счета
 	 *
 	 * @throws ErrorWhileDist
+	 * @throws CantLock
 	 */
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void distKartVol(Calc calc) throws ErrorWhileDist {
+	public void distKartVol(Calc calc) throws ErrorWhileDist, CantLock {
 		Integer lsk = calc.getKart().getLsk();
 		Integer houseId = calc.getKart().getKw().getHouse().getId();
 		// блокировка лиц.счета
 		int waitTick = 0;
 		while (!config.lock.setLockChrgLsk(calc.getReqConfig().getRqn(), lsk, houseId)) {
 			waitTick++;
-			if (waitTick > 60) {
+			if (waitTick > 10) {
 				log.error("********ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!ВНИМАНИЕ!");
-				log.error("********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ к lsk={} В ТЕЧЕНИИ 60 сек!{}", lsk);
-				throw new ErrorWhileDist("Ошибка при блокировке лс lsk=" + lsk);
+				log.error("********НЕВОЗМОЖНО РАЗБЛОКИРОВАТЬ к lsk={} В ТЕЧЕНИИ 10 сек!{}", lsk);
+				throw new CantLock("Ошибка при блокировке лс lsk=" + lsk);
 			}
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				throw new ErrorWhileDist("Ошибка при блокировке лс lsk=" + lsk);
+				throw new CantLock("Ошибка при блокировке лс lsk=" + lsk);
 			}
 		}
 

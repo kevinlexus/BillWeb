@@ -545,7 +545,7 @@ public class DistServ {
 			}
 			// получить список объемов
 			List<Vol> lstVol = meterDao.getVolPeriodByHouse(house, null, user, dt1, dt2);
-			lstVol.stream().filter(t -> t.getChng().equals(chng) ) // по заголовочной записи перерасчета
+			lstVol.stream().filter(t -> t.getChng()!=null && t.getChng().equals(chng) ) // по заголовочной записи перерасчета
 				.forEach(v -> {
 				metMng.saveMeterVol(v.getMet(), -1 * v.getVol1().doubleValue(), chng, user, dt1, dt2);
 			});

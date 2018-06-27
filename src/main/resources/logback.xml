@@ -10,7 +10,7 @@
             </encoder>
   </appender>
 
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+  <appender name="FILE2" class="ch.qos.logback.core.FileAppender">
             <file>${user.home}/BillWeb_brief${myTimestamp}.log</file>
             <append>true</append>
             <encoder>
@@ -45,6 +45,7 @@
   <!-- Setting the root level of logging to INFO - Здесь менять уровни логгинга в Spring Boot-->
   <root level="INFO">
     <appender-ref ref="FILE" />
+    <appender-ref ref="FILE2" />
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

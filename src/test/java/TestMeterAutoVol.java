@@ -18,6 +18,7 @@ import com.ric.bill.mm.MeterLogMng;
 import com.ric.bill.model.fn.Chng;
 import com.ric.bill.model.mt.Meter;
 import com.ric.bill.model.sec.User;
+import com.ric.bill.model.tr.Serv;
 import com.ric.cmn.Utl;
 import com.ric.web.AppConfig;
 
@@ -59,8 +60,13 @@ public class TestMeterAutoVol {
 		Meter mm = em.find(Meter.class, 88489);
 		Chng ch = em.find(Chng.class, 23);
 		User user = em.find(User.class, 4);
+		Serv serv = em.find(Serv.class, 79);
 
-		metMng.saveMeterVol(mm, 1D, ch, user, Utl.getDateFromStr("01.02.2018"), Utl.getDateFromStr("30.02.2018"));
+		meterDao.getVolPeriodByHouse(null, serv, user, Utl.getDateFromStr("01.02.2018"), Utl.getDateFromStr("30.02.2018")).stream()
+		  .forEach(t-> {
+			  log.info("meter.id={}, vol={}", t.getMet().getId(), t.getVol1());
+		  });
+		//metMng.saveMeterVol(mm, 1D, ch, user, Utl.getDateFromStr("01.02.2018"), Utl.getDateFromStr("30.02.2018"));
 
 		//log.info("Date={}",Utl.addMonths(Utl.getDateFromStr("01.02.2018"), -2));
 		//distServ.distHouseAutoVol(187);

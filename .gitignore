@@ -1,4 +1,6 @@
 /target/
 /BAD/
 /logs/
-/target/
+/.idea/
+/.mvn/
+/.settings/

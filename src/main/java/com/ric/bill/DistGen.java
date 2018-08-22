@@ -132,13 +132,6 @@ public class DistGen {
 	 * @param tp - тип распределения (0-по расчетной связи, 1-по связи по площади и кол.прож., 2-по расчетной связи ОДН, 3-по расчетной связи пропорц.площади
 	 * @param genDt - дата формирования
 	 * @return NodeVol - объект содержащий объемы
-	 * @throws WrongGetMethod
-	 * @throws EmptyServ
-	 * @throws NotFoundODNLimit
-	 * @throws NotFoundNode
-	 * @throws EmptyStorable
-	 * @throws EmptyPar
-	 * @throws WrongValue
 	 */
 	public NodeVol distNode (Calc calc, MLogs ml, int tp, Date genDt)
 			throws WrongGetMethod, EmptyServ, NotFoundODNLimit, NotFoundNode, EmptyStorable, EmptyPar, WrongValue {
@@ -269,6 +262,7 @@ public class DistGen {
 									.filter(d -> d.getValTp().getCd().equals("Площадь (м2)")) // фильтр по типу параметра
 									.mapToDouble(d -> Utl.nvl(d.getVal(), 0d) * Utl.getPartDays(d.getDtVal1(), d.getDtVal2()) ) // преобразовать в массив Double
 									.max(); // макс.значение
+
 					if (chngSqr.isPresent()) {
 						// значение из перерасчета
 						partArea = chngSqr.getAsDouble();
@@ -292,10 +286,10 @@ public class DistGen {
 			// сохранить счетчик ЛОДН
 			// только там, где существует услуга в данном дне (по услуге, содержащей Поставщика)
 			if (kartMng.getServ(rqn, calc, ml.getServ().getServOrg(), genDt)) {
-				SumNodeVol lnkODNVol = null;
-				MLogs lnkLODN = null;
-				MLogs lnkSumODPU = null;
-				MLogs lnkODPU = null;
+				SumNodeVol lnkODNVol;
+				MLogs lnkLODN;
+				MLogs lnkSumODPU;
+				MLogs lnkODPU;
 				//поиск счетчика ЛОДН
 				lnkLODN = metMng.getLinkedNode(rqn, ml, "ЛОДН", genDt, false);
 				//параметр Доначисление по ОДН
@@ -737,9 +731,10 @@ public class DistGen {
 	 * @param genDt - дата расчета
 	 * @return - найденный объем
 	 */
-	@Cacheable(cacheNames="DistGen.findLstCheck", key="{ #id, #tp, #genDt }")
+	//@Cacheable(cacheNames="DistGen.findLstCheck", key="{ #id, #tp, #genDt }")
 	private NodeVol findLstCheck(int id, int tp, Date genDt) {
-		Optional<Check> nv = lstCheck.stream().filter(t -> t.getId()==id && t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
+		Optional<Check> nv = lstCheck.stream().filter(t -> t.getId()==id
+				&& t.getTp()==tp && t.getGenDt().equals(genDt)).findAny();
 		if (nv.isPresent()) {
 			return nv.get().getNodeVol();
 		} else {
@@ -771,7 +766,7 @@ public class DistGen {
 	 */
 	public double oplLiter(Double oplMan) {
 		int inVal = (int) Math.round(oplMan);
-		double val=0d;
+		double val;
 
 		switch (inVal) {
 		case 1: val = 2;
